@@ -78,9 +78,9 @@ export default function HomePage() {
     return matchesSearch && matchesChip;
   });
 
-  // Display max 6 categories and top 6 popular services on Home
+  // Display EXACTLY 6 categories and 10 popular services on Home
   const displayCategories = categories.slice(0, 6);
-  const popularServices = filteredServices.slice(0, 6);
+  const popularServices = filteredServices.slice(0, 10);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -120,7 +120,7 @@ export default function HomePage() {
         {/* 3. Hero Banner Carousel */}
         <HeroBanner banners={banners} />
 
-        {/* 4. Explore Categories Grid */}
+        {/* 4. Explore Categories Grid (6 Categories) */}
         {displayCategories.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-6">
@@ -151,7 +151,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok */}
+        {/* 5. Popular Services in Gangtok (10 Services) */}
         {popularServices.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-6">
@@ -213,7 +213,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 6. Why Choose HiMistri? (2x2 Grid matching screenshot) */}
+        {/* 6. Why Choose HiMistri? (2x2 Grid) */}
         <div>
           <div className="mb-6">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white">Why Choose HiMistri?</h2>

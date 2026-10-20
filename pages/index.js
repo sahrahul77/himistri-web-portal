@@ -6,11 +6,10 @@ import Footer from '../components/Footer';
 import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
-import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Zap } from 'lucide-react';
+import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award } from 'lucide-react';
 
 export default function HomePage() {
   const [isDark, setIsDark] = useState(true);
@@ -19,8 +18,9 @@ export default function HomePage() {
   const [checkoutService, setCheckoutService] = useState(null);
 
   // Live Firebase Realtime Database Data
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [services, setServices] = useState(DEFAULT_SERVICES);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [banners, setBanners] = useState([]);
 
   const { currentUser } = useAuth();
 
@@ -37,7 +37,7 @@ export default function HomePage() {
           list.push({ id: child.key, ...child.val() });
         });
       }
-      setCategories(list.length > 0 ? list : DEFAULT_CATEGORIES);
+      setCategories(list);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -47,12 +47,23 @@ export default function HomePage() {
           list.push({ id: child.key, ...child.val() });
         });
       }
-      setServices(list.length > 0 ? list : DEFAULT_SERVICES);
+      setServices(list);
+    });
+
+    const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setBanners(list);
     });
 
     return () => {
       unsubCat();
       unsubSrv();
+      unsubBanners();
     };
   }, []);
 
@@ -69,8 +80,8 @@ export default function HomePage() {
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-8 flex-1 space-y-12">
-        {/* Dynamic Animated Hero Banner */}
-        <HeroBanner />
+        {/* Dynamic Animated Hero Banner from Firebase */}
+        <HeroBanner banners={banners} />
 
         {/* Live Search Bar */}
         <div className="relative max-w-3xl mx-auto">
@@ -86,95 +97,102 @@ export default function HomePage() {
 
         {/* Quick Search Suggestion Chips */}
         <div className="flex gap-2.5 overflow-x-auto pb-2 justify-start sm:justify-center">
-          {['ALL', 'Plumber', 'Electrician', 'Barber', 'Cleaner', 'Carpenter', 'Tutor'].map((chip) => (
+          <button onClick={() => setActiveChip('ALL')} className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all ${activeChip === 'ALL' ? 'bg-redPrimary text-white border-redPrimary shadow-md scale-105' : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800 hover:border-redPrimary'}`}>
+            ⚡ All Services
+          </button>
+          {categories.map((c) => (
             <button
-              key={chip}
-              onClick={() => setActiveChip(chip)}
+              key={c.id}
+              onClick={() => setActiveChip(c.name)}
               className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all ${
-                activeChip === chip
+                activeChip === c.name
                   ? 'bg-redPrimary text-white border-redPrimary shadow-md scale-105'
                   : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800 hover:border-redPrimary'
               }`}
             >
-              ⚡ {chip === 'ALL' ? 'All Services' : chip}
+              ⚡ {c.name}
             </button>
           ))}
         </div>
 
         {/* Categories Section */}
-        <div>
-          <div className="flex justify-between items-baseline mb-6">
-            <div>
-              <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Service Categories</span>
-              <h2 className="text-2xl font-black mt-0.5">Explore Categories ({categories.length})</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Trained technical manpower categories in Gangtok</p>
-            </div>
-            <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1">
-              See All <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            {categories.map((c) => (
-              <Link href="/categories" key={c.id}>
-                <motion.div
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  className="web-card text-center p-5 cursor-pointer shadow-md"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-redPrimary/10 flex items-center justify-center mx-auto mb-3 border border-redPrimary/20">
-                    <img src={c.iconUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={c.name} className="w-8 h-8 object-contain" />
-                  </div>
-                  <strong className="text-xs font-bold block text-slate-900 dark:text-white">{c.name}</strong>
-                </motion.div>
+        {categories.length > 0 && (
+          <div>
+            <div className="flex justify-between items-baseline mb-6">
+              <div>
+                <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Service Categories</span>
+                <h2 className="text-2xl font-black mt-0.5">Explore Categories ({categories.length})</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Trained technical manpower categories in Gangtok</p>
+              </div>
+              <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1">
+                See All <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-            ))}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {categories.map((c) => (
+                <Link href="/categories" key={c.id}>
+                  <motion.div
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    className="web-card text-center p-5 cursor-pointer shadow-md h-full flex flex-col justify-center"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-redPrimary/10 flex items-center justify-center mx-auto mb-3 border border-redPrimary/20 shrink-0">
+                      <img src={c.iconUrl} alt={c.name} className="w-8 h-8 object-contain" />
+                    </div>
+                    <strong className="text-xs font-bold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Popular Services Catalog */}
-        <div>
-          <div className="flex justify-between items-baseline mb-6">
-            <div>
-              <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Top Doorstep Solutions</span>
-              <h2 className="text-2xl font-black mt-0.5">Popular Services in Gangtok</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Top rated doorstep solutions requested by Sikkim residents</p>
+        {services.length > 0 && (
+          <div>
+            <div className="flex justify-between items-baseline mb-6">
+              <div>
+                <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Top Doorstep Solutions</span>
+                <h2 className="text-2xl font-black mt-0.5">Popular Services in Gangtok</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Top rated doorstep solutions requested by Sikkim residents</p>
+              </div>
+              <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1">
+                View Catalog <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1">
-              View Catalog <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {filteredServices.map((s) => (
-              <motion.div
-                key={s.id}
-                whileHover={{ y: -4 }}
-                className="web-card flex flex-col justify-between shadow-lg"
-              >
-                <div>
-                  <div className="relative">
-                    <img src={s.imageUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3" />
-                    <div className="absolute top-2.5 right-2.5 bg-black/80 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10">
-                      <Star className="w-3.5 h-3.5 fill-amber-400" /> {s.ratingAverage || 4.9}
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
-                  <h3 className="font-extrabold text-base mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {filteredServices.map((s) => (
+                <motion.div
+                  key={s.id}
+                  whileHover={{ y: -4 }}
+                  className="web-card flex flex-col justify-between shadow-lg"
+                >
                   <div>
-                    <span className="text-xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
-                    <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
+                    <div className="relative">
+                      <img src={s.imageUrl} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3" />
+                      <div className="absolute top-2.5 right-2.5 bg-black/80 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10">
+                        <Star className="w-3.5 h-3.5 fill-amber-400" /> {s.ratingAverage || 4.9}
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
+                    <h3 className="font-extrabold text-base mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
                   </div>
-                  <button onClick={() => setCheckoutService(s)} className="btn-primary">
-                    Hire Now <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                    <div>
+                      <span className="text-xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                      <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
+                    </div>
+                    <button onClick={() => setCheckoutService(s)} className="btn-primary">
+                      Hire Now <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Why Choose HiMistri Section */}
         <div className="my-12">

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/AuthContext';
-import { Sun, Moon, Phone, MessageSquare, User, MapPin, ChevronDown, UserCircle, Map, LogOut, ShieldCheck, HardHat } from 'lucide-react';
+import { Sun, Moon, Phone, MessageSquare, User, MapPin, ChevronDown, UserCircle, Map, LogOut, ShieldCheck, HardHat, FileText } from 'lucide-react';
 
 export default function Header({ isDark, onToggleTheme }) {
   const router = Router();
@@ -15,7 +15,6 @@ export default function Header({ isDark, onToggleTheme }) {
     try { return useRouter(); } catch { return { pathname: '/' }; }
   }
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -57,7 +56,6 @@ export default function Header({ isDark, onToggleTheme }) {
           <Link href="/" className={`hover:text-amber-200 transition ${router.pathname === '/' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Home</Link>
           <Link href="/categories" className={`hover:text-amber-200 transition ${router.pathname === '/categories' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Categories</Link>
           <Link href="/services" className={`hover:text-amber-200 transition ${router.pathname === '/services' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Services</Link>
-          <Link href="/tracking" className={`hover:text-amber-200 transition ${router.pathname === '/tracking' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Track Order</Link>
         </nav>
 
         <div className="flex items-center gap-2.5">
@@ -71,11 +69,6 @@ export default function Header({ isDark, onToggleTheme }) {
             <span className="hidden sm:inline">Call Support</span>
           </a>
 
-          <a href="https://wa.me/917430887960" target="_blank" rel="noreferrer" className="bg-white text-emerald-600 hover:bg-emerald-50 px-3.5 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition shadow-sm hidden lg:flex">
-            <MessageSquare className="w-4 h-4 fill-emerald-600" /> WhatsApp
-          </a>
-
-          {/* User Account Dropdown Menu */}
           {isAuthLoaded && currentUser ? (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -95,12 +88,15 @@ export default function Header({ isDark, onToggleTheme }) {
                   </div>
 
                   <div className="py-2 flex flex-col">
-                    <Link href="/tracking" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2">
-                      <UserCircle className="w-4 h-4 text-slate-400" /> My Profile & Orders
+                    <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                      <UserCircle className="w-4 h-4 text-slate-400" /> My Profile
                     </Link>
-                    <button onClick={() => { setIsDropdownOpen(false); alert('Address Book: Navigate to Profile to add addresses.'); }} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-left">
-                      <Map className="w-4 h-4 text-slate-400" /> Saved Addresses
-                    </button>
+                    <Link href="/tracking" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-left">
+                      <FileText className="w-4 h-4 text-slate-400" /> My Orders
+                    </Link>
+                    <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-left">
+                      <Map className="w-4 h-4 text-slate-400" /> Address Book
+                    </Link>
 
                     {isPartner && (
                       <Link href="/partner" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-bold text-orangeSecondary hover:bg-orangeSecondary/10 flex items-center gap-2 border-t border-slate-100 dark:border-neutral-800 mt-1 pt-3">

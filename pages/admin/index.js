@@ -5,6 +5,7 @@ import Footer from '../../components/Footer';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../../lib/defaultData';
 import { ref, onValue, update, remove, set } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
+import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
   BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit

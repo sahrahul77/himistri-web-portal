@@ -4,6 +4,7 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { ref, onValue, update } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
+import { useAuth } from '../../lib/AuthContext';
 import { HardHat, CheckCircle, Truck, DollarSign, Edit, Lock, LogIn, LogOut, Phone, MessageSquare } from 'lucide-react';
 
 export default function PartnerDashboardPage() {

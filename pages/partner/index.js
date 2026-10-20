@@ -21,13 +21,7 @@ export default function PartnerDashboardPage() {
 
   const toggleTheme = () => {
     setIsDark(!isDark);
-    if (!isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
+    document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
   };
 
   useEffect(() => {
@@ -79,7 +73,7 @@ export default function PartnerDashboardPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
+      <Header isDark={isDark} onToggleTheme={toggleTheme} />
 
       <main className="web-container py-10 flex-1 max-w-5xl mx-auto space-y-6">
         {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isPartner ? (

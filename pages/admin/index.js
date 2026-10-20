@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../../lib/defaultData';
-import { ref, onValue, update, remove, set } from 'firebase/database';
+import { ref, onValue, update, remove, set, push } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
@@ -143,19 +143,21 @@ export default function AdminControlPanelPage() {
   const handleAddCategory = (e) => {
     e.preventDefault();
     if (!newCatName) return alert('Category Name is required.');
-    const catId = 'cat_' + Math.random().toString(36).substring(2, 8);
-    set(ref(rtdb, `categories/${catId}`), { id: catId, name: newCatName, iconUrl: newCatIcon || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png' })
+    const newRef = push(ref(rtdb, 'categories'));
+    const catId = newRef.key;
+    set(newRef, { id: catId, name: newCatName, iconUrl: newCatIcon || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png' })
       .then(() => { alert(`New Category '${newCatName}' created in Firebase!`); setNewCatName(''); setNewCatIcon(''); });
   };
 
   const handleAddService = (e) => {
     e.preventDefault();
     if (!newSrvTitle) return alert('Service Title is required.');
-    const srvId = 'srv_' + Math.random().toString(36).substring(2, 8);
+    const newRef = push(ref(rtdb, 'services'));
+    const srvId = newRef.key;
     const activeCats = categoriesList.length > 0 ? categoriesList : DEFAULT_CATEGORIES;
     const catObj = activeCats.find(c => c.id === newSrvCatId) || activeCats[0];
 
-    set(ref(rtdb, `services/${srvId}`), {
+    set(newRef, {
       id: srvId,
       categoryId: catObj.id,
       categoryName: catObj.name,
@@ -172,8 +174,9 @@ export default function AdminControlPanelPage() {
   const handleAddBanner = (e) => {
     e.preventDefault();
     if (!newBnrTitle) return alert('Banner Title is required.');
-    const bnrId = 'bnr_' + Math.random().toString(36).substring(2, 8);
-    set(ref(rtdb, `banners/${bnrId}`), {
+    const newRef = push(ref(rtdb, 'banners'));
+    const bnrId = newRef.key;
+    set(newRef, {
       id: bnrId,
       title: newBnrTitle,
       subtitle: newBnrSub || 'Doorstep Services across Gangtok',
@@ -184,8 +187,9 @@ export default function AdminControlPanelPage() {
   const handleAddTestimonial = (e) => {
     e.preventDefault();
     if (!newTestName || !newTestText) return alert('Name and Review Text required.');
-    const testId = 'test_' + Math.random().toString(36).substring(2, 8);
-    set(ref(rtdb, `testimonials/${testId}`), {
+    const newRef = push(ref(rtdb, 'testimonials'));
+    const testId = newRef.key;
+    set(newRef, {
       id: testId,
       name: newTestName,
       location: newTestLoc || 'Gangtok, Sikkim',
@@ -198,8 +202,9 @@ export default function AdminControlPanelPage() {
   const handleAddFaq = (e) => {
     e.preventDefault();
     if (!newFaqQ || !newFaqA) return alert('Question and Answer required.');
-    const faqId = 'faq_' + Math.random().toString(36).substring(2, 8);
-    set(ref(rtdb, `faqs/${faqId}`), {
+    const newRef = push(ref(rtdb, 'faqs'));
+    const faqId = newRef.key;
+    set(newRef, {
       id: faqId,
       q: newFaqQ,
       a: newFaqA
@@ -436,7 +441,10 @@ export default function AdminControlPanelPage() {
                       <strong className="text-base block">{p.fullName}</strong>
                       <span className="text-xs text-slate-400">Skill: {p.skillCategory} | Phone: {p.phoneNumber}</span>
                     </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600/15 text-emerald-600">🟢 ACTIVE</span>
+                    <div className="flex gap-2 items-center">
+                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600/15 text-emerald-600">🟢 ACTIVE</span>
+                      <button onClick={() => handleDeleteItem(`users/${p.id}`)} className="bg-rose-800 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete Partner</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -450,9 +458,12 @@ export default function AdminControlPanelPage() {
                   {usersList.map((u) => (
                     <div key={u.id} className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
                       <div><strong>{u.fullName}</strong> ({u.email}) - {u.phoneNumber}</div>
-                      <span className={`px-2 py-0.5 rounded font-bold ${u.role === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : u.role === 'PARTNER' ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
-                        {u.role}
-                      </span>
+                      <div className="flex gap-2 items-center">
+                        <span className={`px-2 py-0.5 rounded font-bold ${u.role === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : u.role === 'PARTNER' ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
+                          {u.role}
+                        </span>
+                        <button onClick={() => handleDeleteItem(`users/${u.id}`)} className="bg-rose-800 text-white text-[10px] px-2 py-0.5 rounded font-bold">Delete</button>
+                      </div>
                     </div>
                   ))}
                 </div>

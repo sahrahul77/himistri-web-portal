@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CheckoutModal from '../components/CheckoutModal';
-import { DEFAULT_SERVICES } from '../lib/defaultData';
+import { DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -16,7 +16,7 @@ export default function ServicesPage() {
   const [checkoutService, setCheckoutService] = useState(null);
 
   // Live Firebase Services State
-  const [services, setServices] = useState(DEFAULT_SERVICES);
+  const [dbServices, setDbServices] = useState([]);
   const { currentUser, isAuthLoaded } = useAuth();
 
   const toggleTheme = () => {
@@ -32,11 +32,17 @@ export default function ServicesPage() {
           list.push({ id: child.key, ...child.val() });
         });
       }
-      setServices(list.length > 0 ? list : DEFAULT_SERVICES);
+      setDbServices(list);
     });
 
     return () => unsubSrv();
   }, []);
+
+  // Merge Default Services + DB Services so ALL Services ARE ALWAYS VISIBLE
+  const allServices = [
+    ...dbServices,
+    ...DEFAULT_SERVICES.filter(ds => !dbServices.some(dbs => dbs.id === ds.id || dbs.title?.toLowerCase() === ds.title?.toLowerCase()))
+  ];
 
   const handleHireNow = (serviceObj) => {
     if (!isAuthLoaded) return;
@@ -48,7 +54,7 @@ export default function ServicesPage() {
     }
   };
 
-  const filtered = services.filter(s =>
+  const filtered = allServices.filter(s =>
     (s.title || '').toLowerCase().includes(query.toLowerCase()) ||
     (s.categoryName || '').toLowerCase().includes(query.toLowerCase())
   );
@@ -63,7 +69,7 @@ export default function ServicesPage() {
             <Wrench className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-black">Doorstep Services Catalog</h1>
+            <h1 className="text-2xl font-black">Doorstep Services Catalog ({allServices.length})</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">Book verified plumbers, electricians, barbers, tutors & craftsmen in Sikkim</p>
           </div>
         </div>
@@ -88,7 +94,12 @@ export default function ServicesPage() {
               <div key={s.id} className="web-card flex flex-col justify-between shadow-xl">
                 <div>
                   <div className="relative">
-                    <img src={s.imageUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3 bg-slate-100 dark:bg-neutral-800" />
+                    <img
+                      src={s.imageUrl || FALLBACK_ICON}
+                      alt={s.title}
+                      onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                      className="w-full h-44 object-cover rounded-xl mb-3 bg-slate-100 dark:bg-neutral-800"
+                    />
                     <div className="absolute top-2.5 right-2.5 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-md border border-white/10 shadow-lg">
                       <Star className="w-3.5 h-3.5 fill-amber-400" /> {rating}
                     </div>

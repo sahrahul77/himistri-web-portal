@@ -6,20 +6,19 @@ import Footer from '../components/Footer';
 import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
+import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award } from 'lucide-react';
+import { ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award } from 'lucide-react';
 
 export default function HomePage() {
   const [isDark, setIsDark] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
   // Live Firebase Realtime Database Data
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
   const [banners, setBanners] = useState([]);
 
   const { currentUser } = useAuth();
@@ -32,88 +31,35 @@ export default function HomePage() {
   useEffect(() => {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
-      setCategories(list);
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      setCategories(list.length > 0 ? list : DEFAULT_CATEGORIES);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
-      setServices(list);
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      setServices(list.length > 0 ? list : DEFAULT_SERVICES);
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
       setBanners(list);
     });
 
-    return () => {
-      unsubCat();
-      unsubSrv();
-      unsubBanners();
-    };
+    return () => { unsubCat(); unsubSrv(); unsubBanners(); };
   }, []);
 
-  const filteredServices = services.filter((s) => {
-    const matchesSearch =
-      (s.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.categoryName || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesChip = activeChip === 'ALL' || (s.categoryName || '').toLowerCase().includes(activeChip.toLowerCase());
-    return matchesSearch && matchesChip;
-  });
+  // Show only top 6 popular services on Home page to keep it clean (like mobile app)
+  const popularServices = services.slice(0, 6);
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      <main className="web-container py-8 flex-1 space-y-12">
+      <main className="web-container py-8 flex-1 space-y-16">
         {/* Dynamic Animated Hero Banner from Firebase */}
         <HeroBanner banners={banners} />
-
-        {/* Live Search Bar */}
-        <div className="relative max-w-3xl mx-auto">
-          <Search className="w-5 h-5 absolute left-4 top-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search doorstep services in Gangtok (e.g. Plumber, Electrician, Barber, Tutor)..."
-            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-darkSurface text-sm font-medium focus:outline-none focus:border-redPrimary shadow-lg"
-          />
-        </div>
-
-        {/* Quick Search Suggestion Chips */}
-        <div className="flex gap-2.5 overflow-x-auto pb-2 justify-start sm:justify-center">
-          <button onClick={() => setActiveChip('ALL')} className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all ${activeChip === 'ALL' ? 'bg-redPrimary text-white border-redPrimary shadow-md scale-105' : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800 hover:border-redPrimary'}`}>
-            ⚡ All Services
-          </button>
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setActiveChip(c.name)}
-              className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all ${
-                activeChip === c.name
-                  ? 'bg-redPrimary text-white border-redPrimary shadow-md scale-105'
-                  : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800 hover:border-redPrimary'
-              }`}
-            >
-              ⚡ {c.name}
-            </button>
-          ))}
-        </div>
 
         {/* Categories Section */}
         {categories.length > 0 && (
@@ -121,23 +67,23 @@ export default function HomePage() {
             <div className="flex justify-between items-baseline mb-6">
               <div>
                 <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Service Categories</span>
-                <h2 className="text-2xl font-black mt-0.5">Explore Categories ({categories.length})</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Trained technical manpower categories in Gangtok</p>
+                <h2 className="text-2xl sm:text-3xl font-black mt-1">Explore Categories</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Trained technical manpower categories in Gangtok</p>
               </div>
-              <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1">
-                See All <ArrowRight className="w-3.5 h-3.5" />
+              <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1 bg-redPrimary/10 px-3 py-1.5 rounded-full">
+                See All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {categories.map((c) => (
-                <Link href="/categories" key={c.id}>
+                <Link href={`/categories?id=${c.id}`} key={c.id}>
                   <motion.div
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    className="web-card text-center p-5 cursor-pointer shadow-md h-full flex flex-col justify-center"
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    className="web-card text-center p-6 cursor-pointer shadow-lg h-full flex flex-col justify-center border-b-4 border-b-transparent hover:border-b-redPrimary transition-all duration-300"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-redPrimary/10 flex items-center justify-center mx-auto mb-3 border border-redPrimary/20 shrink-0">
-                      <img src={c.iconUrl} alt={c.name} className="w-8 h-8 object-contain" />
+                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-neutral-700 shadow-sm">
+                      <img src={c.iconUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={c.name} className="w-10 h-10 object-contain drop-shadow-sm" />
                     </div>
                     <strong className="text-xs font-bold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
                   </motion.div>
@@ -147,45 +93,45 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Popular Services Catalog */}
-        {services.length > 0 && (
+        {/* Popular Services Catalog (Top 6) */}
+        {popularServices.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-6">
               <div>
                 <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Top Doorstep Solutions</span>
-                <h2 className="text-2xl font-black mt-0.5">Popular Services in Gangtok</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Top rated doorstep solutions requested by Sikkim residents</p>
+                <h2 className="text-2xl sm:text-3xl font-black mt-1">Popular Services</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Most requested doorstep solutions by Sikkim residents</p>
               </div>
-              <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1">
-                View Catalog <ArrowRight className="w-3.5 h-3.5" />
+              <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1 bg-redPrimary/10 px-3 py-1.5 rounded-full">
+                View Catalog <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {filteredServices.map((s) => (
+              {popularServices.map((s) => (
                 <motion.div
                   key={s.id}
-                  whileHover={{ y: -4 }}
-                  className="web-card flex flex-col justify-between shadow-lg"
+                  whileHover={{ y: -6 }}
+                  className="web-card flex flex-col justify-between shadow-xl"
                 >
                   <div>
                     <div className="relative">
-                      <img src={s.imageUrl} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3" />
-                      <div className="absolute top-2.5 right-2.5 bg-black/80 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10">
+                      <img src={s.imageUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={s.title} className="w-full h-48 object-cover rounded-xl mb-4" />
+                      <div className="absolute top-3 right-3 bg-black/85 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-md border border-white/10 shadow-lg">
                         <Star className="w-3.5 h-3.5 fill-amber-400" /> {s.ratingAverage || 4.9}
                       </div>
                     </div>
                     <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
-                    <h3 className="font-extrabold text-base mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
+                    <h3 className="font-extrabold text-lg mt-1 text-slate-900 dark:text-white">{s.title}</h3>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                  <div className="mt-5 pt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
                     <div>
-                      <span className="text-xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                      <span className="text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
                       <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
                     </div>
-                    <button onClick={() => setCheckoutService(s)} className="btn-primary">
-                      Hire Now <ArrowRight className="w-4 h-4" />
+                    <button onClick={() => setCheckoutService(s)} className="btn-primary py-2.5 px-5">
+                      Hire Now <ArrowRight className="w-4 h-4 ml-1" />
                     </button>
                   </div>
                 </motion.div>
@@ -195,33 +141,41 @@ export default function HomePage() {
         )}
 
         {/* Why Choose HiMistri Section */}
-        <div className="my-12">
-          <div className="text-center max-w-xl mx-auto mb-8">
+        <div className="my-16 bg-slate-50 dark:bg-darkSurface py-12 px-6 rounded-3xl border border-slate-200 dark:border-neutral-800 shadow-inner">
+          <div className="text-center max-w-xl mx-auto mb-10">
             <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Quality Assurance</span>
-            <h2 className="text-2xl font-black mt-1">Why Choose HiMistri?</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sikkim's premier doorstep technical manpower platform</p>
+            <h2 className="text-3xl font-black mt-2">Why Choose HiMistri?</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Sikkim's premier doorstep technical manpower platform</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-            <div className="web-card">
-              <ShieldCheck className="w-8 h-8 text-redPrimary mb-3" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-slate-100 dark:border-neutral-800 shadow-sm text-center">
+              <div className="w-14 h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mx-auto mb-4">
+                <ShieldCheck className="w-7 h-7 text-redPrimary" />
+              </div>
               <h4 className="font-bold text-sm text-slate-900 dark:text-white">100% Verified</h4>
-              <p className="text-xs text-slate-500 mt-1">Background checked mistris & technicians in Sikkim</p>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">Background checked mistris & technicians in Sikkim</p>
             </div>
-            <div className="web-card">
-              <Award className="w-8 h-8 text-redPrimary mb-3" />
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-slate-100 dark:border-neutral-800 shadow-sm text-center">
+              <div className="w-14 h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mx-auto mb-4">
+                <Award className="w-7 h-7 text-redPrimary" />
+              </div>
               <h4 className="font-bold text-sm text-slate-900 dark:text-white">Affordable Rates</h4>
-              <p className="text-xs text-slate-500 mt-1">Transparent upfront pricing with zero hidden fees</p>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">Transparent upfront pricing with zero hidden fees</p>
             </div>
-            <div className="web-card">
-              <Clock className="w-8 h-8 text-redPrimary mb-3" />
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-slate-100 dark:border-neutral-800 shadow-sm text-center">
+              <div className="w-14 h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-7 h-7 text-redPrimary" />
+              </div>
               <h4 className="font-bold text-sm text-slate-900 dark:text-white">On-Time Arrival</h4>
-              <p className="text-xs text-slate-500 mt-1">Doorstep arrival at your scheduled date & time slot</p>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">Doorstep arrival at your scheduled date & time slot</p>
             </div>
-            <div className="web-card">
-              <CheckCircle2 className="w-8 h-8 text-redPrimary mb-3" />
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-slate-100 dark:border-neutral-800 shadow-sm text-center">
+              <div className="w-14 h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-7 h-7 text-redPrimary" />
+              </div>
               <h4 className="font-bold text-sm text-slate-900 dark:text-white">30-Day Guarantee</h4>
-              <p className="text-xs text-slate-500 mt-1">Service re-visit guarantee for total peace of mind</p>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">Service re-visit guarantee for total peace of mind</p>
             </div>
           </div>
         </div>

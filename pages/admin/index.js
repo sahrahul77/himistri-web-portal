@@ -8,12 +8,12 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
   const [isDark, setIsDark] = useState(true);
-  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile
+  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile, 9=Testimonials, 10=FAQs
 
   // Realtime Firebase States
   const [bookings, setBookings] = useState([]);
@@ -21,14 +21,14 @@ export default function AdminControlPanelPage() {
   const [categoriesList, setCategoriesList] = useState([]);
   const [servicesList, setServicesList] = useState([]);
   const [bannersList, setBannersList] = useState([]);
+  const [testimonialsList, setTestimonialsList] = useState([]);
+  const [faqsList, setFaqsList] = useState([]);
 
   const { currentUser, logout, isAuthLoaded } = useAuth();
 
   // Search & Filter States
   const [orderQuery, setOrderQuery] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
-  const [catQuery, setCatQuery] = useState('');
-  const [srvQuery, setSrvQuery] = useState('');
 
   // Forms
   const [newCatName, setNewCatName] = useState('');
@@ -44,6 +44,13 @@ export default function AdminControlPanelPage() {
   const [newBnrSub, setNewBnrSub] = useState('');
   const [newBnrImg, setNewBnrImg] = useState('');
 
+  const [newTestName, setNewTestName] = useState('');
+  const [newTestLoc, setNewTestLoc] = useState('');
+  const [newTestText, setNewTestText] = useState('');
+
+  const [newFaqQ, setNewFaqQ] = useState('');
+  const [newFaqA, setNewFaqA] = useState('');
+
   const [adminName, setAdminName] = useState('Rahul Shah');
   const [adminPhone, setAdminPhone] = useState('+919563213089');
   const [adminEmail, setAdminEmail] = useState('sahrahul77@gmail.com');
@@ -53,61 +60,47 @@ export default function AdminControlPanelPage() {
     document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
   };
 
-  // Live Firebase Database Subscriptions for ALL 5 Nodes
   useEffect(() => {
-    // 1. Listen to Bookings
     const unsubBookings = onValue(ref(rtdb, 'bookings'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
       setBookings(list);
     });
 
-    // 2. Listen to Users
     const unsubUsers = onValue(ref(rtdb, 'users'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
       setUsersList(list);
     });
 
-    // 3. Listen to Categories
     const unsubCategories = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
       setCategoriesList(list.length > 0 ? list : DEFAULT_CATEGORIES);
     });
 
-    // 4. Listen to Services
     const unsubServices = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
       setServicesList(list.length > 0 ? list : DEFAULT_SERVICES);
     });
 
-    // 5. Listen to Banners
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
-        });
-      }
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
       setBannersList(list);
+    });
+
+    const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      setTestimonialsList(list);
+    });
+
+    const unsubFaqs = onValue(ref(rtdb, 'faqs'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      setFaqsList(list);
     });
 
     return () => {
@@ -116,14 +109,13 @@ export default function AdminControlPanelPage() {
       unsubCategories();
       unsubServices();
       unsubBanners();
+      unsubTestimonials();
+      unsubFaqs();
     };
   }, []);
 
   const handleUpdateStatus = (id, newStatus, trackingText) => {
-    update(ref(rtdb, `bookings/${id}`), {
-      status: newStatus,
-      trackingStatus: trackingText
-    });
+    update(ref(rtdb, `bookings/${id}`), { status: newStatus, trackingStatus: trackingText });
   };
 
   const handleAssignPartner = (id, partnerName, partnerPhone, partnerSkill) => {
@@ -136,9 +128,9 @@ export default function AdminControlPanelPage() {
     }).then(() => alert(`Order assigned to ${partnerName}!`));
   };
 
-  const handleDeleteOrder = (id) => {
-    if (confirm('Delete this order permanently from Firebase Database?')) {
-      remove(ref(rtdb, `bookings/${id}`));
+  const handleDeleteItem = (path) => {
+    if (confirm('Delete this item permanently from Firebase Database?')) {
+      remove(ref(rtdb, path));
     }
   };
 
@@ -146,20 +138,8 @@ export default function AdminControlPanelPage() {
     e.preventDefault();
     if (!newCatName) return alert('Category Name is required.');
     const catId = 'cat_' + Math.random().toString(36).substring(2, 8);
-    const icon = newCatIcon || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png';
-
-    set(ref(rtdb, `categories/${catId}`), { id: catId, name: newCatName, iconUrl: icon })
-      .then(() => {
-        alert(`New Category '${newCatName}' created in Firebase!`);
-        setNewCatName('');
-        setNewCatIcon('');
-      });
-  };
-
-  const handleDeleteCategory = (catId) => {
-    if (confirm('Delete this category from Firebase?')) {
-      remove(ref(rtdb, `categories/${catId}`));
-    }
+    set(ref(rtdb, `categories/${catId}`), { id: catId, name: newCatName, iconUrl: newCatIcon || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png' })
+      .then(() => { alert(`New Category '${newCatName}' created in Firebase!`); setNewCatName(''); setNewCatIcon(''); });
   };
 
   const handleAddService = (e) => {
@@ -168,34 +148,19 @@ export default function AdminControlPanelPage() {
     const srvId = 'srv_' + Math.random().toString(36).substring(2, 8);
     const activeCats = categoriesList.length > 0 ? categoriesList : DEFAULT_CATEGORIES;
     const catObj = activeCats.find(c => c.id === newSrvCatId) || activeCats[0];
-    const price = parseFloat(newSrvPrice) || 1000;
-    const discount = parseFloat(newSrvDiscount) || price;
-    const img = newSrvImage || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png';
 
-    const srvData = {
+    set(ref(rtdb, `services/${srvId}`), {
       id: srvId,
       categoryId: catObj.id,
       categoryName: catObj.name,
       title: newSrvTitle,
-      originalPrice: price,
-      discountedPrice: discount,
-      imageUrl: img
-    };
-
-    set(ref(rtdb, `services/${srvId}`), srvData)
-      .then(() => {
-        alert(`New Service '${newSrvTitle}' connected to Category '${catObj.name}' and saved to Firebase!`);
-        setNewSrvTitle('');
-        setNewSrvPrice('');
-        setNewSrvDiscount('');
-        setNewSrvImage('');
-      });
-  };
-
-  const handleDeleteService = (srvId) => {
-    if (confirm('Delete this service from Firebase?')) {
-      remove(ref(rtdb, `services/${srvId}`));
-    }
+      originalPrice: parseFloat(newSrvPrice) || 1000,
+      discountedPrice: parseFloat(newSrvDiscount) || (parseFloat(newSrvPrice) || 1000),
+      imageUrl: newSrvImage || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'
+    }).then(() => {
+      alert(`New Service '${newSrvTitle}' connected to Category '${catObj.name}' and saved to Firebase!`);
+      setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage('');
+    });
   };
 
   const handleAddBanner = (e) => {
@@ -207,29 +172,38 @@ export default function AdminControlPanelPage() {
       title: newBnrTitle,
       subtitle: newBnrSub || 'Doorstep Services across Gangtok',
       imageUrl: newBnrImg || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'
-    }).then(() => {
-      alert('New Marketing Banner saved to Firebase!');
-      setNewBnrTitle('');
-      setNewBnrSub('');
-      setNewBnrImg('');
-    });
+    }).then(() => { alert('New Marketing Banner saved to Firebase!'); setNewBnrTitle(''); setNewBnrSub(''); setNewBnrImg(''); });
   };
 
-  const handleDeleteBanner = (bnrId) => {
-    if (confirm('Delete this banner from Firebase?')) {
-      remove(ref(rtdb, `banners/${bnrId}`));
-    }
+  const handleAddTestimonial = (e) => {
+    e.preventDefault();
+    if (!newTestName || !newTestText) return alert('Name and Review Text required.');
+    const testId = 'test_' + Math.random().toString(36).substring(2, 8);
+    set(ref(rtdb, `testimonials/${testId}`), {
+      id: testId,
+      name: newTestName,
+      location: newTestLoc || 'Gangtok, Sikkim',
+      text: newTestText,
+      rating: 5,
+      service: 'Verified Customer'
+    }).then(() => { alert('New Customer Experience Review saved!'); setNewTestName(''); setNewTestLoc(''); setNewTestText(''); });
+  };
+
+  const handleAddFaq = (e) => {
+    e.preventDefault();
+    if (!newFaqQ || !newFaqA) return alert('Question and Answer required.');
+    const faqId = 'faq_' + Math.random().toString(36).substring(2, 8);
+    set(ref(rtdb, `faqs/${faqId}`), {
+      id: faqId,
+      q: newFaqQ,
+      a: newFaqA
+    }).then(() => { alert('New FAQ saved!'); setNewFaqQ(''); setNewFaqA(''); });
   };
 
   const handleSaveAdminProfile = (e) => {
     e.preventDefault();
-    update(ref(rtdb, 'users/bLfKYzhws9d7zozkzwyemQPI8bG3'), {
-      fullName: adminName,
-      phoneNumber: adminPhone,
-      email: adminEmail
-    }).then(() => {
-      alert('Admin Profile ID credentials saved to Firebase Database!');
-    });
+    update(ref(rtdb, 'users/bLfKYzhws9d7zozkzwyemQPI8bG3'), { fullName: adminName, phoneNumber: adminPhone, email: adminEmail })
+      .then(() => alert('Admin Profile ID credentials saved to Firebase Database!'));
   };
 
   const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
@@ -323,6 +297,8 @@ export default function AdminControlPanelPage() {
                 { id: 5, label: `Categories (${activeCategories.length})` },
                 { id: 6, label: `Services (${activeServices.length})` },
                 { id: 7, label: `Banners (${bannersList.length})` },
+                { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
+                { id: 10, label: `FAQs (${faqsList.length})` },
                 { id: 8, label: 'My Admin Profile ID' }
               ].map((t) => (
                 <button
@@ -392,7 +368,7 @@ export default function AdminControlPanelPage() {
                           <UserPlus className="w-3.5 h-3.5 inline mr-1" />
                           {b.status === 'PENDING' ? 'Assign Partner (Confirm First)' : 'Assign Partner Piku'}
                         </button>
-                        <button onClick={() => handleDeleteOrder(b.id)} className="bg-rose-700 text-white text-xs px-3.5 py-2 rounded-lg font-bold">
+                        <button onClick={() => handleDeleteItem(`bookings/${b.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2 rounded-lg font-bold">
                           <Trash2 className="w-3.5 h-3.5 inline" /> Delete
                         </button>
                       </div>
@@ -448,13 +424,15 @@ export default function AdminControlPanelPage() {
             {activeTab === 3 && (
               <div className="web-card space-y-3">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners</h3>
-                <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 flex justify-between items-center">
-                  <div>
-                    <strong className="text-base block">Piku</strong>
-                    <span className="text-xs text-slate-400">Skill: Home Tutor | Phone: +919564111224</span>
+                {usersList.filter(u => u.role === 'PARTNER').map(p => (
+                  <div key={p.id} className="p-4 rounded-xl bg-black/20 border border-neutral-800 flex justify-between items-center">
+                    <div>
+                      <strong className="text-base block">{p.fullName}</strong>
+                      <span className="text-xs text-slate-400">Skill: {p.skillCategory} | Phone: {p.phoneNumber}</span>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600/15 text-emerald-600">🟢 ACTIVE</span>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600/15 text-emerald-600">🟢 ONLINE & FREE</span>
-                </div>
+                ))}
               </div>
             )}
 
@@ -463,18 +441,14 @@ export default function AdminControlPanelPage() {
               <div className="web-card space-y-3">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts</h3>
                 <div className="space-y-2">
-                  <div className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
-                    <div><strong>Rahul Shah</strong> (sahrahul77@gmail.com)</div>
-                    <span className="px-2 py-0.5 rounded bg-redPrimary/20 text-redPrimary font-bold">ADMIN</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
-                    <div><strong>Piku</strong> (piku@himistri.com)</div>
-                    <span className="px-2 py-0.5 rounded bg-orangeSecondary/20 text-orangeSecondary font-bold">PARTNER</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
-                    <div><strong>Passang Bhutia</strong> (gptanisha300@gmail.com)</div>
-                    <span className="px-2 py-0.5 rounded bg-emerald-600/20 text-emerald-600 font-bold">CUSTOMER</span>
-                  </div>
+                  {usersList.map((u) => (
+                    <div key={u.id} className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
+                      <div><strong>{u.fullName}</strong> ({u.email}) - {u.phoneNumber}</div>
+                      <span className={`px-2 py-0.5 rounded font-bold ${u.role === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : u.role === 'PARTNER' ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
+                        {u.role}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -496,7 +470,7 @@ export default function AdminControlPanelPage() {
                     <div key={c.id} className="web-card text-center p-4 relative group">
                       <img src={c.iconUrl} alt={c.name} className="w-10 h-10 object-contain mx-auto mb-2" />
                       <strong className="text-xs block mb-2">{c.name}</strong>
-                      <button onClick={() => handleDeleteCategory(c.id)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
+                      <button onClick={() => handleDeleteItem(`categories/${c.id}`)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
                     </div>
                   ))}
                 </div>
@@ -529,7 +503,7 @@ export default function AdminControlPanelPage() {
                         <h4 className="font-bold text-sm mt-0.5">{s.title}</h4>
                         <p className="text-sm font-black text-redPrimary mt-1">₹{s.discountedPrice}</p>
                       </div>
-                      <button onClick={() => handleDeleteService(s.id)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold mt-3 w-full">Delete Service</button>
+                      <button onClick={() => handleDeleteItem(`services/${s.id}`)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold mt-3 w-full">Delete Service</button>
                     </div>
                   ))}
                 </div>
@@ -552,11 +526,63 @@ export default function AdminControlPanelPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {bannersList.map((b) => (
                     <div key={b.id} className="web-card flex justify-between items-center">
-                      <div>
-                        <strong className="block text-sm font-bold">{b.title}</strong>
-                        <span className="text-xs text-slate-500">{b.subtitle}</span>
+                      <div className="flex gap-4 items-center">
+                        <img src={b.imageUrl} className="w-16 h-12 object-cover rounded-lg" alt="" />
+                        <div>
+                          <strong className="block text-sm font-bold">{b.title}</strong>
+                          <span className="text-xs text-slate-500">{b.subtitle}</span>
+                        </div>
                       </div>
-                      <button onClick={() => handleDeleteBanner(b.id)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold">Delete</button>
+                      <button onClick={() => handleDeleteItem(`banners/${b.id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold">Delete</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 9: CUSTOMER EXPERIENCE (TESTIMONIALS) */}
+            {activeTab === 9 && (
+              <div className="space-y-6">
+                <form onSubmit={handleAddTestimonial} className="web-card space-y-4">
+                  <h3 className="font-extrabold text-base text-redPrimary">Add Customer Experience Review</h3>
+                  <div className="space-y-3">
+                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Nisha Kumari)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm"></textarea>
+                  </div>
+                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add Review to Firebase</button>
+                </form>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {testimonialsList.map((t) => (
+                    <div key={t.id} className="web-card space-y-2 relative">
+                      <strong className="block text-sm font-bold">{t.name} <span className="text-xs font-normal text-slate-400">({t.location})</span></strong>
+                      <p className="text-xs text-slate-300 italic">"{t.text}"</p>
+                      <button onClick={() => handleDeleteItem(`testimonials/${t.id}`)} className="absolute top-4 right-4 bg-rose-800 text-white text-xs px-2 py-1 rounded-lg font-bold">Delete</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 10: FAQs */}
+            {activeTab === 10 && (
+              <div className="space-y-6">
+                <form onSubmit={handleAddFaq} className="web-card space-y-4">
+                  <h3 className="font-extrabold text-base text-redPrimary">Add Frequently Asked Question</h3>
+                  <div className="space-y-3">
+                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm"></textarea>
+                  </div>
+                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add FAQ to Firebase</button>
+                </form>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {faqsList.map((f) => (
+                    <div key={f.id} className="web-card space-y-2 relative">
+                      <strong className="block text-sm font-bold text-redPrimary">Q: {f.q}</strong>
+                      <p className="text-xs text-slate-300">A: {f.a}</p>
+                      <button onClick={() => handleDeleteItem(`faqs/${f.id}`)} className="absolute top-4 right-4 bg-rose-800 text-white text-xs px-2 py-1 rounded-lg font-bold">Delete</button>
                     </div>
                   ))}
                 </div>

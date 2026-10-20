@@ -7,7 +7,7 @@ import { Star, Quote, ChevronDown, HelpCircle } from 'lucide-react';
 const DEFAULT_TESTIMONIALS = [
   { id: 't1', name: 'Passang Bhutia', location: 'Upper Syari, Gangtok', text: 'Booked a plumber for pipe leak repair. The mistri arrived within 25 minutes, fixed the issue cleanly, and charged exact transparent rate.', rating: 5, service: 'Plumber Service' },
   { id: 't2', name: 'Karma Lepcha', location: 'Deorali-Bazar, Sikkim', text: 'Great platform! Home tutor assigned for my child was background verified and very professional.', rating: 5, service: 'Home Tutor' },
-  { id: 't3', name: 'Nisha Kumari', location: 'Singtam, Sikkim', text: 'Doorstep barber service was clean, polite, and punctual. I paid via COD upon completion.', rating: 5, service: 'Barber & Grooming' }
+  { id: 't3', name: 'Mohor Ghosh', location: 'Singtam, Sikkim', text: 'Doorstep barber service was clean, polite, and punctual. I paid via COD upon completion.', rating: 5, service: 'Barber & Grooming' }
 ];
 
 const DEFAULT_FAQS = [
@@ -38,8 +38,9 @@ export default function TestimonialsSection() {
     return () => { unsubTestimonials(); unsubFaqs(); };
   }, []);
 
-  const displayTestimonials = testimonials.length > 0 ? testimonials : DEFAULT_TESTIMONIALS;
-  const displayFaqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
+  // Combine default items with all new items added in Firebase Database
+  const displayTestimonials = [...DEFAULT_TESTIMONIALS, ...testimonials];
+  const displayFaqs = [...DEFAULT_FAQS, ...faqs];
 
   return (
     <div className="space-y-16 my-16">

@@ -192,7 +192,7 @@ export default function AdminControlPanelPage() {
       text: newTestText,
       rating: 5,
       service: 'Verified Customer'
-    }).then(() => { alert('New Customer Experience Review saved!'); setNewTestName(''); setNewTestLoc(''); setNewTestText(''); });
+    }).then(() => { alert('New Customer Experience Review saved to Firebase!'); setNewTestName(''); setNewTestLoc(''); setNewTestText(''); });
   };
 
   const handleAddFaq = (e) => {
@@ -203,7 +203,7 @@ export default function AdminControlPanelPage() {
       id: faqId,
       q: newFaqQ,
       a: newFaqA
-    }).then(() => { alert('New FAQ saved!'); setNewFaqQ(''); setNewFaqA(''); });
+    }).then(() => { alert('New FAQ saved to Firebase!'); setNewFaqQ(''); setNewFaqA(''); });
   };
 
   const handleSaveAdminProfile = (e) => {
@@ -552,7 +552,7 @@ export default function AdminControlPanelPage() {
                 <form onSubmit={handleAddTestimonial} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add Customer Experience Review</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Nisha Kumari)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm"></textarea>
                   </div>

@@ -7,11 +7,11 @@ import Footer from '../components/Footer';
 import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
-import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../lib/defaultData';
+import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign, Zap } from 'lucide-react';
+import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
@@ -21,8 +21,8 @@ export default function HomePage() {
   const [checkoutService, setCheckoutService] = useState(null);
 
   // Live Firebase Realtime Database Data
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [services, setServices] = useState(DEFAULT_SERVICES);
+  const [dbCategories, setDbCategories] = useState([]);
+  const [dbServices, setDbServices] = useState([]);
   const [banners, setBanners] = useState([]);
 
   const { currentUser, isAuthLoaded } = useAuth();
@@ -42,13 +42,13 @@ export default function HomePage() {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setCategories(list.length > 0 ? list : DEFAULT_CATEGORIES);
+      setDbCategories(list);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setServices(list.length > 0 ? list : DEFAULT_SERVICES);
+      setDbServices(list);
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
@@ -70,7 +70,19 @@ export default function HomePage() {
     }
   };
 
-  const filteredServices = services.filter((s) => {
+  // Merge Default Categories + DB Categories so ALL 10 Categories ARE ALWAYS VISIBLE
+  const allCategories = [
+    ...dbCategories,
+    ...DEFAULT_CATEGORIES.filter(dc => !dbCategories.some(dbc => dbc.id === dc.id || dbc.name?.toLowerCase() === dc.name?.toLowerCase()))
+  ];
+
+  // Merge Default Services + DB Services so ALL 10 Popular Services ARE ALWAYS VISIBLE
+  const allServices = [
+    ...dbServices,
+    ...DEFAULT_SERVICES.filter(ds => !dbServices.some(dbs => dbs.id === ds.id || dbs.title?.toLowerCase() === ds.title?.toLowerCase()))
+  ];
+
+  const filteredServices = allServices.filter((s) => {
     const matchesSearch =
       (s.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.categoryName || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -78,8 +90,8 @@ export default function HomePage() {
     return matchesSearch && matchesChip;
   });
 
-  // Display EXACTLY 6 categories and 10 popular services on Home
-  const displayCategories = categories.slice(0, 6);
+  // Display EXACTLY 6 Categories and 10 Popular Services on Home
+  const displayCategories = allCategories.slice(0, 6);
   const popularServices = filteredServices.slice(0, 10);
 
   return (
@@ -121,97 +133,103 @@ export default function HomePage() {
         <HeroBanner banners={banners} />
 
         {/* 4. Explore Categories Grid (6 Categories) */}
-        {displayCategories.length > 0 && (
-          <div>
-            <div className="flex justify-between items-baseline mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Explore Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">10+ Technical & Household Categories in Gangtok</p>
-              </div>
-              <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3.5 py-1.5 rounded-full">
-                See All ({categories.length})
-              </Link>
+        <div>
+          <div className="flex justify-between items-baseline mb-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">Explore Categories</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">10+ Technical & Household Categories in Gangtok</p>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-              {displayCategories.map((c) => (
-                <Link href={`/categories?id=${c.id}`} key={c.id}>
-                  <motion.div
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    className="web-card text-center p-5 cursor-pointer shadow-md flex flex-col justify-center items-center h-full"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mb-3">
-                      <img src={c.iconUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={c.name} className="w-8 h-8 object-contain" />
-                    </div>
-                    <strong className="text-xs font-bold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
-                  </motion.div>
-                </Link>
-              ))}
-            </div>
+            <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3.5 py-1.5 rounded-full">
+              See All ({allCategories.length})
+            </Link>
           </div>
-        )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+            {displayCategories.map((c) => (
+              <Link href={`/categories?id=${c.id}`} key={c.id}>
+                <motion.div
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  className="web-card text-center p-5 cursor-pointer shadow-md flex flex-col justify-center items-center h-full"
+                >
+                  <div className="w-14 h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mb-3">
+                    <img
+                      src={c.iconUrl || FALLBACK_ICON}
+                      alt={c.name}
+                      onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                      className="w-8 h-8 object-contain"
+                    />
+                  </div>
+                  <strong className="text-xs font-bold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {/* 5. Popular Services in Gangtok (10 Services) */}
-        {popularServices.length > 0 && (
-          <div>
-            <div className="flex justify-between items-baseline mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Popular Services in Gangtok</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Top rated doorstep solutions requested by Sikkim residents</p>
-              </div>
-              <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3.5 py-1.5 rounded-full">
-                View Catalog
-              </Link>
+        <div>
+          <div className="flex justify-between items-baseline mb-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">Popular Services in Gangtok</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Top rated doorstep solutions requested by Sikkim residents</p>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {popularServices.map((s) => {
-                const rating = parseFloat(s.ratingAverage || 4.9).toFixed(1);
-                const discountPercent = s.originalPrice && s.discountedPrice
-                  ? Math.round(((s.originalPrice - s.discountedPrice) / s.originalPrice) * 100)
-                  : 10;
-
-                return (
-                  <motion.div
-                    key={s.id}
-                    whileHover={{ y: -4 }}
-                    className="web-card flex flex-col justify-between shadow-xl relative"
-                  >
-                    <div>
-                      <div className="relative">
-                        <img src={s.imageUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={s.title} className="w-full h-48 object-cover rounded-xl mb-4 bg-slate-100 dark:bg-neutral-800" />
-
-                        {/* Discount Badge on Top Left */}
-                        <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider">
-                          {discountPercent}% OFF
-                        </div>
-
-                        {/* Rating Badge on Top Right */}
-                        <div className="absolute top-3 right-3 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10 shadow-md">
-                          <Star className="w-3.5 h-3.5 fill-amber-400" /> {rating}
-                        </div>
-                      </div>
-
-                      <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
-                      <h3 className="font-extrabold text-lg mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
-                      <p className="text-xs text-slate-500 line-clamp-2 mt-1">{s.shortDescription || 'Doorstep expert technical service in Gangtok'}</p>
-                    </div>
-
-                    <div className="mt-5 pt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
-                        <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
-                      </div>
-                      <button onClick={() => handleHireNow(s)} className="btn-primary py-2.5 px-5">
-                        Hire Now
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+            <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3.5 py-1.5 rounded-full">
+              View Catalog
+            </Link>
           </div>
-        )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {popularServices.map((s) => {
+              const rating = parseFloat(s.ratingAverage || 4.9).toFixed(1);
+              const discountPercent = s.originalPrice && s.discountedPrice
+                ? Math.round(((s.originalPrice - s.discountedPrice) / s.originalPrice) * 100)
+                : 10;
+
+              return (
+                <motion.div
+                  key={s.id}
+                  whileHover={{ y: -4 }}
+                  className="web-card flex flex-col justify-between shadow-xl relative"
+                >
+                  <div>
+                    <div className="relative">
+                      <img
+                        src={s.imageUrl || FALLBACK_ICON}
+                        alt={s.title}
+                        onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                        className="w-full h-48 object-cover rounded-xl mb-4 bg-slate-100 dark:bg-neutral-800"
+                      />
+
+                      {/* Discount Badge on Top Left */}
+                      <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider">
+                        {discountPercent}% OFF
+                      </div>
+
+                      {/* Rating Badge on Top Right */}
+                      <div className="absolute top-3 right-3 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10 shadow-md">
+                        <Star className="w-3.5 h-3.5 fill-amber-400" /> {rating}
+                      </div>
+                    </div>
+
+                    <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
+                    <h3 className="font-extrabold text-lg mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
+                    <p className="text-xs text-slate-500 line-clamp-2 mt-1">{s.shortDescription || 'Doorstep expert technical service in Gangtok'}</p>
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                    <div>
+                      <span className="text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                      <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
+                    </div>
+                    <button onClick={() => handleHireNow(s)} className="btn-primary py-2.5 px-5">
+                      Hire Now
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* 6. Why Choose HiMistri? (2x2 Grid) */}
         <div>

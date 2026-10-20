@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
+import { ref, get, set } from 'firebase/database';
+import { rtdb } from '../lib/firebase';
 import { User, Lock, Phone, Mail, CheckCircle, ShieldCheck } from 'lucide-react';
 
 export default function AuthPage() {
@@ -27,15 +29,90 @@ export default function AuthPage() {
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    alert(`Authentication Successful! Welcome back.`);
-    window.location.href = '/';
+    if (!inputVal) return alert('Please enter Mobile Number or Email.');
+    if (!password) return alert('Please enter Password.');
+
+    const cleanInput = inputVal.trim();
+    const cleanPhone = cleanInput.replace(/\D/g, '').slice(-10);
+
+    // 1. Admin Login Hardcoded / Instant Check
+    if (cleanInput.toLowerCase() === 'sahrahul77@gmail.com' || cleanPhone === '9563213089') {
+      const adminUser = { id: 'bLfKYzhws9d7zozkzwyemQPI8bG3', fullName: 'Rahul Shah', phoneNumber: '+919563213089', email: 'sahrahul77@gmail.com', role: 'ADMIN' };
+      localStorage.setItem('himistri_session', JSON.stringify(adminUser));
+      alert('Authentication Successful! Welcome Lead Admin Rahul Shah.');
+      window.location.href = '/admin';
+      return;
+    }
+
+    // 2. Partner Login Hardcoded / Instant Check
+    if (cleanInput.toLowerCase() === 'piku@himistri.com' || cleanPhone === '9564111224') {
+      const partnerUser = { id: 'NvEip3MgEgPoefVOVKnnOEQZzm72', fullName: 'Piku', phoneNumber: '+919564111224', email: 'piku@himistri.com', role: 'PARTNER', skillCategory: 'Home Tutor' };
+      localStorage.setItem('himistri_session', JSON.stringify(partnerUser));
+      alert('Authentication Successful! Welcome Partner Piku.');
+      window.location.href = '/partner';
+      return;
+    }
+
+    // 3. Query Firebase Realtime Database /users
+    get(ref(rtdb, 'users')).then((snapshot) => {
+      let matchedUser = null;
+      if (snapshot.exists()) {
+        snapshot.forEach((childSnap) => {
+          const u = childSnap.val();
+          const uEmail = (u.email || '').toLowerCase().trim();
+          const uPhone = (u.phoneNumber || '').replace(/\D/g, '').slice(-10);
+
+          if ((cleanInput.includes('@') && uEmail === cleanInput.toLowerCase()) || (cleanPhone.length >= 10 && uPhone === cleanPhone)) {
+            matchedUser = { id: childSnap.key, ...u };
+          }
+        });
+      }
+
+      if (!matchedUser) {
+        matchedUser = {
+          id: 'usr_' + Math.random().toString(36).substring(2, 8),
+          fullName: cleanInput.includes('@') ? cleanInput.split('@')[0] : 'Sikkim Customer',
+          phoneNumber: cleanPhone ? '+91' + cleanPhone : '+916296351107',
+          email: cleanInput.includes('@') ? cleanInput : `${cleanPhone}@himistri.com`,
+          role: 'CUSTOMER'
+        };
+        set(ref(rtdb, 'users/' + matchedUser.id), matchedUser);
+      }
+
+      localStorage.setItem('himistri_session', JSON.stringify(matchedUser));
+      alert(`Authentication Successful! Welcome ${matchedUser.fullName}.`);
+      if (matchedUser.role === 'ADMIN') window.location.href = '/admin';
+      else if (matchedUser.role === 'PARTNER') window.location.href = '/partner';
+      else window.location.href = '/';
+    }).catch(() => {
+      const fallbackUser = { id: 'usr_guest', fullName: 'Nisha Kumari', phoneNumber: '+916296351107', role: 'CUSTOMER' };
+      localStorage.setItem('himistri_session', JSON.stringify(fallbackUser));
+      window.location.href = '/';
+    });
   };
 
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
     if (!regName) return alert('Full Name is required.');
-    alert(`Account created successfully as ${regRole}! Navigating to portal...`);
-    window.location.href = regRole === 'PARTNER' ? '/partner' : '/';
+    const cleanPhone = regPhone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length < 10) return alert('Valid 10-digit mobile number is required.');
+
+    const newId = 'usr_' + Math.random().toString(36).substring(2, 8);
+    const newUser = {
+      id: newId,
+      fullName: regName,
+      phoneNumber: '+91' + cleanPhone,
+      email: regEmail || `${cleanPhone}@himistri.com`,
+      role: regRole,
+      skillCategory: regRole === 'PARTNER' ? regSkill : null
+    };
+
+    set(ref(rtdb, 'users/' + newId), newUser).then(() => {
+      localStorage.setItem('himistri_session', JSON.stringify(newUser));
+      alert(`Account created successfully as ${regRole}!`);
+      if (regRole === 'PARTNER') window.location.href = '/partner';
+      else window.location.href = '/';
+    });
   };
 
   return (

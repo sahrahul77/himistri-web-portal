@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { Sun, Moon, Phone, MessageSquare, User, MapPin, ShieldCheck, HardHat } from 'lucide-react';
+import { Sun, Moon, Phone, MessageSquare, User, MapPin } from 'lucide-react';
 
 export default function Header({ isDark, onToggleTheme, currentUser }) {
   const router = Router();
@@ -28,17 +28,14 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
     }
   };
 
-  const isAdmin = currentUser?.role === 'ADMIN';
-  const isPartner = currentUser?.role === 'PARTNER' || isAdmin;
-
   return (
     <header className="sticky top-0 z-50 shadow-xl">
-      {/* Top Domain Bar */}
+      {/* Top Domain Banner */}
       <div className="bg-black text-slate-400 text-xs px-6 py-1.5 flex justify-between items-center border-b border-neutral-800">
         <span className="font-semibold text-slate-300">
           Official Web Portal: <strong className="text-white">himistri.techcoders.in</strong>
         </span>
-        <span className="hidden sm:inline">100% Background Verified Craftsmen in Sikkim</span>
+        <span className="hidden sm:inline">100% Background Verified Local Craftsmen in Sikkim</span>
       </div>
 
       {/* Main Red App Bar */}
@@ -50,7 +47,7 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
           </div>
         </Link>
 
-        {/* Desktop Web Navigation Links */}
+        {/* Clean Web Navigation Links (Partner & Admin removed from menu) */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-bold">
           <Link href="/" className={`hover:text-amber-200 transition ${router.pathname === '/' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
             Home
@@ -59,23 +56,14 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
             Categories
           </Link>
           <Link href="/services" className={`hover:text-amber-200 transition ${router.pathname === '/services' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
-            Services Catalog
+            Services
           </Link>
           <Link href="/tracking" className={`hover:text-amber-200 transition ${router.pathname === '/tracking' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
-            Track Bookings
+            Track Order
           </Link>
-
-          {isPartner && (
-            <Link href="/partner" className={`hover:text-amber-200 transition flex items-center gap-1 ${router.pathname.startsWith('/partner') ? 'underline underline-offset-4 text-amber-300' : ''}`}>
-              <HardHat className="w-4 h-4" /> Partner Portal
-            </Link>
-          )}
-
-          {isAdmin && (
-            <Link href="/admin" className={`hover:text-amber-200 transition flex items-center gap-1 ${router.pathname.startsWith('/admin') ? 'underline underline-offset-4 text-amber-300' : ''}`}>
-              <ShieldCheck className="w-4 h-4" /> Admin Panel
-            </Link>
-          )}
+          <Link href="/privacy" className={`hover:text-amber-200 transition ${router.pathname === '/privacy' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
+            Policies
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2.5">
@@ -92,7 +80,7 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
             className="bg-white/20 hover:bg-white/30 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition"
           >
             <Phone className="w-4 h-4" />
-            <span className="hidden sm:inline">Support</span>
+            <span className="hidden sm:inline">Call Support</span>
           </a>
 
           <a

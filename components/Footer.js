@@ -20,18 +20,20 @@ export default function Footer() {
           <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Quick Links</h4>
           <ul className="space-y-2 text-xs font-semibold">
             <li><Link href="/" className="hover:text-redPrimary">Home Page</Link></li>
-            <li><Link href="/categories" className="hover:text-redPrimary">Categories Directory</Link></li>
+            <li><Link href="/categories" className="hover:text-redPrimary">Explore Categories</Link></li>
             <li><Link href="/services" className="hover:text-redPrimary">Services Catalog</Link></li>
             <li><Link href="/tracking" className="hover:text-redPrimary">Track My Booking</Link></li>
+            <li><Link href="/about" className="hover:text-redPrimary">About HiMistri</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Portals</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Legal & Policies</h4>
           <ul className="space-y-2 text-xs font-semibold">
-            <li><Link href="/partner" className="hover:text-redPrimary">Service Partner Portal</Link></li>
-            <li><Link href="/admin" className="hover:text-redPrimary">Lead Admin Control Panel</Link></li>
-            <li><Link href="/auth" className="hover:text-redPrimary">Customer Sign In / Register</Link></li>
+            <li><Link href="/privacy" className="hover:text-redPrimary">Privacy Policy</Link></li>
+            <li><Link href="/terms" className="hover:text-redPrimary">Terms & Conditions</Link></li>
+            <li><Link href="/cancellation" className="hover:text-redPrimary">Cancellation & Refund Policy</Link></li>
+            <li><Link href="/auth" className="hover:text-redPrimary">Sign In / Register Account</Link></li>
           </ul>
         </div>
 

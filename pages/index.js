@@ -9,6 +9,7 @@ import CheckoutModal from '../components/CheckoutModal';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
+import { useAuth } from '../lib/AuthContext';
 import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Zap } from 'lucide-react';
 
 export default function HomePage() {
@@ -21,8 +22,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [services, setServices] = useState(DEFAULT_SERVICES);
 
-  // Current User Session
-  const [currentUser, setCurrentUser] = useState(null);
+  const { currentUser } = useAuth();
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -30,13 +30,6 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    const session = localStorage.getItem('himistri_session');
-    if (session) {
-      try {
-        setCurrentUser(JSON.parse(session));
-      } catch (e) {}
-    }
-
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {

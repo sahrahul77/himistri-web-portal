@@ -11,15 +11,7 @@ export default function PartnerDashboardPage() {
   const [bookings, setBookings] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Logged-In Partner Session
-  const [currentUser, setCurrentUser] = useState({
-    id: 'NvEip3MgEgPoefVOVKnnOEQZzm72',
-    fullName: 'Piku',
-    phoneNumber: '+919564111224',
-    email: 'piku@himistri.com',
-    role: 'PARTNER',
-    skillCategory: 'Home Tutor'
-  });
+  const { currentUser, logout, isAuthLoaded } = useAuth();
 
   const [partnerName, setPartnerName] = useState('Piku');
   const [partnerPhone, setPartnerPhone] = useState('+919564111224');
@@ -45,13 +37,6 @@ export default function PartnerDashboardPage() {
 
     return () => unsubscribe();
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('himistri_session');
-    setCurrentUser(null);
-    alert('Logged out successfully.');
-    window.location.href = '/auth';
-  };
 
   const handleUpdateStatus = (id, newStatus, trackingText) => {
     update(ref(rtdb, `bookings/${id}`), {
@@ -85,7 +70,7 @@ export default function PartnerDashboardPage() {
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-10 flex-1 max-w-5xl mx-auto space-y-6">
-        {!isPartner ? (
+        {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isPartner ? (
           <div className="web-card text-center py-16 max-w-lg mx-auto space-y-4">
             <Lock className="w-16 h-16 text-redPrimary mx-auto" />
             <h2 className="text-2xl font-black">Partner Access Restricted</h2>
@@ -115,7 +100,7 @@ export default function PartnerDashboardPage() {
                 <button onClick={() => setIsEditing(!isEditing)} className="btn-outline text-xs">
                   <Edit className="w-3.5 h-3.5 inline mr-1" /> Edit Profile ID
                 </button>
-                <button onClick={handleLogout} className="btn-primary bg-redPrimary text-xs py-2.5 px-4 shadow">
+                <button onClick={logout} className="btn-primary bg-redPrimary text-xs py-2.5 px-4 shadow">
                   <LogOut className="w-4 h-4" /> Log Out
                 </button>
               </div>

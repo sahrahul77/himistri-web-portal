@@ -21,14 +21,7 @@ export default function AdminControlPanelPage() {
   const [servicesList, setServicesList] = useState([]);
   const [bannersList, setBannersList] = useState([]);
 
-  // Logged-In Admin Session
-  const [currentUser, setCurrentUser] = useState({
-    id: 'bLfKYzhws9d7zozkzwyemQPI8bG3',
-    fullName: 'Rahul Shah',
-    phoneNumber: '+919563213089',
-    email: 'sahrahul77@gmail.com',
-    role: 'ADMIN'
-  });
+  const { currentUser, logout, isAuthLoaded } = useAuth();
 
   // Search & Filter States
   const [orderQuery, setOrderQuery] = useState('');
@@ -124,13 +117,6 @@ export default function AdminControlPanelPage() {
       unsubBanners();
     };
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('himistri_session');
-    setCurrentUser(null);
-    alert('Logged out successfully.');
-    window.location.href = '/auth';
-  };
 
   const handleUpdateStatus = (id, newStatus, trackingText) => {
     update(ref(rtdb, `bookings/${id}`), {
@@ -266,7 +252,7 @@ export default function AdminControlPanelPage() {
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-10 flex-1 space-y-6">
-        {!isAdmin ? (
+        {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isAdmin ? (
           <div className="web-card text-center py-16 max-w-lg mx-auto space-y-4">
             <Lock className="w-16 h-16 text-redPrimary mx-auto" />
             <h2 className="text-2xl font-black">Admin Access Restricted</h2>
@@ -287,7 +273,7 @@ export default function AdminControlPanelPage() {
                 </div>
               </div>
 
-              <button onClick={handleLogout} className="btn-primary bg-redPrimary hover:bg-redDark text-xs py-2 px-4 shadow">
+              <button onClick={logout} className="btn-primary bg-redPrimary hover:bg-redDark text-xs py-2 px-4 shadow">
                 <LogOut className="w-4 h-4" /> Log Out
               </button>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
@@ -7,6 +7,8 @@ import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../lib/defaultData';
+import { ref, onValue } from 'firebase/database';
+import { rtdb } from '../lib/firebase';
 import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Zap } from 'lucide-react';
 
 export default function HomePage() {
@@ -15,16 +17,47 @@ export default function HomePage() {
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
+  // Live Firebase Realtime Database Data
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
+
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
   };
 
-  const filteredServices = DEFAULT_SERVICES.filter((s) => {
+  useEffect(() => {
+    const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setCategories(list.length > 0 ? list : DEFAULT_CATEGORIES);
+    });
+
+    const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setServices(list.length > 0 ? list : DEFAULT_SERVICES);
+    });
+
+    return () => {
+      unsubCat();
+      unsubSrv();
+    };
+  }, []);
+
+  const filteredServices = services.filter((s) => {
     const matchesSearch =
-      s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.categoryName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesChip = activeChip === 'ALL' || s.categoryName.toLowerCase().includes(activeChip.toLowerCase());
+      (s.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.categoryName || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesChip = activeChip === 'ALL' || (s.categoryName || '').toLowerCase().includes(activeChip.toLowerCase());
     return matchesSearch && matchesChip;
   });
 
@@ -70,8 +103,8 @@ export default function HomePage() {
           <div className="flex justify-between items-baseline mb-6">
             <div>
               <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Service Categories</span>
-              <h2 className="text-2xl font-black mt-0.5">Explore Categories (10)</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Trained technical manpower categories registered in Gangtok</p>
+              <h2 className="text-2xl font-black mt-0.5">Explore Categories ({categories.length})</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Trained technical manpower categories in Gangtok</p>
             </div>
             <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline flex items-center gap-1">
               See All <ArrowRight className="w-3.5 h-3.5" />
@@ -79,14 +112,14 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            {DEFAULT_CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <Link href="/categories" key={c.id}>
                 <motion.div
                   whileHover={{ y: -4, scale: 1.02 }}
                   className="web-card text-center p-5 cursor-pointer shadow-md"
                 >
                   <div className="w-14 h-14 rounded-2xl bg-redPrimary/10 flex items-center justify-center mx-auto mb-3 border border-redPrimary/20">
-                    <img src={c.iconUrl} alt={c.name} className="w-8 h-8 object-contain" />
+                    <img src={c.iconUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={c.name} className="w-8 h-8 object-contain" />
                   </div>
                   <strong className="text-xs font-bold block text-slate-900 dark:text-white">{c.name}</strong>
                 </motion.div>
@@ -117,19 +150,19 @@ export default function HomePage() {
               >
                 <div>
                   <div className="relative">
-                    <img src={s.imageUrl} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3" />
+                    <img src={s.imageUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3" />
                     <div className="absolute top-2.5 right-2.5 bg-black/80 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10">
-                      <Star className="w-3.5 h-3.5 fill-amber-400" /> {s.ratingAverage}
+                      <Star className="w-3.5 h-3.5 fill-amber-400" /> {s.ratingAverage || 4.9}
                     </div>
                   </div>
-                  <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName}</span>
+                  <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
                   <h3 className="font-extrabold text-base mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
                   <div>
-                    <span className="text-xl font-black text-redPrimary">₹{s.discountedPrice}</span>
-                    <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice}</span>
+                    <span className="text-xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                    <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
                   </div>
                   <button onClick={() => setCheckoutService(s)} className="btn-primary">
                     Hire Now <ArrowRight className="w-4 h-4" />

@@ -26,21 +26,31 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Parse Dates
-  const today = new Date();
-  const tmrw = new Date(today);
-  tmrw.setDate(tmrw.getDate() + 1);
-  const dayAfter = new Date(today);
-  dayAfter.setDate(dayAfter.getDate() + 2);
+  const [date, setDate] = useState('');
+  const [slot, setSlot] = useState('');
 
-  const dateOptions = [
-    `Today, ${today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
-    `Tomorrow, ${tmrw.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
-    `${dayAfter.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', weekday: 'short' })}`
-  ];
+  const [savedAddressesList, setSavedAddressesList] = useState([]);
 
   useEffect(() => {
-    setSelectedDate(dateOptions[0]);
-  }, []);
+    // Set default date to tomorrow
+    const tmrw = new Date();
+    tmrw.setDate(tmrw.getDate() + 1);
+    setDate(tmrw.toISOString().split('T')[0]);
+
+    if (currentUser) {
+      // Fetch user's saved addresses
+      const userRef = ref(rtdb, `users/${currentUser.id}`);
+      onValue(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (data.addresses) {
+            const addrs = Object.values(data.addresses);
+            setSavedAddressesList(addrs);
+          }
+        }
+      });
+    }
+  }, [currentUser]);
 
   const basePrice = 900;
   const totalPrice = basePrice * quantity;
@@ -53,18 +63,19 @@ export default function CheckoutPage() {
   const handleSavedAddressChange = (e) => {
     const val = e.target.value;
     setSelectedSavedAddr(val);
-    if (val === 'home') {
-      setHouseNo('Flat 4B / House No. 12');
-      setStreetAddress('Upper Syari, Deorali-Bazar, Gangtok');
-      setLandmark('Near ICDS Center');
-    } else if (val === 'work') {
-      setHouseNo('Office Suite 102');
-      setStreetAddress('Deorali Main Road, Gangtok');
-      setLandmark('Near Deorali Taxi Stand');
-    } else {
+
+    if (val === 'new') {
       setHouseNo('');
       setStreetAddress('');
       setLandmark('');
+    } else {
+      // It's an address string from DB
+      const parts = val.split(', Pincode: ');
+      const addrMain = parts[0] || val;
+      setStreetAddress(addrMain);
+      setHouseNo('');
+      setLandmark('');
+      if (parts[1]) setPincode(parts[1]);
     }
   };
 
@@ -95,8 +106,8 @@ export default function CheckoutPage() {
       serviceCategory: 'Household Manpower',
       quantity: quantity,
       totalAmount: totalPrice,
-      scheduledDate: selectedDate,
-      scheduledTimeSlot: selectedSlot,
+      scheduledDate: date,
+      scheduledTimeSlot: slot,
       address: fullAddrString,
       paymentMethod: paymentMethod,
       status: 'PENDING',
@@ -162,45 +173,30 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Dynamic Date Selection Chips */}
-              <div>
-                <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-2">
-                  <Calendar className="w-4 h-4 text-redPrimary" /> Select Service Date
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {dateOptions.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setSelectedDate(d)}
-                      className={`py-3 px-2 rounded-xl text-xs font-bold border text-center transition ${
-                        selectedDate === d ? 'bg-redPrimary/15 border-redPrimary text-redPrimary shadow-sm' : 'bg-slate-50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-slate-300'
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
+              {/* Dynamic Date Selection Pickers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-2">
+                    <Calendar className="w-4 h-4 text-redPrimary" /> Select Service Date
+                  </label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold shadow-sm outline-none focus:border-redPrimary"
+                  />
                 </div>
-              </div>
-
-              {/* Time Slot Selection */}
-              <div>
-                <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-2">
-                  <Clock className="w-4 h-4 text-redPrimary" /> Select Arrival Time Slot
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {['09:00 AM - 11:00 AM', '11:00 AM - 01:00 PM', '02:00 PM - 04:00 PM', '04:00 PM - 06:00 PM'].map((slotStr) => (
-                    <label
-                      key={slotStr}
-                      onClick={() => setSelectedSlot(slotStr)}
-                      className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer text-sm font-semibold transition ${
-                        selectedSlot === slotStr ? 'bg-redPrimary/15 border-redPrimary text-redPrimary' : 'bg-slate-50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      <input type="radio" name="slotRadio" checked={selectedSlot === slotStr} readOnly className="accent-redPrimary w-4 h-4" />
-                      <span>{slotStr}</span>
-                    </label>
-                  ))}
+                <div>
+                  <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-2">
+                    <Clock className="w-4 h-4 text-redPrimary" /> Select Arrival Time
+                  </label>
+                  <input
+                    type="time"
+                    value={slot}
+                    onChange={(e) => setSlot(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold shadow-sm outline-none focus:border-redPrimary"
+                  />
                 </div>
               </div>
 
@@ -214,11 +210,12 @@ export default function CheckoutPage() {
                   <select
                     value={selectedSavedAddr}
                     onChange={handleSavedAddressChange}
-                    className="w-full sm:w-1/2 p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-bold shadow-sm"
+                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-bold shadow-sm"
                   >
                     <option value="new">+ Add New Address in Gangtok</option>
-                    <option value="home">🏡 Home - Upper Syari ({currentUser.phoneNumber})</option>
-                    <option value="work">🏢 Work - Deorali Office ({currentUser.phoneNumber})</option>
+                    {savedAddressesList.map((a, i) => (
+                      <option key={i} value={a.fullAddress}>{a.title} - {a.fullAddress}</option>
+                    ))}
                   </select>
                 </div>
 

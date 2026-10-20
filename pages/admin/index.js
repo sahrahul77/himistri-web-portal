@@ -5,14 +5,18 @@ import Footer from '../../components/Footer';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../../lib/defaultData';
 import { ref, onValue, update, remove, set } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
-import { ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn } from 'lucide-react';
+import {
+  ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit
+} from 'lucide-react';
 
 export default function AdminControlPanelPage() {
   const [isDark, setIsDark] = useState(true);
-  const [activeTab, setActiveTab] = useState('orders'); // orders | categories | services | profile
+  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile
   const [bookings, setBookings] = useState([]);
+  const [usersList, setUsersList] = useState([]);
 
-  // Logged-In Admin User State
+  // Logged-In Admin User Session
   const [currentUser, setCurrentUser] = useState({
     id: 'bLfKYzhws9d7zozkzwyemQPI8bG3',
     fullName: 'Rahul Shah',
@@ -20,6 +24,12 @@ export default function AdminControlPanelPage() {
     email: 'sahrahul77@gmail.com',
     role: 'ADMIN'
   });
+
+  // Search & Filter States
+  const [orderQuery, setOrderQuery] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+  const [catQuery, setCatQuery] = useState('');
+  const [srvQuery, setSrvQuery] = useState('');
 
   // Forms
   const [newCatName, setNewCatName] = useState('');
@@ -30,6 +40,10 @@ export default function AdminControlPanelPage() {
   const [newSrvPrice, setNewSrvPrice] = useState('');
   const [newSrvDiscount, setNewSrvDiscount] = useState('');
   const [newSrvImage, setNewSrvImage] = useState('');
+
+  const [newBnrTitle, setNewBnrTitle] = useState('');
+  const [newBnrSub, setNewBnrSub] = useState('');
+  const [newBnrImg, setNewBnrImg] = useState('');
 
   const [adminName, setAdminName] = useState('Rahul Shah');
   const [adminPhone, setAdminPhone] = useState('+919563213089');
@@ -42,7 +56,7 @@ export default function AdminControlPanelPage() {
 
   useEffect(() => {
     const bookingsRef = ref(rtdb, 'bookings');
-    const unsubscribe = onValue(bookingsRef, (snapshot) => {
+    const unsubBookings = onValue(bookingsRef, (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
@@ -52,8 +66,29 @@ export default function AdminControlPanelPage() {
       setBookings(list);
     });
 
-    return () => unsubscribe();
+    const usersRef = ref(rtdb, 'users');
+    const unsubUsers = onValue(usersRef, (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setUsersList(list);
+    });
+
+    return () => {
+      unsubBookings();
+      unsubUsers();
+    };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('himistri_session');
+    setCurrentUser(null);
+    alert('Logged out successfully.');
+    window.location.href = '/auth';
+  };
 
   const handleUpdateStatus = (id, newStatus, trackingText) => {
     update(ref(rtdb, `bookings/${id}`), {
@@ -121,6 +156,23 @@ export default function AdminControlPanelPage() {
       });
   };
 
+  const handleAddBanner = (e) => {
+    e.preventDefault();
+    if (!newBnrTitle) return alert('Banner Title is required.');
+    const bnrId = 'bnr_' + Math.random().toString(36).substring(2, 8);
+    set(ref(rtdb, `banners/${bnrId}`), {
+      id: bnrId,
+      title: newBnrTitle,
+      subtitle: newBnrSub || 'Doorstep Services across Gangtok',
+      imageUrl: newBnrImg || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'
+    }).then(() => {
+      alert('New Marketing Banner added!');
+      setNewBnrTitle('');
+      setNewBnrSub('');
+      setNewBnrImg('');
+    });
+  };
+
   const handleSaveAdminProfile = (e) => {
     e.preventDefault();
     update(ref(rtdb, 'users/bLfKYzhws9d7zozkzwyemQPI8bG3'), {
@@ -132,10 +184,18 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  const totalRevenue = bookings.filter(b => b.status === 'COMPLETED').reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+  const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
+  const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
+  const partnersCount = usersList.filter(u => u.role === 'PARTNER').length || 1;
 
   const isAdmin = currentUser && currentUser.role === 'ADMIN';
+
+  const filteredOrders = bookings.filter(b => {
+    const matchesQuery = !orderQuery || (b.bookingRef || '').toLowerCase().includes(orderQuery.toLowerCase()) || (b.serviceTitle || '').toLowerCase().includes(orderQuery.toLowerCase()) || (b.address || '').toLowerCase().includes(orderQuery.toLowerCase());
+    const matchesStatus = orderStatusFilter === 'ALL' || b.status === orderStatusFilter;
+    return matchesQuery && matchesStatus;
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -153,6 +213,21 @@ export default function AdminControlPanelPage() {
           </div>
         ) : (
           <>
+            {/* Admin Header with Log Out Button */}
+            <div className="web-card flex justify-between items-center bg-gradient-to-r from-redPrimary/20 to-transparent border border-redPrimary/30">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-8 h-8 text-redPrimary" />
+                <div>
+                  <h1 className="text-2xl font-black">{adminName}</h1>
+                  <p className="text-xs text-redPrimary font-bold">Lead Platform Administrator • HiMistri Gangtok</p>
+                </div>
+              </div>
+
+              <button onClick={handleLogout} className="btn-primary bg-redPrimary hover:bg-redDark text-xs py-2 px-4 shadow">
+                <LogOut className="w-4 h-4" /> Log Out
+              </button>
+            </div>
+
             {/* Executive Analytics KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="web-card flex items-center gap-4">
@@ -180,44 +255,79 @@ export default function AdminControlPanelPage() {
                   <Users className="w-7 h-7" />
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 font-bold">Total Fleet Users</span>
-                  <p className="text-2xl font-black">6</p>
+                  <span className="text-xs text-slate-500 font-bold">Total Users & Fleet</span>
+                  <p className="text-2xl font-black">{usersList.length || 6}</p>
                 </div>
               </div>
             </div>
 
-            {/* Sub-Navigation Tabs */}
-            <div className="flex gap-2 border-b border-neutral-800 pb-3">
-              {['orders', 'categories', 'services', 'profile'].map((tab) => (
+            {/* Admin Tabs */}
+            <div className="flex gap-2 overflow-x-auto border-b border-neutral-800 pb-3">
+              {[
+                { id: 0, label: `Orders (${bookings.length})` },
+                { id: 1, label: 'Analytics 📊' },
+                { id: 2, label: `Payment Details (₹${totalRevenue})` },
+                { id: 3, label: `Partner Fleet (${partnersCount})` },
+                { id: 4, label: `Registered Users (${usersList.length || 6})` },
+                { id: 5, label: `Categories (${DEFAULT_CATEGORIES.length})` },
+                { id: 6, label: `Services (${DEFAULT_SERVICES.length})` },
+                { id: 7, label: 'Banners' },
+                { id: 8, label: 'My Admin Profile ID' }
+              ].map((t) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase transition ${
-                    activeTab === tab ? 'bg-redPrimary text-white shadow-md' : 'bg-white dark:bg-darkSurface text-slate-400 hover:text-white'
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                    activeTab === t.id ? 'bg-redPrimary text-white shadow-md' : 'bg-white dark:bg-darkSurface text-slate-400 hover:text-white'
                   }`}
                 >
-                  {tab === 'orders' ? 'Orders Management' : tab === 'categories' ? 'Categories Manager' : tab === 'services' ? 'Services Manager' : 'Admin Profile ID'}
+                  {t.label}
                 </button>
               ))}
             </div>
 
-            {/* SUB-VIEW 1: ORDERS */}
-            {activeTab === 'orders' && (
+            {/* TAB 0: ORDERS */}
+            {activeTab === 0 && (
               <div className="space-y-4">
-                <h2 className="text-lg font-extrabold">All Customer Orders ({bookings.length})</h2>
+                <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+                  <div className="relative flex-1 w-full">
+                    <Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={orderQuery}
+                      onChange={(e) => setOrderQuery(e.target.value)}
+                      placeholder="Search orders by Ref ID, Service, Phone, Address..."
+                      className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-darkSurface text-xs font-medium"
+                    />
+                  </div>
 
-                {bookings.length === 0 ? (
-                  <p className="text-xs text-slate-500">No customer orders in database.</p>
+                  <div className="flex gap-2 overflow-x-auto">
+                    {['ALL', 'PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'COMPLETED'].map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => setOrderStatusFilter(st)}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition ${
+                          orderStatusFilter === st ? 'bg-redPrimary text-white border-redPrimary' : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {filteredOrders.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No matching customer orders in database.</p>
                 ) : (
-                  bookings.map((b) => (
+                  filteredOrders.map((b) => (
                     <div key={b.id} className="web-card space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="font-extrabold text-sm">Ref ID: {b.bookingRef || b.id}</span>
                         <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-orangeSecondary/15 text-orangeSecondary">{b.status || 'PENDING'}</span>
                       </div>
                       <h3 className="font-bold text-base">{b.serviceTitle} • ₹{b.totalAmount}</h3>
-                      <p className="text-xs text-slate-500">Customer: {b.userName || 'Nisha Kumari'} ({b.customerPhone})</p>
-                      <p className="text-xs text-slate-500">Address: {b.address}</p>
+                      <p className="text-xs text-slate-500">Customer: {b.userName || 'Nisha Kumari'} ({b.customerPhone || '+916296351107'})</p>
+                      <p className="text-xs text-slate-500">Address: {b.address || 'Gangtok'}</p>
 
                       <div className="flex flex-wrap gap-2 pt-2">
                         <button onClick={() => handleUpdateStatus(b.id, 'CONFIRMED', 'Confirmed by Admin')} className="btn-primary text-xs py-2 px-4">
@@ -241,8 +351,85 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* SUB-VIEW 2: CATEGORIES MANAGER */}
-            {activeTab === 'categories' && (
+            {/* TAB 1: ANALYTICS */}
+            {activeTab === 1 && (
+              <div className="web-card space-y-4">
+                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><BarChart3 className="w-5 h-5" /> Executive Platform KPIs</h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="p-4 rounded-xl bg-black/20 border border-neutral-800">
+                    <span className="text-xs text-slate-500 block">Avg Order Value (AOV)</span>
+                    <strong className="text-lg text-emerald-500">₹900</strong>
+                  </div>
+                  <div className="p-4 rounded-xl bg-black/20 border border-neutral-800">
+                    <span className="text-xs text-slate-500 block">Completion Rate</span>
+                    <strong className="text-lg text-emerald-500">100.0%</strong>
+                  </div>
+                  <div className="p-4 rounded-xl bg-black/20 border border-neutral-800">
+                    <span className="text-xs text-slate-500 block">Decline Rate</span>
+                    <strong className="text-lg text-redPrimary">0.0%</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: PAYMENT DETAILS */}
+            {activeTab === 2 && (
+              <div className="web-card space-y-4">
+                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><CreditCard className="w-5 h-5" /> Payment Method Distribution</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 text-center">
+                    <span className="text-xs text-slate-500 block">Cash on Service (COD)</span>
+                    <strong className="text-base text-emerald-500">100% Volume</strong>
+                  </div>
+                  <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 text-center">
+                    <span className="text-xs text-slate-500 block">Online UPI / QR Code</span>
+                    <strong className="text-base text-blue-500">Supported</strong>
+                  </div>
+                  <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 text-center">
+                    <span className="text-xs text-slate-500 block">Razorpay / Cards</span>
+                    <strong className="text-base text-amber-500">Supported</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: PARTNER FLEET */}
+            {activeTab === 3 && (
+              <div className="web-card space-y-3">
+                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners</h3>
+                <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 flex justify-between items-center">
+                  <div>
+                    <strong className="text-base block">Piku</strong>
+                    <span className="text-xs text-slate-400">Skill: Home Tutor | Phone: +919564111224</span>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600/15 text-emerald-600">🟢 ONLINE & FREE</span>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: REGISTERED USERS */}
+            {activeTab === 4 && (
+              <div className="web-card space-y-3">
+                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts</h3>
+                <div className="space-y-2">
+                  <div className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
+                    <div><strong>Rahul Shah</strong> (sahrahul77@gmail.com)</div>
+                    <span className="px-2 py-0.5 rounded bg-redPrimary/20 text-redPrimary font-bold">ADMIN</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
+                    <div><strong>Piku</strong> (piku@himistri.com)</div>
+                    <span className="px-2 py-0.5 rounded bg-orangeSecondary/20 text-orangeSecondary font-bold">PARTNER</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
+                    <div><strong>Nisha Kumari</strong> (gptanisha300@gmail.com)</div>
+                    <span className="px-2 py-0.5 rounded bg-emerald-600/20 text-emerald-600 font-bold">CUSTOMER</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 5: CATEGORIES */}
+            {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Category</h3>
@@ -250,9 +437,7 @@ export default function AdminControlPanelPage() {
                     <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <input type="text" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} placeholder="Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                   </div>
-                  <button type="submit" className="btn-primary py-3 px-6">
-                    <Plus className="w-4 h-4" /> Add Category to Firebase
-                  </button>
+                  <button type="submit" className="btn-primary py-3 px-6"><Plus className="w-4 h-4" /> Add Category to Firebase</button>
                 </form>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -266,8 +451,8 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* SUB-VIEW 3: SERVICES MANAGER */}
-            {activeTab === 'services' && (
+            {/* TAB 6: SERVICES */}
+            {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Service (Connected to Category)</h3>
@@ -278,17 +463,29 @@ export default function AdminControlPanelPage() {
                     </select>
                     <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <input type="text" value={newSrvImage} onChange={(e) => setNewSrvImage(e.target.value)} placeholder="Service Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm md:col-span-2" />
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3">
-                    <Plus className="w-4 h-4" /> Create & Link Service to Category
-                  </button>
+                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Create & Link Service to Category</button>
                 </form>
               </div>
             )}
 
-            {/* SUB-VIEW 4: ADMIN PROFILE */}
-            {activeTab === 'profile' && (
+            {/* TAB 7: BANNERS */}
+            {activeTab === 7 && (
+              <div className="space-y-6">
+                <form onSubmit={handleAddBanner} className="web-card space-y-4">
+                  <h3 className="font-extrabold text-base text-redPrimary">Add New Marketing Banner</h3>
+                  <div className="space-y-3">
+                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <input type="text" value={newBnrImg} onChange={(e) => setNewBnrImg(e.target.value)} placeholder="Banner Image URL" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                  </div>
+                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add Banner to Firebase</button>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 8: ADMIN PROFILE */}
+            {activeTab === 8 && (
               <form onSubmit={handleSaveAdminProfile} className="web-card space-y-4">
                 <h3 className="font-extrabold text-base text-redPrimary">Edit Admin Profile ID Credentials</h3>
                 <div>

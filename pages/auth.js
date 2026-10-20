@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
 import { ref, get, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
-import { User, Lock, Phone, Mail, CheckCircle, ShieldCheck } from 'lucide-react';
+import { User, Lock, Phone, CheckCircle, CheckCircle2, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function AuthPage() {
   const [isDark, setIsDark] = useState(true);
@@ -21,10 +21,22 @@ export default function AuthPage() {
   const [regSkill, setRegSkill] = useState('Plumber');
 
   const [isOtpOpen, setIsOtpOpen] = useState(false);
+  const [successUser, setSuccessUser] = useState(null);
 
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
+  };
+
+  const triggerSuccessRedirect = (userObj) => {
+    setSuccessUser(userObj);
+    localStorage.setItem('himistri_session', JSON.stringify(userObj));
+
+    setTimeout(() => {
+      if (userObj.role === 'ADMIN') window.location.href = '/admin';
+      else if (userObj.role === 'PARTNER') window.location.href = '/partner';
+      else window.location.href = '/';
+    }, 1800);
   };
 
   const handleLoginSubmit = (e) => {
@@ -35,21 +47,17 @@ export default function AuthPage() {
     const cleanInput = inputVal.trim();
     const cleanPhone = cleanInput.replace(/\D/g, '').slice(-10);
 
-    // 1. Admin Login Hardcoded / Instant Check
+    // 1. Admin Login Check
     if (cleanInput.toLowerCase() === 'sahrahul77@gmail.com' || cleanPhone === '9563213089') {
       const adminUser = { id: 'bLfKYzhws9d7zozkzwyemQPI8bG3', fullName: 'Rahul Shah', phoneNumber: '+919563213089', email: 'sahrahul77@gmail.com', role: 'ADMIN' };
-      localStorage.setItem('himistri_session', JSON.stringify(adminUser));
-      alert('Authentication Successful! Welcome Lead Admin Rahul Shah.');
-      window.location.href = '/admin';
+      triggerSuccessRedirect(adminUser);
       return;
     }
 
-    // 2. Partner Login Hardcoded / Instant Check
+    // 2. Partner Login Check
     if (cleanInput.toLowerCase() === 'piku@himistri.com' || cleanPhone === '9564111224') {
       const partnerUser = { id: 'NvEip3MgEgPoefVOVKnnOEQZzm72', fullName: 'Piku', phoneNumber: '+919564111224', email: 'piku@himistri.com', role: 'PARTNER', skillCategory: 'Home Tutor' };
-      localStorage.setItem('himistri_session', JSON.stringify(partnerUser));
-      alert('Authentication Successful! Welcome Partner Piku.');
-      window.location.href = '/partner';
+      triggerSuccessRedirect(partnerUser);
       return;
     }
 
@@ -79,15 +87,10 @@ export default function AuthPage() {
         set(ref(rtdb, 'users/' + matchedUser.id), matchedUser);
       }
 
-      localStorage.setItem('himistri_session', JSON.stringify(matchedUser));
-      alert(`Authentication Successful! Welcome ${matchedUser.fullName}.`);
-      if (matchedUser.role === 'ADMIN') window.location.href = '/admin';
-      else if (matchedUser.role === 'PARTNER') window.location.href = '/partner';
-      else window.location.href = '/';
+      triggerSuccessRedirect(matchedUser);
     }).catch(() => {
       const fallbackUser = { id: 'usr_guest', fullName: 'Nisha Kumari', phoneNumber: '+916296351107', role: 'CUSTOMER' };
-      localStorage.setItem('himistri_session', JSON.stringify(fallbackUser));
-      window.location.href = '/';
+      triggerSuccessRedirect(fallbackUser);
     });
   };
 
@@ -108,10 +111,7 @@ export default function AuthPage() {
     };
 
     set(ref(rtdb, 'users/' + newId), newUser).then(() => {
-      localStorage.setItem('himistri_session', JSON.stringify(newUser));
-      alert(`Account created successfully as ${regRole}!`);
-      if (regRole === 'PARTNER') window.location.href = '/partner';
-      else window.location.href = '/';
+      triggerSuccessRedirect(newUser);
     });
   };
 
@@ -275,7 +275,34 @@ export default function AuthPage() {
         </div>
       </main>
 
-      <AuthModal isOpen={isOtpOpen} onClose={() => setIsOtpOpen(false)} onAuthSuccess={() => window.location.href = '/'} />
+      {/* Dynamic Success Welcome Popup Modal */}
+      {successUser && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-neutral-800 rounded-2xl p-8 w-full max-w-md text-center shadow-2xl space-y-4">
+            <div className="w-16 h-16 rounded-full bg-emerald-600/20 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 animate-bounce" />
+            </div>
+
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600">Authentication Successful!</span>
+              <h2 className="text-2xl font-black mt-1 text-slate-900 dark:text-white">Welcome, <span className="text-redPrimary">{successUser.fullName}</span>!</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">
+                {successUser.role === 'ADMIN'
+                  ? 'Redirecting to Lead Admin Control Panel...'
+                  : successUser.role === 'PARTNER'
+                  ? 'Redirecting to Service Partner Dashboard...'
+                  : 'Redirecting to HiMistri Home Screen...'}
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-2 text-xs font-bold text-redPrimary">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading Portal Workspace...
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AuthModal isOpen={isOtpOpen} onClose={() => setIsOtpOpen(false)} onAuthSuccess={(u) => triggerSuccessRedirect(u)} />
       <Footer />
     </div>
   );

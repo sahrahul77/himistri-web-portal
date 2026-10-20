@@ -47,8 +47,8 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
           </div>
         </Link>
 
-        {/* Clean Web Navigation Links (Partner & Admin removed from menu) */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-bold">
+        {/* Clean Web Navigation Links (Policies removed from top menu) */}
+        <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
           <Link href="/" className={`hover:text-amber-200 transition ${router.pathname === '/' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
             Home
           </Link>
@@ -60,9 +60,6 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
           </Link>
           <Link href="/tracking" className={`hover:text-amber-200 transition ${router.pathname === '/tracking' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
             Track Order
-          </Link>
-          <Link href="/privacy" className={`hover:text-amber-200 transition ${router.pathname === '/privacy' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
-            Policies
           </Link>
         </nav>
 

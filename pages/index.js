@@ -4,18 +4,41 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CheckoutModal from '../components/CheckoutModal';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../lib/defaultData';
-import { Search, ShieldCheck, Star, ArrowRight, Wrench, Clock, CheckCircle2, Award } from 'lucide-react';
+import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award } from 'lucide-react';
 
 export default function HomePage() {
   const [isDark, setIsDark] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
   };
+
+  const defaultBannerSlides = [
+    {
+      title: "LOOKING FOR A RELIABLE SERVICE?",
+      subtitle: "Doorstep Plumbing, Electrical, Cleaning & Salon across Gangtok.",
+      badge: "100% Safe & Verified (24x7)",
+      imageUrl: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      title: "VERIFIED TECHNICAL MANPOWER IN SIKKIM",
+      subtitle: "Background checked mistris & skilled manpower at affordable prices.",
+      badge: "Doorstep Service Convenience",
+      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80"
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % defaultBannerSlides.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [defaultBannerSlides.length]);
 
   const filteredServices = DEFAULT_SERVICES.filter((s) => {
     const matchesSearch =
@@ -25,20 +48,23 @@ export default function HomePage() {
     return matchesSearch && matchesChip;
   });
 
+  const activeSlide = defaultBannerSlides[currentSlideIndex];
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header isDark={isDark} onToggleTheme={toggleTheme} />
 
       <main className="web-container py-8 flex-1 space-y-10">
-        {/* Hero Banner Section */}
-        <div className="hero-box">
+        {/* Dynamic Hero Banner Carousel */}
+        <div
+          className="hero-box relative overflow-hidden transition-all duration-500"
+          style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.85)), url('${activeSlide.imageUrl}')` }}
+        >
           <span className="inline-block bg-redPrimary text-white text-xs font-extrabold px-3 py-1 rounded-full mb-3">
-            100% Safe & Verified (24x7)
+            {activeSlide.badge}
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black mb-2 tracking-tight">LOOKING FOR A RELIABLE SERVICE?</h1>
-          <p className="text-sm sm:text-base opacity-90 max-width-2xl mb-6">
-            Doorstep Plumbing, Electrical, Cleaning, Salon & Tutor services across Gangtok, Sikkim.
-          </p>
+          <h1 className="text-3xl sm:text-4xl font-black mb-2 tracking-tight">{activeSlide.title}</h1>
+          <p className="text-sm sm:text-base opacity-90 max-w-2xl mb-6">{activeSlide.subtitle}</p>
           <div className="flex flex-wrap gap-3">
             <Link href="/services" className="btn-primary">
               Explore All Services <ArrowRight className="w-4 h-4" />

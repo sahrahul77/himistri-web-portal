@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import TestimonialsSection from '../components/TestimonialsSection';
-import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
+import { FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -16,9 +16,9 @@ export default function CategoriesPage() {
   // Start with ALL, but if user clicked a category from homepage, use that ID
   const [selectedCatId, setSelectedCatId] = useState('ALL');
 
-  // Live Firebase States
-  const [dbCategories, setDbCategories] = useState([]);
-  const [dbServices, setDbServices] = useState([]);
+  // Live Firebase States (No Mock Data)
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -37,29 +37,17 @@ export default function CategoriesPage() {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setDbCategories(list);
+      setCategories(list);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setDbServices(list);
+      setServices(list);
     });
 
     return () => { unsubCat(); unsubSrv(); };
   }, []);
-
-  // Merge Default Categories + DB Categories so ALL 10 Categories ARE ALWAYS VISIBLE
-  const allCategories = [
-    ...dbCategories,
-    ...DEFAULT_CATEGORIES.filter(dc => !dbCategories.some(dbc => dbc.id === dc.id || dbc.name?.toLowerCase() === dc.name?.toLowerCase()))
-  ];
-
-  // Merge Default Services + DB Services so ALL 10 Services ARE ALWAYS VISIBLE
-  const allServices = [
-    ...dbServices,
-    ...DEFAULT_SERVICES.filter(ds => !dbServices.some(dbs => dbs.id === ds.id || dbs.title?.toLowerCase() === ds.title?.toLowerCase()))
-  ];
 
   const handleHireNow = (serviceObj) => {
     if (!isAuthLoaded) return;
@@ -74,9 +62,9 @@ export default function CategoriesPage() {
   // Filter services for the selected category
   const filteredServices = selectedCatId === 'ALL'
     ? []
-    : allServices.filter(s => s.categoryId === selectedCatId || (s.categoryName || '').toLowerCase() === selectedCatId.toLowerCase());
+    : services.filter(s => s.categoryId === selectedCatId || (s.categoryName || '').toLowerCase() === selectedCatId.toLowerCase());
 
-  const selectedCategoryObj = allCategories.find(c => c.id === selectedCatId || c.name === selectedCatId);
+  const selectedCategoryObj = categories.find(c => c.id === selectedCatId || c.name === selectedCatId);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -89,11 +77,11 @@ export default function CategoriesPage() {
           </div>
           <div>
             <h1 className="text-2xl font-black">Sikkim Service Categories</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">10+ Technical & Household Categories Available in Gangtok</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Technical & Household Categories Available in Gangtok</p>
           </div>
         </div>
 
-        {/* Top Category Grid (Always Visible - All 10 Categories) */}
+        {/* Top Category Grid (Always Visible from Firebase) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           <div
             onClick={() => { setSelectedCatId('ALL'); router.replace('/categories', undefined, { shallow: true }); }}
@@ -105,7 +93,7 @@ export default function CategoriesPage() {
             <strong className="text-xs block">All Categories</strong>
           </div>
 
-          {allCategories.map((c) => (
+          {categories.map((c) => (
             <div
               key={c.id}
               onClick={() => { setSelectedCatId(c.id); router.replace(`/categories?id=${c.id}`, undefined, { shallow: true }); }}

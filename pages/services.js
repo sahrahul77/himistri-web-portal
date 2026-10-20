@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CheckoutModal from '../components/CheckoutModal';
-import { DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
+import { FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -15,8 +15,8 @@ export default function ServicesPage() {
   const [query, setQuery] = useState('');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Live Firebase Services State
-  const [dbServices, setDbServices] = useState([]);
+  // Live Firebase Services State (No Mock Data)
+  const [services, setServices] = useState([]);
   const { currentUser, isAuthLoaded } = useAuth();
 
   const toggleTheme = () => {
@@ -32,17 +32,11 @@ export default function ServicesPage() {
           list.push({ id: child.key, ...child.val() });
         });
       }
-      setDbServices(list);
+      setServices(list);
     });
 
     return () => unsubSrv();
   }, []);
-
-  // Merge Default Services + DB Services so ALL Services ARE ALWAYS VISIBLE
-  const allServices = [
-    ...dbServices,
-    ...DEFAULT_SERVICES.filter(ds => !dbServices.some(dbs => dbs.id === ds.id || dbs.title?.toLowerCase() === ds.title?.toLowerCase()))
-  ];
 
   const handleHireNow = (serviceObj) => {
     if (!isAuthLoaded) return;
@@ -54,7 +48,7 @@ export default function ServicesPage() {
     }
   };
 
-  const filtered = allServices.filter(s =>
+  const filtered = services.filter(s =>
     (s.title || '').toLowerCase().includes(query.toLowerCase()) ||
     (s.categoryName || '').toLowerCase().includes(query.toLowerCase())
   );
@@ -69,7 +63,7 @@ export default function ServicesPage() {
             <Wrench className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-black">Doorstep Services Catalog ({allServices.length})</h1>
+            <h1 className="text-2xl font-black">Doorstep Services Catalog ({services.length})</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">Book verified plumbers, electricians, barbers, tutors & craftsmen in Sikkim</p>
           </div>
         </div>

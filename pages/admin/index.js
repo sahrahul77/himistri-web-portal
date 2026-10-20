@@ -57,7 +57,13 @@ export default function AdminControlPanelPage() {
 
   const toggleTheme = () => {
     setIsDark(!isDark);
-    document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
+    if (!isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
   };
 
   useEffect(() => {

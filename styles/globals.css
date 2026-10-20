@@ -15,7 +15,7 @@
   --text-main: #FFFFFF;
   --text-muted: #CCCCCC;
   --border-color: #333333;
-  color-scheme: dark; /* Fixes native calendar/time pickers in dark mode */
+  color-scheme: dark;
 }
 
 [data-theme="light"] {
@@ -39,63 +39,7 @@ body {
   color: var(--text-main);
   min-height: 100vh;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-/* Form & Input High-Contrast Rules */
-input, select, textarea {
-  color: var(--text-main) !important;
-  background-color: var(--surface-color) !important;
-  color-scheme: inherit;
-}
-
-input::placeholder, textarea::placeholder {
-  color: var(--text-muted) !important;
-}
-
-select option {
-  background-color: var(--surface-color) !important;
-  color: var(--text-main) !important;
-}
-
-/* Dark Mode Explicit Rule */
-:root[data-theme="dark"] input,
-:root[data-theme="dark"] select,
-:root[data-theme="dark"] textarea,
-html.dark input,
-html.dark select,
-html.dark textarea {
-  color: #FFFFFF !important;
-  background-color: #262626 !important;
-  border-color: #444444 !important;
-}
-
-:root[data-theme="dark"] input::placeholder,
-html.dark input::placeholder {
-  color: #AAAAAA !important;
-}
-
-:root[data-theme="dark"] select option,
-html.dark select option {
-  background-color: #262626 !important;
-  color: #FFFFFF !important;
-}
-
-/* Light Mode Explicit Rule */
-:root[data-theme="light"] input,
-:root[data-theme="light"] select,
-:root[data-theme="light"] textarea {
-  color: #111111 !important;
-  background-color: #FFFFFF !important;
-  border-color: #CBD5E1 !important;
-}
-
-:root[data-theme="light"] input::placeholder {
-  color: #64748B !important;
-}
-
-:root[data-theme="light"] select option {
-  background-color: #FFFFFF !important;
-  color: #111111 !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Header & Nav */
@@ -178,7 +122,7 @@ html.dark select option {
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .web-card:hover {
@@ -186,26 +130,8 @@ html.dark select option {
   transform: translateY(-2px);
 }
 
-/* Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 16px;
-}
-
-.modal-box {
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 28px;
-  width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
+/* Inputs & Form Elements */
+input, select, textarea {
+  color-scheme: inherit;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }

@@ -5,25 +5,23 @@ import CheckoutModal from '../components/CheckoutModal';
 import { DEFAULT_SERVICES } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
+import { useAuth } from '../lib/AuthContext';
+import { useRouter } from 'next/router';
 import { Search, Star, Wrench, ArrowRight } from 'lucide-react';
 
 export default function ServicesPage() {
+  const router = useRouter();
   const [isDark, setIsDark] = useState(true);
   const [query, setQuery] = useState('');
   const [checkoutService, setCheckoutService] = useState(null);
 
   // Live Firebase Services State
   const [services, setServices] = useState(DEFAULT_SERVICES);
+  const { currentUser, isAuthLoaded } = useAuth();
 
   const toggleTheme = () => {
     setIsDark(!isDark);
-    if (!isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
+    document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
   };
 
   useEffect(() => {
@@ -40,6 +38,16 @@ export default function ServicesPage() {
     return () => unsubSrv();
   }, []);
 
+  const handleHireNow = (serviceObj) => {
+    if (!isAuthLoaded) return;
+    localStorage.setItem('himistri_checkout_service', JSON.stringify(serviceObj));
+    if (!currentUser) {
+      router.push('/auth?redirect=checkout');
+    } else {
+      router.push('/checkout');
+    }
+  };
+
   const filtered = services.filter(s =>
     (s.title || '').toLowerCase().includes(query.toLowerCase()) ||
     (s.categoryName || '').toLowerCase().includes(query.toLowerCase())
@@ -47,7 +55,7 @@ export default function ServicesPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header isDark={isDark} onToggleTheme={toggleTheme} />
+      <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-10 flex-1">
         <div className="flex items-center gap-3 mb-6">
@@ -74,37 +82,40 @@ export default function ServicesPage() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {filtered.map((s) => (
-            <div key={s.id} className="web-card flex flex-col justify-between">
-              <div>
-                <div className="relative">
-                  <img src={s.imageUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3" />
-                  <div className="absolute top-2 right-2 bg-black/80 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-sm">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" /> {s.ratingAverage || 4.9}
-                  </div>
-                </div>
-                <span className="text-xs font-extrabold text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
-                <h3 className="font-extrabold text-base mt-1">{s.title}</h3>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+          {filtered.map((s) => {
+            const rating = parseFloat(s.ratingAverage || 4.9).toFixed(1);
+            return (
+              <div key={s.id} className="web-card flex flex-col justify-between shadow-xl">
                 <div>
-                  <span className="text-xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
-                  <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
+                  <div className="relative">
+                    <img src={s.imageUrl || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'} alt={s.title} className="w-full h-44 object-cover rounded-xl mb-3 bg-slate-100 dark:bg-neutral-800" />
+                    <div className="absolute top-2.5 right-2.5 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-md border border-white/10 shadow-lg">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" /> {rating}
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
+                  <h3 className="font-extrabold text-lg mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
                 </div>
-                <button
-                  onClick={() => setCheckoutService(s)}
-                  className="btn-primary"
-                >
-                  Hire Now <ArrowRight className="w-4 h-4" />
-                </button>
+
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                    <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
+                  </div>
+                  <button
+                    onClick={() => handleHireNow(s)}
+                    className="btn-primary py-2.5 px-5"
+                  >
+                    Hire Now <ArrowRight className="w-4 h-4 ml-1" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 
-      <CheckoutModal isOpen={!!checkoutService} onClose={() => setCheckoutService(null)} service={checkoutService} />
+      <CheckoutModal isOpen={!!checkoutService} onClose={() => setCheckoutService(null)} service={checkoutService} currentUser={currentUser} />
       <Footer />
     </div>
   );

@@ -1,61 +1,121 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Phone, Mail, MapPin, ShieldCheck } from 'lucide-react';
+import { Phone, Mail, MapPin, ShieldCheck, Send, CheckCircle2, Heart, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
+  const [emailInput, setEmailInput] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (!emailInput) return;
+    setSubscribed(true);
+    setEmailInput('');
+  };
+
   return (
-    <footer className="bg-white dark:bg-darkSurface border-t border-slate-200 dark:border-neutral-800 mt-16 text-slate-600 dark:text-slate-400">
-      <div className="web-container py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div>
-          <h3 className="text-xl font-black text-redPrimary mb-2">HiMistri Web</h3>
-          <p className="text-xs leading-relaxed mb-4">
-            HiMistri is a Gangtok-based start-up company established in 2022 that provides technical manpower at doorstep at minimum cost and maximum benefits across Sikkim.
+    <footer className="bg-slate-950 text-slate-300 border-t border-neutral-800 mt-20 relative overflow-hidden">
+      {/* Background Subtle Red Glow */}
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-redPrimary/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Newsletter Subscription Banner */}
+      <div className="border-b border-neutral-800 py-10 bg-neutral-900/50 backdrop-blur-md">
+        <div className="web-container flex flex-col md:flex-row justify-between items-center gap-6">
+          <div>
+            <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Stay Connected</span>
+            <h3 className="text-xl font-black text-white mt-0.5">Subscribe to Sikkim Service Alerts</h3>
+            <p className="text-xs text-slate-400">Get instant doorstep discount offers & technician availability updates in Gangtok</p>
+          </div>
+
+          <form onSubmit={handleSubscribe} className="flex w-full md:w-auto gap-2">
+            <input
+              type="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="Enter your email address"
+              className="px-4 py-3 rounded-xl bg-neutral-800 border border-neutral-700 text-white text-xs outline-none focus:border-redPrimary min-w-[260px]"
+            />
+            <button type="submit" className="btn-primary text-xs py-3 px-5 whitespace-nowrap">
+              {subscribed ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Send className="w-4 h-4" />}
+              {subscribed ? 'Subscribed!' : 'Subscribe'}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Main Footer Links & Information */}
+      <div className="web-container py-14 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-2xl font-black text-white">HiMistri</h3>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-redPrimary text-white">SIKKIM</span>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            HiMistri is a Gangtok-based start-up established in 2022 providing doorstep technical manpower across Sikkim with maximum quality and transparent pricing.
           </p>
-          <div className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> 100% Background Verified Craftsmen
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-800/30">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>100% Background Verified Local Craftsmen</span>
           </div>
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Quick Links</h4>
-          <ul className="space-y-2 text-xs font-semibold">
-            <li><Link href="/" className="hover:text-redPrimary">Home Page</Link></li>
-            <li><Link href="/categories" className="hover:text-redPrimary">Explore Categories</Link></li>
-            <li><Link href="/services" className="hover:text-redPrimary">Services Catalog</Link></li>
-            <li><Link href="/tracking" className="hover:text-redPrimary">Track My Booking</Link></li>
-            <li><Link href="/about" className="hover:text-redPrimary">About HiMistri</Link></li>
+          <h4 className="text-sm font-black text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Quick Navigation</h4>
+          <ul className="space-y-2.5 text-xs font-semibold">
+            <li><Link href="/" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Home Portal</Link></li>
+            <li><Link href="/categories" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Explore 10 Categories</Link></li>
+            <li><Link href="/services" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Doorstep Services Catalog</Link></li>
+            <li><Link href="/tracking" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Track Order Status</Link></li>
+            <li><Link href="/about" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> About HiMistri</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Legal & Policies</h4>
-          <ul className="space-y-2 text-xs font-semibold">
-            <li><Link href="/privacy" className="hover:text-redPrimary">Privacy Policy</Link></li>
-            <li><Link href="/terms" className="hover:text-redPrimary">Terms & Conditions</Link></li>
-            <li><Link href="/cancellation" className="hover:text-redPrimary">Cancellation & Refund Policy</Link></li>
-            <li><Link href="/auth" className="hover:text-redPrimary">Sign In / Register Account</Link></li>
+          <h4 className="text-sm font-black text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Legal & Policies</h4>
+          <ul className="space-y-2.5 text-xs font-semibold">
+            <li><Link href="/privacy" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-shield text-[10px] text-redPrimary"></i> Privacy Policy</Link></li>
+            <li><Link href="/terms" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-file-contract text-[10px] text-redPrimary"></i> Terms & Conditions</Link></li>
+            <li><Link href="/cancellation" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-rotate-left text-[10px] text-redPrimary"></i> Cancellation & Refund</Link></li>
+            <li><Link href="/auth" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-user-check text-[10px] text-redPrimary"></i> Customer Sign In / Register</Link></li>
           </ul>
         </div>
 
-        <div>
-          <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Sikkim Head Office</h4>
-          <p className="text-xs flex items-start gap-2 mb-2">
+        <div className="space-y-3">
+          <h4 className="text-sm font-black text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Sikkim Head Office</h4>
+          <p className="text-xs flex items-start gap-2.5 text-slate-300">
             <MapPin className="w-4 h-4 text-redPrimary shrink-0 mt-0.5" />
-            <span>Upper Syari Near ICDS center, Dothapu, Near Deorali-Bazar, Gangtok, East Sikkim. PIN: 737102</span>
+            <span>Upper Syari Near ICDS center, Dothapu, Near Deorali-Bazar, Gangtok, East Sikkim 737102</span>
           </p>
-          <p className="text-xs flex items-center gap-2 mb-2">
-            <Phone className="w-4 h-4 text-redPrimary" />
-            <span>+91 7430887960 (24x7 Support)</span>
+          <p className="text-xs flex items-center gap-2.5 text-slate-300">
+            <Phone className="w-4 h-4 text-redPrimary shrink-0" />
+            <span>+91 7430887960 (24x7 Helpline)</span>
           </p>
-          <p className="text-xs flex items-center gap-2">
-            <Mail className="w-4 h-4 text-redPrimary" />
+          <p className="text-xs flex items-center gap-2.5 text-slate-300">
+            <Mail className="w-4 h-4 text-redPrimary shrink-0" />
             <span>info@himistri.techcoders.in</span>
           </p>
+          <a
+            href="https://maps.google.com/?q=Upper+Syari+Gangtok"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-400 hover:underline pt-1"
+          >
+            Open in Google Maps <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
       </div>
 
-      <div className="bg-black text-slate-500 py-4 text-center text-xs border-t border-neutral-800">
-        HiMistri Platform &copy; 2026. Official Web Portal: <strong>himistri.techcoders.in</strong>. All Rights Reserved.
+      {/* Service Towns Footer Strip */}
+      <div className="bg-black/60 border-t border-neutral-800 py-3 text-[11px] text-slate-500 text-center">
+        <div className="web-container flex flex-wrap justify-between items-center gap-2">
+          <span>Active Coverage: <strong>Gangtok (Upper Syari, Deorali, Chandmari, Burtuk), Singtam, Pakyong, Rangpo & Namchi</strong></span>
+          <span className="flex items-center gap-1">Crafted with <Heart className="w-3 h-3 text-redPrimary fill-redPrimary" /> for Sikkim</span>
+        </div>
+      </div>
+
+      {/* Copyright Strip */}
+      <div className="bg-black py-4 text-center text-xs text-slate-500 border-t border-neutral-900">
+        HiMistri Platform &copy; 2026. Official Domain: <strong className="text-slate-300">himistri.techcoders.in</strong>. All Rights Reserved.
       </div>
     </footer>
   );

@@ -30,7 +30,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
       paymentMethod: payment,
       status: 'PENDING',
       customerPhone: currentUser?.phoneNumber || '+916296351107',
-      userName: currentUser?.fullName || 'Nisha Kumari',
+      userName: currentUser?.fullName || 'Passang Bhutia',
       trackingStatus: 'Order Placed by Customer'
     };
 

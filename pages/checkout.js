@@ -25,7 +25,7 @@ export default function CheckoutPage() {
   // User Session State
   const [currentUser, setCurrentUser] = useState({
     id: 'sqjxAnHZgkQhYxrXXmLXFSUiH5r1',
-    fullName: 'Nisha Kumari',
+    fullName: 'Passang Bhutia',
     phoneNumber: '+916296351107',
     role: 'CUSTOMER'
   });
@@ -85,7 +85,7 @@ export default function CheckoutPage() {
       paymentMethod: paymentMethod,
       status: 'PENDING',
       customerPhone: currentUser?.phoneNumber || '+916296351107',
-      userName: currentUser?.fullName || 'Nisha Kumari',
+      userName: currentUser?.fullName || 'Passang Bhutia',
       trackingStatus: 'Order Placed by Customer'
     };
 

@@ -326,7 +326,7 @@ export default function AdminControlPanelPage() {
                         <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-orangeSecondary/15 text-orangeSecondary">{b.status || 'PENDING'}</span>
                       </div>
                       <h3 className="font-bold text-base">{b.serviceTitle} • ₹{b.totalAmount}</h3>
-                      <p className="text-xs text-slate-500">Customer: {b.userName || 'Nisha Kumari'} ({b.customerPhone || '+916296351107'})</p>
+                      <p className="text-xs text-slate-500">Customer: {b.userName || 'Passang Bhutia'} ({b.customerPhone || '+916296351107'})</p>
                       <p className="text-xs text-slate-500">Address: {b.address || 'Gangtok'}</p>
 
                       <div className="flex flex-wrap gap-2 pt-2">
@@ -421,7 +421,7 @@ export default function AdminControlPanelPage() {
                     <span className="px-2 py-0.5 rounded bg-orangeSecondary/20 text-orangeSecondary font-bold">PARTNER</span>
                   </div>
                   <div className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
-                    <div><strong>Nisha Kumari</strong> (gptanisha300@gmail.com)</div>
+                    <div><strong>Passang Bhutia</strong> (gptanisha300@gmail.com)</div>
                     <span className="px-2 py-0.5 rounded bg-emerald-600/20 text-emerald-600 font-bold">CUSTOMER</span>
                   </div>
                 </div>

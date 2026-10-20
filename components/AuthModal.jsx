@@ -14,7 +14,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     const phone = authInput || '+916296351107';
     onAuthSuccess({
       id: 'usr_' + Math.random().toString(36).substring(2, 8),
-      fullName: 'Nisha Kumari',
+      fullName: 'Passang Bhutia',
       phoneNumber: phone,
       role: 'CUSTOMER'
     });

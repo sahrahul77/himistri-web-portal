@@ -89,7 +89,7 @@ export default function AuthPage() {
 
       triggerSuccessRedirect(matchedUser);
     }).catch(() => {
-      const fallbackUser = { id: 'usr_guest', fullName: 'Nisha Kumari', phoneNumber: '+916296351107', role: 'CUSTOMER' };
+      const fallbackUser = { id: 'usr_guest', fullName: 'Passang Bhutia', phoneNumber: '+916296351107', role: 'CUSTOMER' };
       triggerSuccessRedirect(fallbackUser);
     });
   };

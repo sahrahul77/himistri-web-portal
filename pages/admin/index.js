@@ -13,10 +13,15 @@ import {
 export default function AdminControlPanelPage() {
   const [isDark, setIsDark] = useState(true);
   const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile
+
+  // Realtime Firebase States
   const [bookings, setBookings] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
+  const [bannersList, setBannersList] = useState([]);
 
-  // Logged-In Admin User Session
+  // Logged-In Admin Session
   const [currentUser, setCurrentUser] = useState({
     id: 'bLfKYzhws9d7zozkzwyemQPI8bG3',
     fullName: 'Rahul Shah',
@@ -54,9 +59,10 @@ export default function AdminControlPanelPage() {
     document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
   };
 
+  // Live Firebase Database Subscriptions for ALL 5 Nodes
   useEffect(() => {
-    const bookingsRef = ref(rtdb, 'bookings');
-    const unsubBookings = onValue(bookingsRef, (snapshot) => {
+    // 1. Listen to Bookings
+    const unsubBookings = onValue(ref(rtdb, 'bookings'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
@@ -66,8 +72,8 @@ export default function AdminControlPanelPage() {
       setBookings(list);
     });
 
-    const usersRef = ref(rtdb, 'users');
-    const unsubUsers = onValue(usersRef, (snapshot) => {
+    // 2. Listen to Users
+    const unsubUsers = onValue(ref(rtdb, 'users'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
@@ -77,9 +83,45 @@ export default function AdminControlPanelPage() {
       setUsersList(list);
     });
 
+    // 3. Listen to Categories
+    const unsubCategories = onValue(ref(rtdb, 'categories'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setCategoriesList(list.length > 0 ? list : DEFAULT_CATEGORIES);
+    });
+
+    // 4. Listen to Services
+    const unsubServices = onValue(ref(rtdb, 'services'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setServicesList(list.length > 0 ? list : DEFAULT_SERVICES);
+    });
+
+    // 5. Listen to Banners
+    const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setBannersList(list);
+    });
+
     return () => {
       unsubBookings();
       unsubUsers();
+      unsubCategories();
+      unsubServices();
+      unsubBanners();
     };
   }, []);
 
@@ -127,11 +169,18 @@ export default function AdminControlPanelPage() {
       });
   };
 
+  const handleDeleteCategory = (catId) => {
+    if (confirm('Delete this category from Firebase?')) {
+      remove(ref(rtdb, `categories/${catId}`));
+    }
+  };
+
   const handleAddService = (e) => {
     e.preventDefault();
     if (!newSrvTitle) return alert('Service Title is required.');
     const srvId = 'srv_' + Math.random().toString(36).substring(2, 8);
-    const catObj = DEFAULT_CATEGORIES.find(c => c.id === newSrvCatId) || DEFAULT_CATEGORIES[0];
+    const activeCats = categoriesList.length > 0 ? categoriesList : DEFAULT_CATEGORIES;
+    const catObj = activeCats.find(c => c.id === newSrvCatId) || activeCats[0];
     const price = parseFloat(newSrvPrice) || 1000;
     const discount = parseFloat(newSrvDiscount) || price;
     const img = newSrvImage || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png';
@@ -148,12 +197,18 @@ export default function AdminControlPanelPage() {
 
     set(ref(rtdb, `services/${srvId}`), srvData)
       .then(() => {
-        alert(`New Service '${newSrvTitle}' connected to Category '${catObj.name}' and saved!`);
+        alert(`New Service '${newSrvTitle}' connected to Category '${catObj.name}' and saved to Firebase!`);
         setNewSrvTitle('');
         setNewSrvPrice('');
         setNewSrvDiscount('');
         setNewSrvImage('');
       });
+  };
+
+  const handleDeleteService = (srvId) => {
+    if (confirm('Delete this service from Firebase?')) {
+      remove(ref(rtdb, `services/${srvId}`));
+    }
   };
 
   const handleAddBanner = (e) => {
@@ -166,11 +221,17 @@ export default function AdminControlPanelPage() {
       subtitle: newBnrSub || 'Doorstep Services across Gangtok',
       imageUrl: newBnrImg || 'https://himistri.techcoders.in/wp-content/uploads/2022/10/PLUMBER.png'
     }).then(() => {
-      alert('New Marketing Banner added!');
+      alert('New Marketing Banner saved to Firebase!');
       setNewBnrTitle('');
       setNewBnrSub('');
       setNewBnrImg('');
     });
+  };
+
+  const handleDeleteBanner = (bnrId) => {
+    if (confirm('Delete this banner from Firebase?')) {
+      remove(ref(rtdb, `banners/${bnrId}`));
+    }
   };
 
   const handleSaveAdminProfile = (e) => {
@@ -180,7 +241,7 @@ export default function AdminControlPanelPage() {
       phoneNumber: adminPhone,
       email: adminEmail
     }).then(() => {
-      alert('Admin Profile ID credentials saved to Firebase!');
+      alert('Admin Profile ID credentials saved to Firebase Database!');
     });
   };
 
@@ -190,6 +251,9 @@ export default function AdminControlPanelPage() {
   const partnersCount = usersList.filter(u => u.role === 'PARTNER').length || 1;
 
   const isAdmin = currentUser && currentUser.role === 'ADMIN';
+
+  const activeCategories = categoriesList.length > 0 ? categoriesList : DEFAULT_CATEGORIES;
+  const activeServices = servicesList.length > 0 ? servicesList : DEFAULT_SERVICES;
 
   const filteredOrders = bookings.filter(b => {
     const matchesQuery = !orderQuery || (b.bookingRef || '').toLowerCase().includes(orderQuery.toLowerCase()) || (b.serviceTitle || '').toLowerCase().includes(orderQuery.toLowerCase()) || (b.address || '').toLowerCase().includes(orderQuery.toLowerCase());
@@ -269,9 +333,9 @@ export default function AdminControlPanelPage() {
                 { id: 2, label: `Payment Details (₹${totalRevenue})` },
                 { id: 3, label: `Partner Fleet (${partnersCount})` },
                 { id: 4, label: `Registered Users (${usersList.length || 6})` },
-                { id: 5, label: `Categories (${DEFAULT_CATEGORIES.length})` },
-                { id: 6, label: `Services (${DEFAULT_SERVICES.length})` },
-                { id: 7, label: 'Banners' },
+                { id: 5, label: `Categories (${activeCategories.length})` },
+                { id: 6, label: `Services (${activeServices.length})` },
+                { id: 7, label: `Banners (${bannersList.length})` },
                 { id: 8, label: 'My Admin Profile ID' }
               ].map((t) => (
                 <button
@@ -317,7 +381,7 @@ export default function AdminControlPanelPage() {
                 </div>
 
                 {filteredOrders.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6">No matching customer orders in database.</p>
+                  <p className="text-xs text-slate-500 py-6">No matching customer orders in Firebase Database.</p>
                 ) : (
                   filteredOrders.map((b) => (
                     <div key={b.id} className="web-card space-y-3">
@@ -428,7 +492,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 5: CATEGORIES */}
+            {/* TAB 5: CATEGORIES MANAGER */}
             {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4">
@@ -441,17 +505,18 @@ export default function AdminControlPanelPage() {
                 </form>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {DEFAULT_CATEGORIES.map((c) => (
-                    <div key={c.id} className="web-card text-center p-4">
+                  {activeCategories.map((c) => (
+                    <div key={c.id} className="web-card text-center p-4 relative group">
                       <img src={c.iconUrl} alt={c.name} className="w-10 h-10 object-contain mx-auto mb-2" />
-                      <strong className="text-xs block">{c.name}</strong>
+                      <strong className="text-xs block mb-2">{c.name}</strong>
+                      <button onClick={() => handleDeleteCategory(c.id)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* TAB 6: SERVICES */}
+            {/* TAB 6: SERVICES MANAGER */}
             {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4">
@@ -459,17 +524,32 @@ export default function AdminControlPanelPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-bold">
-                      {DEFAULT_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {activeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                     <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <input type="text" value={newSrvImage} onChange={(e) => setNewSrvImage(e.target.value)} placeholder="Service Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm md:col-span-2" />
                   </div>
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Create & Link Service to Category</button>
                 </form>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {activeServices.map((s) => (
+                    <div key={s.id} className="web-card flex flex-col justify-between">
+                      <div>
+                        <img src={s.imageUrl} alt={s.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                        <span className="text-[10px] font-bold text-redPrimary uppercase">{s.categoryName}</span>
+                        <h4 className="font-bold text-sm mt-0.5">{s.title}</h4>
+                        <p className="text-sm font-black text-redPrimary mt-1">₹{s.discountedPrice}</p>
+                      </div>
+                      <button onClick={() => handleDeleteService(s.id)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold mt-3 w-full">Delete Service</button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* TAB 7: BANNERS */}
+            {/* TAB 7: BANNERS MANAGER */}
             {activeTab === 7 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddBanner} className="web-card space-y-4">
@@ -481,6 +561,18 @@ export default function AdminControlPanelPage() {
                   </div>
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add Banner to Firebase</button>
                 </form>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {bannersList.map((b) => (
+                    <div key={b.id} className="web-card flex justify-between items-center">
+                      <div>
+                        <strong className="block text-sm font-bold">{b.title}</strong>
+                        <span className="text-xs text-slate-500">{b.subtitle}</span>
+                      </div>
+                      <button onClick={() => handleDeleteBanner(b.id)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold">Delete</button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -21,12 +21,22 @@ export default function HomePage() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [services, setServices] = useState(DEFAULT_SERVICES);
 
+  // Current User Session
+  const [currentUser, setCurrentUser] = useState(null);
+
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
   };
 
   useEffect(() => {
+    const session = localStorage.getItem('himistri_session');
+    if (session) {
+      try {
+        setCurrentUser(JSON.parse(session));
+      } catch (e) {}
+    }
+
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
@@ -63,7 +73,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header isDark={isDark} onToggleTheme={toggleTheme} />
+      <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-8 flex-1 space-y-12">
         {/* Dynamic Animated Hero Banner */}
@@ -209,7 +219,7 @@ export default function HomePage() {
         <TestimonialsSection />
       </main>
 
-      <CheckoutModal isOpen={!!checkoutService} onClose={() => setCheckoutService(null)} service={checkoutService} />
+      <CheckoutModal isOpen={!!checkoutService} onClose={() => setCheckoutService(null)} service={checkoutService} currentUser={currentUser} />
       <Footer />
     </div>
   );

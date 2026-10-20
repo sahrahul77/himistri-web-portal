@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { Sun, Moon, Phone, MessageSquare, User, MapPin, Search } from 'lucide-react';
+import { Sun, Moon, Phone, MessageSquare, User, MapPin, ShieldCheck, HardHat } from 'lucide-react';
 
 export default function Header({ isDark, onToggleTheme, currentUser }) {
   const router = Router();
@@ -27,6 +27,9 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
       );
     }
   };
+
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isPartner = currentUser?.role === 'PARTNER' || isAdmin;
 
   return (
     <header className="sticky top-0 z-50 shadow-xl">
@@ -61,12 +64,18 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
           <Link href="/tracking" className={`hover:text-amber-200 transition ${router.pathname === '/tracking' ? 'underline underline-offset-4 text-amber-300' : ''}`}>
             Track Bookings
           </Link>
-          <Link href="/partner" className={`hover:text-amber-200 transition ${router.pathname.startsWith('/partner') ? 'underline underline-offset-4 text-amber-300' : ''}`}>
-            Partner Portal
-          </Link>
-          <Link href="/admin" className={`hover:text-amber-200 transition ${router.pathname.startsWith('/admin') ? 'underline underline-offset-4 text-amber-300' : ''}`}>
-            Admin Panel
-          </Link>
+
+          {isPartner && (
+            <Link href="/partner" className={`hover:text-amber-200 transition flex items-center gap-1 ${router.pathname.startsWith('/partner') ? 'underline underline-offset-4 text-amber-300' : ''}`}>
+              <HardHat className="w-4 h-4" /> Partner Portal
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link href="/admin" className={`hover:text-amber-200 transition flex items-center gap-1 ${router.pathname.startsWith('/admin') ? 'underline underline-offset-4 text-amber-300' : ''}`}>
+              <ShieldCheck className="w-4 h-4" /> Admin Panel
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2.5">
@@ -101,7 +110,7 @@ export default function Header({ isDark, onToggleTheme, currentUser }) {
             className="bg-white/20 hover:bg-white/30 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition"
           >
             <User className="w-4 h-4" />
-            {currentUser ? currentUser.fullName.split(' ')[0] : 'Sign In'}
+            {currentUser ? (currentUser.fullName ? currentUser.fullName.split(' ')[0] : 'Account') : 'Sign In'}
           </Link>
         </div>
       </div>

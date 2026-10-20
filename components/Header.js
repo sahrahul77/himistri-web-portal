@@ -35,7 +35,7 @@ export default function Header({ isDark, onToggleTheme }) {
   };
 
   const isAdmin = currentUser?.role === 'ADMIN';
-  const isPartner = currentUser?.role === 'PARTNER' || isAdmin;
+  const isPartner = currentUser?.role === 'PARTNER';
 
   return (
     <header className="sticky top-0 z-50 shadow-xl">
@@ -45,18 +45,33 @@ export default function Header({ isDark, onToggleTheme }) {
       </div>
 
       <div className="header-bar text-white px-6 py-4 flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href={isAdmin ? "/admin" : isPartner ? "/partner" : "/"} className="flex items-center gap-3 group">
           <div>
             <h1 className="text-2xl font-black tracking-wide">HiMistri</h1>
             <p className="text-xs font-medium text-white/90">Sikkim's #1 Doorstep Services</p>
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
-          <Link href="/" className={`hover:text-amber-200 transition ${router.pathname === '/' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Home</Link>
-          <Link href="/categories" className={`hover:text-amber-200 transition ${router.pathname === '/categories' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Categories</Link>
-          <Link href="/services" className={`hover:text-amber-200 transition ${router.pathname === '/services' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Services</Link>
-        </nav>
+        {/* Dynamic Navigation Links based on Role */}
+        {isAdmin ? (
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
+            <Link href="/admin" className="underline underline-offset-4 text-amber-300 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-amber-300" /> Lead Admin Control Panel
+            </Link>
+          </nav>
+        ) : isPartner ? (
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
+            <Link href="/partner" className="underline underline-offset-4 text-amber-300 flex items-center gap-1.5">
+              <HardHat className="w-4 h-4 text-amber-300" /> Service Partner Dashboard
+            </Link>
+          </nav>
+        ) : (
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
+            <Link href="/" className={`hover:text-amber-200 transition ${router.pathname === '/' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Home</Link>
+            <Link href="/categories" className={`hover:text-amber-200 transition ${router.pathname === '/categories' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Categories</Link>
+            <Link href="/services" className={`hover:text-amber-200 transition ${router.pathname === '/services' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Services</Link>
+          </nav>
+        )}
 
         <div className="flex items-center gap-2.5">
           <button onClick={onToggleTheme} className="bg-white/20 hover:bg-white/30 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition">
@@ -88,18 +103,22 @@ export default function Header({ isDark, onToggleTheme }) {
                   </div>
 
                   <div className="py-2 flex flex-col">
-                    <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2">
-                      <UserCircle className="w-4 h-4 text-slate-400" /> My Profile
-                    </Link>
-                    <Link href="/tracking" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-left">
-                      <FileText className="w-4 h-4 text-slate-400" /> My Orders
-                    </Link>
-                    <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-left">
-                      <Map className="w-4 h-4 text-slate-400" /> Address Book
-                    </Link>
+                    {!isAdmin && !isPartner && (
+                      <>
+                        <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                          <UserCircle className="w-4 h-4 text-slate-400" /> My Profile
+                        </Link>
+                        <Link href="/tracking" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-left">
+                          <FileText className="w-4 h-4 text-slate-400" /> My Orders
+                        </Link>
+                        <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-left">
+                          <Map className="w-4 h-4 text-slate-400" /> Address Book
+                        </Link>
+                      </>
+                    )}
 
                     {isPartner && (
-                      <Link href="/partner" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-bold text-orangeSecondary hover:bg-orangeSecondary/10 flex items-center gap-2 border-t border-slate-100 dark:border-neutral-800 mt-1 pt-3">
+                      <Link href="/partner" onClick={() => setIsDropdownOpen(false)} className="px-4 py-2 text-sm font-bold text-orangeSecondary hover:bg-orangeSecondary/10 flex items-center gap-2">
                         <HardHat className="w-4 h-4" /> Partner Dashboard
                       </Link>
                     )}

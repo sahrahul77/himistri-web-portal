@@ -12,15 +12,17 @@ function AuthGuard({ children }) {
   const { currentUser, isAuthLoaded } = useAuth();
   const router = useRouter();
 
-  // Allow everyone (including guests) to see public pages.
-  // ONLY lock Admin/Partner paths to their respective roles.
   useEffect(() => {
     if (!isAuthLoaded) return;
 
-    if (router.pathname.startsWith('/admin') && currentUser?.role !== 'ADMIN') {
-      router.replace('/auth');
-    } else if (router.pathname.startsWith('/partner') && currentUser?.role !== 'PARTNER' && currentUser?.role !== 'ADMIN') {
-      router.replace('/auth');
+    // STRICT LOCK FOR ADMIN: If Admin tries to visit ANY page other than /admin, force redirect to /admin
+    if (currentUser?.role === 'ADMIN' && router.pathname !== '/admin') {
+      router.replace('/admin');
+    }
+
+    // STRICT LOCK FOR PARTNER: If Partner tries to visit ANY page other than /partner, force redirect to /partner
+    else if (currentUser?.role === 'PARTNER' && router.pathname !== '/partner') {
+      router.replace('/partner');
     }
   }, [currentUser, isAuthLoaded, router.pathname]);
 
@@ -32,9 +34,9 @@ function AuthGuard({ children }) {
     );
   }
 
-  // Prevent rendering if they are blocked from a protected route
-  if (router.pathname.startsWith('/admin') && currentUser?.role !== 'ADMIN') return null;
-  if (router.pathname.startsWith('/partner') && currentUser?.role !== 'PARTNER' && currentUser?.role !== 'ADMIN') return null;
+  // Hide page content if Admin/Partner attempts to view other pages while logged in
+  if (currentUser?.role === 'ADMIN' && router.pathname !== '/admin') return null;
+  if (currentUser?.role === 'PARTNER' && router.pathname !== '/partner') return null;
 
   return children;
 }

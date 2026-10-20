@@ -2,8 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-slate-50 text-slate-900 dark:bg-darkBg dark:text-slate-100 min-h-screen font-sans transition-colors duration-200;
-  }
+:root {
+  --red-primary: #D32F2F;
+  --red-dark: #B71C1C;
+  --orange-secondary: #FF6B00;
+  --green-success: #2E7D32;
+  --bg-color: #121212;
+  --surface-color: #1E1E1E;
+  --card-color: #262626;
+  --text-main: #F5F5F5;
+  --text-muted: #AAAAAA;
+  --border-color: #333333;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Fallback Styling for Next.js */
+header {
+  background: linear-gradient(135deg, var(--red-primary), var(--red-dark));
+}
+
+button {
+  cursor: pointer;
 }

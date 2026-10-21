@@ -75,18 +75,6 @@ export default function CheckoutPage() {
               ...data.addresses[k]
             }));
             setSavedAddressesList(addrs);
-
-            if (addrs.length > 0) {
-              const firstAddr = addrs[0];
-              setSelectedSavedAddr(firstAddr.id);
-              setNewAddrType(firstAddr.title || 'Home');
-              setHouseNo(firstAddr.houseNo || '');
-              setStreetAddress(firstAddr.streetAddress || firstAddr.fullAddress || '');
-              setLocality(firstAddr.locality || '');
-              setCity(firstAddr.city || 'Gangtok');
-              setState('Sikkim');
-              setPincode(firstAddr.pincode || '737101');
-            }
           }
         }
       });
@@ -366,7 +354,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Complete Structured Address Details matching Screenshot Blueprint 100% */}
+                {/* Complete Structured Address Details matching Blueprint 100% */}
                 <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
                   <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
                     <MapPin className="w-5 h-5" /> Doorstep Service Address in Gangtok

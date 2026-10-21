@@ -9,7 +9,7 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
@@ -46,6 +46,7 @@ export default function AdminControlPanelPage() {
   const [editingBanner, setEditingBanner] = useState(null);
   const [editingTestimonial, setEditingTestimonial] = useState(null);
   const [editingFaq, setEditingFaq] = useState(null);
+  const [editingAdminUser, setEditingAdminUser] = useState(null); // Sub-Admin Edit State
 
   // Selected Booking for Assign Partner Modal
   const [assigningBooking, setAssigningBooking] = useState(null);
@@ -78,10 +79,11 @@ export default function AdminControlPanelPage() {
   const [newFaqQ, setNewFaqQ] = useState('');
   const [newFaqA, setNewFaqA] = useState('');
 
-  // Admin Account Creation Form States (Max 3 Admins)
+  // Sub-Admin Creation Form States with Password
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPhone, setNewAdminPhone] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
 
   const [adminName, setAdminName] = useState('Rahul Shah');
   const [adminPhone, setAdminPhone] = useState('+919563213089');
@@ -98,7 +100,7 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // Robust Snapshot Parser to retrieve ALL entries
+  // Robust Snapshot Parser
   const parseFirebaseSnapshot = (snapshot) => {
     const list = [];
     if (snapshot && snapshot.exists()) {
@@ -199,7 +201,7 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Add Admin Functionality (Max 3 Admins Limit)
+  // Add Admin Functionality (Max 3 Admins Limit with Password)
   const currentAdmins = usersList.filter(u => (u.role || '').toUpperCase() === 'ADMIN');
 
   const handleAddAdmin = async (e) => {
@@ -209,17 +211,17 @@ export default function AdminControlPanelPage() {
       setPopupState({
         isOpen: true,
         title: 'Admin Limit Reached',
-        message: 'Maximum limit of 3 Admins reached for this web application. Demote or remove an existing secondary admin before adding a new one.',
+        message: 'Maximum limit of 3 Admins reached. Demote or remove an existing sub-admin before adding a new one.',
         type: 'error'
       });
       return;
     }
 
-    if (!newAdminName || !newAdminEmail || !newAdminPhone) {
+    if (!newAdminName || !newAdminEmail || !newAdminPhone || !newAdminPassword) {
       setPopupState({
         isOpen: true,
         title: 'Form Incomplete',
-        message: 'Full Name, Email Address, and Mobile Number are required to create an Admin.',
+        message: 'Full Name, Email Address, Mobile Number, and Password are required to create a Sub-Admin.',
         type: 'error'
       });
       return;
@@ -233,6 +235,7 @@ export default function AdminControlPanelPage() {
         fullName: newAdminName,
         email: newAdminEmail,
         phoneNumber: newAdminPhone,
+        password: newAdminPassword,
         role: 'ADMIN',
         createdAt: new Date().toISOString()
       });
@@ -240,17 +243,47 @@ export default function AdminControlPanelPage() {
       setNewAdminName('');
       setNewAdminEmail('');
       setNewAdminPhone('');
+      setNewAdminPassword('');
 
       setPopupState({
         isOpen: true,
-        title: 'New Admin Created!',
-        message: `Admin account for ${newAdminName} created successfully!\nTotal Admins: ${currentAdmins.length + 1} / 3 Max`,
+        title: 'Sub-Admin Created!',
+        message: `Sub-Admin account for ${newAdminName} created successfully!\nTotal Admins: ${currentAdmins.length + 1} / 3 Max`,
         type: 'success'
       });
     } catch (err) {
       setPopupState({
         isOpen: true,
         title: 'Creation Failed',
+        message: err.message,
+        type: 'error'
+      });
+    }
+  };
+
+  const handleSaveAdminUserEdit = async (e) => {
+    e.preventDefault();
+    if (!editingAdminUser) return;
+
+    try {
+      await update(ref(rtdb, `users/${editingAdminUser.id}`), {
+        fullName: editingAdminUser.fullName,
+        email: editingAdminUser.email,
+        phoneNumber: editingAdminUser.phoneNumber,
+        password: editingAdminUser.password
+      });
+
+      setPopupState({
+        isOpen: true,
+        title: 'Admin Account Updated',
+        message: `Credentials for ${editingAdminUser.fullName} updated successfully!`,
+        type: 'success'
+      });
+      setEditingAdminUser(null);
+    } catch (err) {
+      setPopupState({
+        isOpen: true,
+        title: 'Update Failed',
         message: err.message,
         type: 'error'
       });
@@ -448,6 +481,7 @@ export default function AdminControlPanelPage() {
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
 
+  // Retrieve ALL Registered Service Partners
   const allPartnersList = usersList.filter(u => {
     const roleUpper = (u.role || '').toUpperCase();
     return roleUpper === 'PARTNER' || roleUpper === 'SERVICE_PARTNER' || u.skillCategory;
@@ -461,6 +495,7 @@ export default function AdminControlPanelPage() {
     return matchesQuery && matchesStatus;
   });
 
+  // Assign Partner Filtering Logic inside Modal
   const getModalPartners = () => {
     if (!assigningBooking) return [];
     const serviceCategoryName = (assigningBooking.serviceCategory || '').toLowerCase();
@@ -1239,7 +1274,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 8: ADMIN ROLES & CREATION MANAGER (Max 3 Admins) */}
+            {/* TAB 8: ADMIN ROLES & CREATION MANAGER (Max 3 Admins with Password & Edit) */}
             {activeTab === 8 && (
               <div className="space-y-6">
                 <div className="web-card space-y-4">
@@ -1253,10 +1288,10 @@ export default function AdminControlPanelPage() {
                     </span>
                   </div>
 
-                  {/* Create New Admin Account Form */}
+                  {/* Create New Admin Account Form with Password */}
                   <form onSubmit={handleAddAdmin} className="space-y-4 pt-2">
-                    <h4 className="text-sm font-bold text-white">Create New Admin Account</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <h4 className="text-sm font-bold text-white">Create New Sub-Admin Account</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input
                         type="text"
                         value={newAdminName}
@@ -1278,6 +1313,13 @@ export default function AdminControlPanelPage() {
                         placeholder="Admin Phone Number *"
                         className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
                       />
+                      <input
+                        type="password"
+                        value={newAdminPassword}
+                        onChange={(e) => setNewAdminPassword(e.target.value)}
+                        placeholder="Sub-Admin Password *"
+                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                      />
                     </div>
 
                     <button
@@ -1288,12 +1330,12 @@ export default function AdminControlPanelPage() {
                       }`}
                     >
                       <UserPlus className="w-4 h-4 inline mr-1" />
-                      {currentAdmins.length >= 3 ? 'Admin Limit Reached (3/3 Max)' : 'Create & Grant Admin Role'}
+                      {currentAdmins.length >= 3 ? 'Admin Limit Reached (3/3 Max)' : 'Create & Grant Sub-Admin Role'}
                     </button>
                   </form>
                 </div>
 
-                {/* Current Active Admins List */}
+                {/* Current Active Admins List with Edit Button */}
                 <div className="web-card space-y-3">
                   <h4 className="font-bold text-sm text-slate-300">Active Administrator Accounts ({currentAdmins.length})</h4>
                   <div className="space-y-2">
@@ -1313,13 +1355,22 @@ export default function AdminControlPanelPage() {
                               Lead Main Admin
                             </span>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleDemoteAdmin(adm.id, adm.email)}
-                              className="bg-amber-600/80 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition"
-                            >
-                              Demote to Customer
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setEditingAdminUser({ ...adm })}
+                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition"
+                              >
+                                Edit Credentials
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDemoteAdmin(adm.id, adm.email)}
+                                className="bg-amber-600/80 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition"
+                              >
+                                Demote
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -1398,6 +1449,33 @@ export default function AdminControlPanelPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL FOR SUB-ADMIN USERS */}
+      {editingAdminUser && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
+          <form onSubmit={handleSaveAdminUserEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+            <button type="button" onClick={() => setEditingAdminUser(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            <h3 className="text-lg font-bold text-redPrimary">Edit Sub-Admin Account Credentials</h3>
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Full Name</label>
+              <input type="text" value={editingAdminUser.fullName || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, fullName: e.target.value })} placeholder="Full Name" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Email Address</label>
+              <input type="email" value={editingAdminUser.email || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, email: e.target.value })} placeholder="Email Address" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Phone Number</label>
+              <input type="text" value={editingAdminUser.phoneNumber || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, phoneNumber: e.target.value })} placeholder="Phone Number" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Password</label>
+              <input type="text" value={editingAdminUser.password || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, password: e.target.value })} placeholder="Sub-Admin Password" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white font-bold" />
+            </div>
+            <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Sub-Admin Updates</button>
+          </form>
         </div>
       )}
 

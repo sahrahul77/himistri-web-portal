@@ -200,7 +200,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok (100% Un-cropped Square Artwork Display) */}
+        {/* 5. Popular Services in Gangtok (100% FULL ARTWORK DISPLAY - ZERO CROPPING) */}
         <div>
           <div className="flex justify-between items-baseline mb-4 sm:mb-6">
             <div>
@@ -236,13 +236,13 @@ export default function HomePage() {
                     className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl"
                   >
                     <div>
-                      {/* Image Container with aspect-square & object-contain to render 100% FULL SQUARE ARTWORK */}
-                      <div className="relative w-full aspect-square rounded-xl mb-3 sm:mb-4 overflow-hidden bg-slate-100 dark:bg-neutral-800/80 flex items-center justify-center p-1.5 border border-slate-200 dark:border-neutral-700/60 shadow-inner">
+                      {/* Image Box: Explicit height h-64 sm:h-72 with object-contain ensures 100% of the square artwork (including bottom title banner) is FULLY VISIBLE */}
+                      <div className="relative w-full h-64 sm:h-72 rounded-xl mb-3 sm:mb-4 overflow-hidden bg-[#1A1A1A] flex items-center justify-center p-2 border border-slate-200 dark:border-neutral-800 shadow-inner">
                         <img
                           src={s.imageUrl || FALLBACK_ICON}
                           alt={s.title}
                           onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                          className="w-full h-full object-contain rounded-lg"
+                          className="w-full h-full object-contain object-center rounded-lg"
                         />
 
                         {/* Discount Badge on Top Left */}

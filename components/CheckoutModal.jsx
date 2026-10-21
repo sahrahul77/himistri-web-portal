@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, MapPin, Calendar, Clock, CreditCard, Plus, Minus, LogIn, Lock, Map } from 'lucide-react';
+import { X, CheckCircle, MapPin, Calendar, Clock, CreditCard, Plus, Minus, LogIn, Lock, Map, Timer } from 'lucide-react';
 import { ref, set, push, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import PopupModal from './PopupModal';
 import Link from 'next/link';
+import { DURATION_PLANS, getDurationOptions, getDurationUnitText, calculateDurationPrice } from '../lib/durationHelpers';
 
 export default function CheckoutModal({ isOpen, onClose, service, currentUser }) {
   const [quantity, setQuantity] = useState(1);
   const [date, setDate] = useState('');
   const [slot, setSlot] = useState('');
 
+  // Booking Plan & Duration States
+  const [bookingPlan, setBookingPlan] = useState('HOURLY'); // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
+  const [durationValue, setDurationValue] = useState(1);
+
   // Structured Address States
   const [savedAddressesList, setSavedAddressesList] = useState([]);
   const [selectedSavedAddr, setSelectedSavedAddr] = useState('new');
-  const [newAddrType, setNewAddrType] = useState('Home'); // Home, Work, Office, Other
+  const [newAddrType, setNewAddrType] = useState('Home');
   const [houseNo, setHouseNo] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [locality, setLocality] = useState('');
@@ -28,11 +33,10 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
   useEffect(() => {
-    // Default Custom Pickers
     const tmrw = new Date();
     tmrw.setDate(tmrw.getDate() + 1);
     setDate(tmrw.toISOString().split('T')[0]);
-    setSlot('09:00'); // Default Custom Time
+    setSlot('09:00');
 
     if (currentUser) {
       const userRef = ref(rtdb, `users/${currentUser.id}`);
@@ -65,7 +69,18 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
   if (!isOpen || !service) return null;
 
   const isLoggedIn = !!currentUser;
-  const totalPrice = (service.discountedPrice || 500) * quantity;
+
+  // Dynamic Duration Price Calculation
+  const basePrice = service ? (service.discountedPrice || service.originalPrice || 800) : 800;
+  const singleUnitDurationPrice = calculateDurationPrice(basePrice, bookingPlan, durationValue);
+  const totalPrice = singleUnitDurationPrice * quantity;
+  const durationText = getDurationUnitText(bookingPlan, durationValue);
+  const durationOptions = getDurationOptions(bookingPlan);
+
+  const handlePlanChange = (planId) => {
+    setBookingPlan(planId);
+    setDurationValue(1);
+  };
 
   const handleSavedAddressChange = (e) => {
     const val = e.target.value;
@@ -109,7 +124,6 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
     const bookingId = 'bk_' + Math.random().toString(36).substring(2, 10);
     const fullAddrString = `${houseNo ? houseNo + ', ' : ''}${streetAddress}, ${locality ? locality + ', ' : ''}${city || 'Gangtok'}, Sikkim. PIN: ${pincode || '737101'}`;
 
-    // Save structured address object to Customer Profile
     if (selectedSavedAddr === 'new' && currentUser) {
       try {
         const userAddrRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
@@ -129,7 +143,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
       }
     }
 
-    // Create Booking in Firebase
+    // Save Complete Booking Object with Duration Plan
     const bookingData = {
       id: bookingId,
       bookingRef: bookingRef,
@@ -139,8 +153,11 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
       userPhone: currentUser.phoneNumber || '+916296351107',
       serviceId: service.id,
       serviceTitle: service.title,
-      serviceCategory: service.categoryName,
+      serviceCategory: service.categoryName || 'General',
       quantity: quantity,
+      bookingPlan: bookingPlan, // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
+      durationValue: durationValue,
+      durationUnitText: durationText, // "3 Hours", "2 Days", "1 Week"
       totalAmount: totalPrice,
       scheduledDate: date,
       scheduledTimeSlot: slot,
@@ -158,7 +175,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
       setPopupState({
         isOpen: true,
         title: 'Order Placed Successfully!',
-        message: `Ref ID: ${bookingRef}\nAmount: ₹${totalPrice}\nAddress saved to Profile!`,
+        message: `Ref ID: ${bookingRef}\nDuration: ${durationText}\nAmount: ₹${totalPrice}`,
         type: 'success',
         onAction: () => {
           onClose();
@@ -195,14 +212,14 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
         ) : (
           <>
             <h3 className="text-xl font-bold mb-1">Checkout & Booking</h3>
-            <p className="text-xs text-slate-400 mb-6">Confirm schedule, delivery address & payment details</p>
+            <p className="text-xs text-slate-400 mb-6">Select duration basis plan, schedule date & address</p>
 
             <form onSubmit={handleCheckoutSubmit} className="space-y-6">
               {/* Service Summary & Quantity */}
               <div className="p-4 rounded-xl bg-redPrimary/10 border border-redPrimary/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h3 className="font-extrabold text-base text-redPrimary">{service.title}</h3>
-                  <p className="text-xs text-slate-400">{service.categoryName} Category • Gangtok</p>
+                  <p className="text-xs text-slate-400">{service.categoryName} Category • Base Rate: ₹{basePrice}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 bg-[#0F0F0F] border border-[#333333] rounded-lg p-1">
@@ -214,10 +231,50 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
                 </div>
               </div>
 
+              {/* Booking Duration Basis Plan Selector */}
+              <div className="space-y-3 bg-[#242424] p-4 rounded-xl border border-[#333333]">
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <Timer className="w-4 h-4 text-redPrimary" /> Select Booking Duration Basis
+                </label>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                  {DURATION_PLANS.map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => handlePlanChange(plan.id)}
+                      className={`p-2.5 rounded-xl border text-left transition ${
+                        bookingPlan === plan.id
+                          ? 'bg-redPrimary/20 border-redPrimary text-redPrimary font-extrabold'
+                          : 'bg-[#0F0F0F] border-[#333333] text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="text-xs block font-black">{plan.label}</span>
+                      <span className="text-[9px] text-slate-500 block mt-0.5">{plan.desc}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center bg-[#0F0F0F] p-3 rounded-xl border border-[#333333] text-xs">
+                  <span>Specify Units (<strong className="text-redPrimary">{durationText}</strong>):</span>
+                  <select
+                    value={durationValue}
+                    onChange={(e) => setDurationValue(parseInt(e.target.value, 10))}
+                    className="p-2 rounded-lg border border-[#444444] bg-[#1A1A1A] text-white font-bold outline-none focus:border-redPrimary"
+                  >
+                    {durationOptions.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {unit} {bookingPlan === 'HOURLY' ? (unit === 1 ? 'Hour' : 'Hours') : bookingPlan === 'DAILY' ? (unit === 1 ? 'Day' : 'Days') : bookingPlan === 'WEEKLY' ? (unit === 1 ? 'Week' : 'Weeks') : bookingPlan === 'MONTHLY' ? (unit === 1 ? 'Month' : 'Months') : (unit === 1 ? 'Year' : 'Years')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {/* Date & Time */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 flex items-center gap-1.5 mb-2"><Calendar className="w-4 h-4 text-redPrimary" /> Custom Service Date</label>
+                  <label className="text-xs font-bold text-slate-400 flex items-center gap-1.5 mb-2"><Calendar className="w-4 h-4 text-redPrimary" /> Service Start Date</label>
                   <input
                     type="date"
                     value={date}
@@ -228,7 +285,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 flex items-center gap-1.5 mb-2"><Clock className="w-4 h-4 text-redPrimary" /> Custom Arrival Time</label>
+                  <label className="text-xs font-bold text-slate-400 flex items-center gap-1.5 mb-2"><Clock className="w-4 h-4 text-redPrimary" /> Arrival Time</label>
                   <input
                     type="time"
                     value={slot}
@@ -250,7 +307,6 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
                 </select>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#242424] p-4 rounded-xl border border-[#333333]">
-                  {/* Address Type Selector */}
                   <div className="sm:col-span-2">
                     <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Type of Address *</label>
                     <div className="flex gap-2">
@@ -314,7 +370,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
               </div>
 
               <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-4 text-base shadow-lg rounded-xl bg-redPrimary text-white font-black">
-                <CheckCircle className="w-5 h-5 mr-2 inline" /> {isSubmitting ? 'Processing Order...' : `Confirm & Place Order (₹${totalPrice})`}
+                <CheckCircle className="w-5 h-5 mr-2 inline" /> {isSubmitting ? 'Processing Order...' : `Confirm & Place Order (${durationText} • ₹${totalPrice})`}
               </button>
             </form>
           </>

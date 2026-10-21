@@ -7,7 +7,8 @@ import PopupModal from '../components/PopupModal';
 import { ref, set, push, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck } from 'lucide-react';
+import { DURATION_PLANS, getDurationOptions, getDurationUnitText, calculateDurationPrice } from '../lib/durationHelpers';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -18,10 +19,14 @@ export default function CheckoutPage() {
   const [date, setDate] = useState('');
   const [slot, setSlot] = useState('');
 
+  // Booking Plan & Duration States
+  const [bookingPlan, setBookingPlan] = useState('HOURLY'); // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
+  const [durationValue, setDurationValue] = useState(1);
+
   // Address Form Structured States
   const [savedAddressesList, setSavedAddressesList] = useState([]);
   const [selectedSavedAddr, setSelectedSavedAddr] = useState('new');
-  const [newAddrType, setNewAddrType] = useState('Home'); // Home, Work, Office, Other
+  const [newAddrType, setNewAddrType] = useState('Home');
   const [houseNo, setHouseNo] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [locality, setLocality] = useState('');
@@ -37,17 +42,27 @@ export default function CheckoutPage() {
 
   const [service, setService] = useState(null);
 
+  // Automatic Theme Synchronization Effect
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, [isDark]);
+
   useEffect(() => {
     try {
       const storedSrv = localStorage.getItem('himistri_checkout_service');
       if (storedSrv) setService(JSON.parse(storedSrv));
     } catch (e) {}
 
-    // Default Custom Pickers
     const tmrw = new Date();
     tmrw.setDate(tmrw.getDate() + 1);
     setDate(tmrw.toISOString().split('T')[0]);
-    setSlot('09:00'); // Default Custom Time
+    setSlot('09:00');
 
     if (currentUser) {
       const userRef = ref(rtdb, `users/${currentUser.id}`);
@@ -61,7 +76,6 @@ export default function CheckoutPage() {
             }));
             setSavedAddressesList(addrs);
 
-            // Auto pre-fill structured address fields from primary saved address
             if (addrs.length > 0) {
               const firstAddr = addrs[0];
               setSelectedSavedAddr(firstAddr.id);
@@ -79,18 +93,20 @@ export default function CheckoutPage() {
     }
   }, [currentUser]);
 
-  const basePrice = service ? (service.discountedPrice || service.originalPrice || 500) : 0;
-  const totalPrice = basePrice * quantity;
+  // Dynamic Duration Price Calculation
+  const basePrice = service ? (service.discountedPrice || service.originalPrice || 800) : 800;
+  const singleUnitDurationPrice = calculateDurationPrice(basePrice, bookingPlan, durationValue);
+  const totalPrice = singleUnitDurationPrice * quantity;
+  const durationText = getDurationUnitText(bookingPlan, durationValue);
+  const durationOptions = getDurationOptions(bookingPlan);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
-    if (!isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
+    setIsDark(prev => !prev);
+  };
+
+  const handlePlanChange = (planId) => {
+    setBookingPlan(planId);
+    setDurationValue(1); // Reset duration value to 1 when plan changes
   };
 
   const handleSavedAddressChange = (e) => {
@@ -157,7 +173,6 @@ export default function CheckoutPage() {
     const bookingId = 'bk_' + Math.random().toString(36).substring(2, 10);
     const fullAddrString = `${houseNo ? houseNo + ', ' : ''}${streetAddress}, ${locality ? locality + ', ' : ''}${city || 'Gangtok'}, Sikkim. PIN: ${pincode || '737101'}`;
 
-    // Save structured address object if adding a new address
     if (selectedSavedAddr === 'new' && currentUser) {
       try {
         const userAddrRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
@@ -177,7 +192,7 @@ export default function CheckoutPage() {
       }
     }
 
-    // Create Booking in Firebase
+    // Save Complete Booking object with Duration Plan to Firebase
     const bookingData = {
       id: bookingId,
       bookingRef: bookingRef,
@@ -189,6 +204,9 @@ export default function CheckoutPage() {
       serviceTitle: service.title,
       serviceCategory: service.categoryName || 'General',
       quantity: quantity,
+      bookingPlan: bookingPlan, // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
+      durationValue: durationValue,
+      durationUnitText: durationText, // e.g. "3 Hours", "2 Days", "1 Week"
       totalAmount: totalPrice,
       scheduledDate: date,
       scheduledTimeSlot: slot,
@@ -199,276 +217,290 @@ export default function CheckoutPage() {
       createdAt: new Date().toISOString()
     };
 
-    set(ref(rtdb, 'bookings/' + bookingId), bookingData)
-      .then(() => {
-        setIsSubmitting(false);
-        localStorage.removeItem('himistri_checkout_service');
+    try {
+      await set(ref(rtdb, `bookings/${bookingId}`), bookingData);
+      localStorage.removeItem('himistri_checkout_service');
+      setIsSubmitting(false);
 
-        // Show Dynamic Popup Modal
-        setPopupState({
-          isOpen: true,
-          title: 'Order Placed Successfully!',
-          message: `Ref ID: ${bookingRef}\nAmount: ₹${totalPrice}\nAddress saved to Profile!`,
-          type: 'success',
-          onAction: () => { window.location.href = '/tracking'; }
-        });
-      })
-      .catch((err) => {
-        setIsSubmitting(false);
-        setPopupState({
-          isOpen: true,
-          title: 'Order Submission Failed',
-          message: err.message,
-          type: 'error'
-        });
+      setPopupState({
+        isOpen: true,
+        title: 'Order Confirmed!',
+        message: `Booking Ref: ${bookingRef}\nDuration: ${durationText}\nTotal: ₹${totalPrice}\n\nOur verified technician is dispatched!`,
+        type: 'success',
+        onAction: () => router.push(`/tracking?ref=${bookingRef}`)
       });
+    } catch (err) {
+      setIsSubmitting(false);
+      setPopupState({
+        isOpen: true,
+        title: 'Order Placement Failed',
+        message: err.message,
+        type: 'error'
+      });
+    }
   };
 
-  const isLoggedIn = !!currentUser;
-
   return (
-    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl w-full max-w-xl shadow-2xl relative max-h-[95vh] overflow-y-auto">
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
+      <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-          {/* Top Navbar Header */}
-          <div className="sticky top-0 bg-[#1A1A1A] z-10 border-b border-[#333333] px-6 py-4 flex justify-between items-center">
-            <div>
-              <h3 className="text-xl font-bold">Checkout & Booking</h3>
-              <p className="text-xs text-slate-400">Confirm schedule, delivery address & payment details</p>
-            </div>
-            <button onClick={() => router.back()} className="text-slate-400 hover:text-white p-2">
-              <X className="w-5 h-5" />
-            </button>
+      <main className="web-container py-6 sm:py-10 flex-1 max-w-5xl mx-auto px-4 sm:px-6 w-full">
+        {!isAuthLoaded ? (
+          <div className="web-card text-center py-16 text-slate-500">Verifying session...</div>
+        ) : !currentUser ? (
+          <div className="web-card text-center py-16 space-y-4 max-w-md mx-auto bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
+            <Lock className="w-16 h-16 text-redPrimary mx-auto" />
+            <h2 className="text-2xl font-black">Sign In Required</h2>
+            <p className="text-xs text-slate-500">Please sign in to place a doorstep service booking in Gangtok.</p>
+            <Link href="/auth?redirect=checkout" className="btn-primary inline-flex">
+              <LogIn className="w-4 h-4" /> Sign In to Proceed
+            </Link>
           </div>
-
-          <div className="p-6">
-            {!isAuthLoaded ? (
-              <div className="text-center py-16 text-slate-500">Loading secure session...</div>
-            ) : !isLoggedIn ? (
-              <div className="text-center py-12 space-y-4">
-                <Lock className="w-16 h-16 text-redPrimary mx-auto opacity-50" />
-                <h2 className="text-2xl font-black">Login Required</h2>
-                <p className="text-sm text-slate-400">Please sign in to proceed with checkout.</p>
-                <Link href="/auth" className="btn-primary inline-flex mt-4 px-8 py-3.5 shadow-lg">
-                  <LogIn className="w-5 h-5 mr-2" /> Sign In / Register Account
-                </Link>
+        ) : !service ? (
+          <div className="web-card text-center py-16 space-y-4 max-w-md mx-auto bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
+            <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto" />
+            <h2 className="text-2xl font-black">Your Cart is Empty</h2>
+            <p className="text-xs text-slate-500">Browse our services catalog and select a service to hire.</p>
+            <Link href="/services" className="btn-primary inline-flex">
+              Browse Services
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-redPrimary/10 text-redPrimary">
+                <ShoppingBag className="w-6 h-6" />
               </div>
-            ) : !service ? (
-               <div className="text-center py-12 space-y-4">
-                <ShoppingBag className="w-16 h-16 text-slate-500 mx-auto opacity-30" />
-                <h2 className="text-2xl font-black text-slate-400">Cart is Empty</h2>
-                <p className="text-sm text-slate-500">You haven't selected a service yet.</p>
-                <button onClick={() => router.back()} className="btn-primary inline-flex mt-4">Browse Catalog</button>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black">Complete Your Doorstep Booking</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Select duration plan, schedule date & address in Gangtok, Sikkim</p>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Service Summary Card */}
-                <div className="p-5 rounded-2xl bg-[#242424] border border-[#333333] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
-                  <div>
-                    <h3 className="font-black text-lg text-redPrimary">{service.title}</h3>
-                    <p className="text-xs text-slate-500">{service.categoryName || 'General'} Category • Gangtok</p>
-                  </div>
+            </div>
 
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              {/* Left 2 Columns: Order Form & Plan Duration */}
+              <div className="lg:col-span-2 space-y-6">
+
+                {/* Selected Service Card */}
+                <div className="web-card p-5 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-[#1A1A1A] border border-[#333333] rounded-lg p-1">
-                      <button type="button" disabled={quantity <= 1} onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-1.5 text-slate-500 hover:text-redPrimary disabled:opacity-30 transition"><Minus className="w-4 h-4" /></button>
-                      <span className="font-extrabold text-sm px-2 w-8 text-center">{quantity}</span>
-                      <button type="button" onClick={() => setQuantity(quantity + 1)} className="p-1.5 text-slate-500 hover:text-redPrimary transition"><Plus className="w-4 h-4" /></button>
+                    <img src={service.imageUrl} alt="" className="w-16 h-16 object-cover rounded-xl bg-neutral-800" />
+                    <div>
+                      <span className="text-[10px] font-black text-redPrimary uppercase">{service.categoryName || 'General'}</span>
+                      <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">{service.title}</h3>
+                      <p className="text-xs text-redPrimary font-black">Base Rate: ₹{basePrice}</p>
                     </div>
-                    <span className="text-2xl font-black text-redPrimary">₹{totalPrice}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-slate-100 dark:bg-neutral-800 p-1.5 rounded-xl border border-slate-200 dark:border-neutral-700">
+                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-700 dark:text-white"><Minus className="w-3.5 h-3.5" /></button>
+                    <span className="text-xs font-black px-2">{quantity}</span>
+                    <button type="button" onClick={() => setQuantity(quantity + 1)} className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-700 dark:text-white"><Plus className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
 
-                {/* Custom Date & Time Pickers */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-                  <div>
-                    <label className="text-xs font-black text-slate-500 flex items-center gap-1.5 mb-2 uppercase tracking-wider">
-                      <Calendar className="w-4 h-4 text-redPrimary" /> Custom Service Date
-                    </label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      required
-                      className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-sm font-bold shadow-sm outline-none focus:border-redPrimary focus:ring-1 focus:ring-redPrimary transition"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-black text-slate-500 flex items-center gap-1.5 mb-2 uppercase tracking-wider">
-                      <Clock className="w-4 h-4 text-redPrimary" /> Custom Arrival Time
-                    </label>
-                    <input
-                      type="time"
-                      value={slot}
-                      onChange={(e) => setSlot(e.target.value)}
-                      required
-                      className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-sm font-bold shadow-sm outline-none focus:border-redPrimary focus:ring-1 focus:ring-redPrimary transition"
-                    />
-                  </div>
-                </div>
+                {/* NEW: Booking Duration Basis Plan Selector */}
+                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
+                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
+                    <Timer className="w-5 h-5" /> Select Booking Duration Basis
+                  </h3>
 
-                {/* Structured Address Section (Matching User Requirements) */}
-                <div className="space-y-4 pt-4 border-t border-[#333333]">
-                  <label className="text-xs font-black text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
-                    <MapPin className="w-4 h-4 text-redPrimary" /> Delivery Address Details
-                  </label>
-
-                  <select
-                    value={selectedSavedAddr}
-                    onChange={handleSavedAddressChange}
-                    className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-sm font-bold shadow-sm outline-none focus:border-redPrimary"
-                  >
-                    <option value="new">+ Add New Address in Sikkim</option>
-                    {savedAddressesList.map((a) => (
-                      <option key={a.id} value={a.id}>{a.title} - {a.fullAddress}</option>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                    {DURATION_PLANS.map((plan) => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => handlePlanChange(plan.id)}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          bookingPlan === plan.id
+                            ? 'bg-redPrimary/10 border-redPrimary text-redPrimary font-extrabold shadow-md scale-102'
+                            : 'bg-slate-50 dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-slate-300 hover:border-redPrimary/50'
+                        }`}
+                      >
+                        <span className="text-xs block font-black">{plan.label}</span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">{plan.desc}</span>
+                      </button>
                     ))}
-                  </select>
+                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#242424] p-4 rounded-xl border border-[#333333]">
+                  {/* Duration Units Picker Dropdown */}
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <label className="text-xs font-black text-slate-900 dark:text-white block">
+                        Specify Duration ({bookingPlan} BASIS):
+                      </label>
+                      <span className="text-[11px] text-slate-500">
+                        Selected: <strong className="text-redPrimary">{durationText}</strong>
+                      </span>
+                    </div>
 
-                    {/* Address Type Selector */}
-                    <div className="sm:col-span-2">
-                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Type of Address *</label>
+                    <select
+                      value={durationValue}
+                      onChange={(e) => setDurationValue(parseInt(e.target.value, 10))}
+                      className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary w-full sm:w-auto"
+                    >
+                      {durationOptions.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit} {bookingPlan === 'HOURLY' ? (unit === 1 ? 'Hour' : 'Hours') : bookingPlan === 'DAILY' ? (unit === 1 ? 'Day' : 'Days') : bookingPlan === 'WEEKLY' ? (unit === 1 ? 'Week' : 'Weeks') : bookingPlan === 'MONTHLY' ? (unit === 1 ? 'Month' : 'Months') : (unit === 1 ? 'Year' : 'Years')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Schedule Date & Arrival Time */}
+                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
+                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
+                    <Calendar className="w-5 h-5" /> Service Schedule & Arrival Time
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Service Start Date *</label>
+                      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Arrival Time *</label>
+                      <input type="time" value={slot} onChange={(e) => setSlot(e.target.value)} required className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Details */}
+                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
+                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
+                    <MapPin className="w-5 h-5" /> Doorstep Service Address in Gangtok
+                  </h3>
+
+                  {savedAddressesList.length > 0 && (
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Saved Addresses</label>
+                      <select value={selectedSavedAddr} onChange={handleSavedAddressChange} className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary">
+                        <option value="new">+ Enter New Doorstep Address</option>
+                        {savedAddressesList.map(a => <option key={a.id} value={a.id}>{a.title || 'Address'}: {a.fullAddress}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Address Tag</label>
                       <div className="flex gap-2">
-                        {['Home', 'Work', 'Office', 'Other'].map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => setNewAddrType(tag)}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition ${
-                              newAddrType === tag
-                                ? 'bg-redPrimary text-white border-redPrimary shadow-md'
-                                : 'bg-[#0F0F0F] text-slate-400 border-[#333333] hover:border-slate-500'
-                            }`}
-                          >
-                            {tag === 'Home' ? '🏡 Home' : tag === 'Work' ? '🏢 Work' : tag === 'Office' ? '💼 Office' : '📍 Other'}
-                          </button>
+                        {['Home', 'Work', 'Office', 'Other'].map(t => (
+                          <button key={t} type="button" onClick={() => setNewAddrType(t)} className={`flex-1 py-2 text-xs font-bold rounded-lg border transition ${newAddrType === t ? 'bg-redPrimary text-white border-redPrimary' : 'bg-slate-50 dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-slate-300'}`}>{t}</button>
                         ))}
                       </div>
                     </div>
 
-                    {/* House No / Tower / Block */}
                     <div>
-                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">House No. / Tower / Block</label>
-                      <input
-                        type="text"
-                        value={houseNo}
-                        onChange={(e) => setHouseNo(e.target.value)}
-                        placeholder="e.g. Flat 4B / Block C"
-                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                      />
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Building / House No.</label>
+                      <input type="text" value={houseNo} onChange={(e) => setHouseNo(e.target.value)} placeholder="e.g. House No. 42 / Flat 3B" className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
                     </div>
 
-                    {/* Address (Building, Street, Area) */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
-                      <input
-                        type="text"
-                        value={streetAddress}
-                        onChange={(e) => setStreetAddress(e.target.value)}
-                        placeholder="e.g. Upper Syari, Deorali *"
-                        required
-                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                      />
-                    </div>
-
-                    {/* Locality / Town */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Locality / Town</label>
-                      <input
-                        type="text"
-                        value={locality}
-                        onChange={(e) => setLocality(e.target.value)}
-                        placeholder="e.g. Near ICDS Center"
-                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                      />
-                    </div>
-
-                    {/* City / District */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">City / District</label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="Gangtok"
-                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                      />
-                    </div>
-
-                    {/* State (Fixed Pre-selected Sikkim) */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">State (Fixed)</label>
-                      <input
-                        type="text"
-                        value={state}
-                        disabled
-                        className="w-full p-3.5 rounded-lg border border-[#333333] bg-[#111111] text-slate-400 text-sm font-bold cursor-not-allowed"
-                      />
-                    </div>
-
-                    {/* Pincode (Default 737101) */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Pincode (Default: 737101)</label>
-                      <input
-                        type="text"
-                        value={pincode}
-                        onChange={(e) => setPincode(e.target.value)}
-                        placeholder="737101"
-                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                      />
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Street Address & Area *</label>
+                      <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder="e.g. Upper Syari Road, Near Deorali Taxi Stand" required className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
                     </div>
                   </div>
                 </div>
 
                 {/* Payment Method */}
-                <div className="pt-4 border-t border-[#333333]">
-                  <label className="text-xs font-black text-slate-500 flex items-center gap-1.5 mb-2 uppercase tracking-wider">
-                    <CreditCard className="w-4 h-4 text-redPrimary" /> Select Payment Method
-                  </label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full p-4 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-sm font-extrabold shadow-sm outline-none focus:border-redPrimary"
-                  >
-                    <option value="CASH_ON_DELIVERY">💵 Cash on Service (COD) - Pay upon completion</option>
-                    <option value="ONLINE_UPI">📱 Online UPI / QR Code - Google Pay, PhonePe</option>
-                    <option value="RAZORPAY">💳 Razorpay Gateway - Credit / Debit Cards</option>
-                  </select>
+                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-3">
+                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" /> Payment Method
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'CASH_ON_DELIVERY' ? 'border-redPrimary bg-redPrimary/10' : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900'}`}>
+                      <input type="radio" name="pay" checked={paymentMethod === 'CASH_ON_DELIVERY'} onChange={() => setPaymentMethod('CASH_ON_DELIVERY')} className="accent-redPrimary" />
+                      <div>
+                        <strong className="text-xs block text-slate-900 dark:text-white font-extrabold">Cash on Service (COD)</strong>
+                        <span className="text-[10px] text-slate-500">Pay directly to mistri after work</span>
+                      </div>
+                    </label>
+
+                    <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'ONLINE_UPI' ? 'border-redPrimary bg-redPrimary/10' : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900'}`}>
+                      <input type="radio" name="pay" checked={paymentMethod === 'ONLINE_UPI'} onChange={() => setPaymentMethod('ONLINE_UPI')} className="accent-redPrimary" />
+                      <div>
+                        <strong className="text-xs block text-slate-900 dark:text-white font-extrabold">Online UPI / GPay / PhonePe</strong>
+                        <span className="text-[10px] text-slate-500">Instant QR Code payment</span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
-                {/* Submit Button */}
-                <div className="pt-6 border-t border-[#333333]">
+              </div>
+
+              {/* Right Column: Dynamic Price Summary */}
+              <div className="space-y-6">
+                <div className="web-card p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-xl space-y-4 sticky top-24">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-800 pb-3">Booking Price Summary</h3>
+
+                  <div className="space-y-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    <div className="flex justify-between">
+                      <span>Service Item:</span>
+                      <span className="text-slate-900 dark:text-white font-bold">{service.title}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span>Duration Plan:</span>
+                      <span className="text-redPrimary font-bold">{bookingPlan}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span>Duration Units:</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{durationText}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span>Unit Duration Cost:</span>
+                      <span>₹{singleUnitDurationPrice}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span>Quantity:</span>
+                      <span>x {quantity}</span>
+                    </div>
+
+                    <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-neutral-800 text-base font-black text-redPrimary">
+                      <span>Total Amount:</span>
+                      <span>₹{totalPrice}</span>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary w-full py-4 text-base shadow-xl hover:shadow-redPrimary/20 transition-all rounded-xl bg-redPrimary text-white font-black"
+                    className="btn-primary w-full py-4 text-sm font-black shadow-lg rounded-xl bg-redPrimary hover:bg-redDark text-white transition cursor-pointer"
                   >
-                    <CheckCircle className="w-5 h-5 mr-2 inline" />
-                    {isSubmitting ? 'Processing Secure Order...' : `Confirm & Place Order (₹${totalPrice})`}
+                    <CheckCircle className="w-4 h-4 inline mr-1" />
+                    {isSubmitting ? 'Placing Booking...' : `Confirm & Book (${durationText} • ₹${totalPrice})`}
                   </button>
-                  <p className="text-center text-[10px] text-slate-500 font-bold mt-4">
-                    By placing this order, you agree to our 1-Minute Free Cancellation Policy.
+
+                  <p className="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> 100% Verified Technical Manpower in Gangtok
                   </p>
                 </div>
-              </form>
-            )}
+              </div>
+
+            </form>
           </div>
-        </div>
+        )}
       </main>
 
-      {/* Dynamic Popup Modal Component */}
       <PopupModal
         isOpen={popupState.isOpen}
         onClose={() => setPopupState({ ...popupState, isOpen: false })}
         title={popupState.title}
         message={popupState.message}
         type={popupState.type}
-        actionText="View My Orders & Track"
+        actionText="Track Order"
         onAction={popupState.onAction}
       />
+
+      <Footer />
     </div>
   );
 }

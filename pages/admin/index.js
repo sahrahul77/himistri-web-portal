@@ -10,7 +10,7 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
@@ -772,6 +772,13 @@ export default function AdminControlPanelPage() {
                           </div>
 
                           <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
+
+                          {/* Duration Plan Display */}
+                          <div className="p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex items-center gap-2 text-xs font-bold text-redPrimary">
+                            <Timer className="w-4 h-4 text-redPrimary shrink-0" />
+                            <span>Booking Duration: {currentOrder.durationUnitText || '1 Hour'} ({currentOrder.bookingPlan || 'HOURLY'} BASIS)</span>
+                          </div>
+
                           <p className="text-xs text-slate-600 dark:text-slate-400">Customer: <strong className="text-slate-900 dark:text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
                           <p className="text-xs text-slate-600 dark:text-slate-400">Address: <strong className="text-slate-900 dark:text-white">{currentOrder.address || 'Gangtok'}</strong></p>
 
@@ -1077,9 +1084,6 @@ export default function AdminControlPanelPage() {
                           <div>
                             <strong className="text-slate-900 dark:text-white block text-sm">{adm.fullName || 'Admin Account'}</strong>
                             <span className="text-slate-500 dark:text-slate-400">{adm.email || 'N/A'} • {adm.phoneNumber || 'N/A'}</span>
-                            {adm.password && (
-                              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">🔑 Password: {adm.password}</p>
-                            )}
                           </div>
                         </div>
 

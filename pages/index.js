@@ -42,11 +42,13 @@ export default function HomePage() {
     setIsDark(prev => !prev);
   };
 
-  // Seed / Sync 10 Categories and Icon URLs into Firebase Database
+  // Sync / Overwrite Original HiMistri Categories into Firebase Database
   useEffect(() => {
-    DEFAULT_CATEGORIES.forEach((cat) => {
-      set(ref(rtdb, `categories/${cat.id}`), cat);
+    const catMap = {};
+    DEFAULT_CATEGORIES.forEach((c) => {
+      catMap[c.id] = c;
     });
+    set(ref(rtdb, 'categories'), catMap);
   }, []);
 
   useEffect(() => {
@@ -114,7 +116,7 @@ export default function HomePage() {
     return matchesSearch && matchesChip;
   });
 
-  const displayCategories = categories.slice(0, 6);
+  const displayCategories = categories;
   const popularServices = filteredServices.slice(0, 10);
 
   return (
@@ -171,20 +173,20 @@ export default function HomePage() {
         {/* 3. Hero Banner Carousel */}
         <HeroBanner banners={banners} />
 
-        {/* 4. Explore Categories Grid */}
+        {/* 4. Explore Original Categories Grid */}
         {displayCategories.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-4 sm:mb-6">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">10+ Technical & Household Categories in Gangtok</p>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Original Categories</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Core Technical & Household Manpower Categories in Gangtok</p>
               </div>
               <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3 sm:px-3.5 py-1.5 rounded-full shrink-0">
                 See All ({categories.length})
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {displayCategories.map((c) => (
                 <Link href={`/categories?id=${c.id}`} key={c.id}>
                   <motion.div
@@ -199,7 +201,7 @@ export default function HomePage() {
                         className="w-full h-full object-contain"
                       />
                     </div>
-                    <strong className="text-xs font-bold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
+                    <strong className="text-xs sm:text-sm font-extrabold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
                   </motion.div>
                 </Link>
               ))}

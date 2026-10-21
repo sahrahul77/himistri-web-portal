@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, push, get, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle, Send } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TrackingPage() {
   const [isDark, setIsDark] = useState(true);
@@ -264,7 +265,7 @@ export default function TrackingPage() {
               </button>
             </div>
 
-            {/* Interactive Slider Container */}
+            {/* Interactive Single-Card Order Slider Container */}
             {displayedList.length === 0 ? (
               <div className="web-card py-20 text-center text-slate-500 space-y-2 border-dashed">
                 <Clock className="w-12 h-12 mx-auto text-slate-600 opacity-40 mb-2" />
@@ -272,142 +273,200 @@ export default function TrackingPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {displayedList.map((currentBooking) => (
-                  <div key={currentBooking.id} className="web-card bg-[#1A1A1A] border border-[#333333] p-6 rounded-2xl space-y-4 shadow-2xl relative">
-                    {/* Top Row: Ref & Status Badge */}
-                    <div className="flex justify-between items-center pb-3 border-b border-neutral-800">
-                      <span className="font-extrabold text-sm text-white">
-                        {currentBooking.bookingRef || currentBooking.id}
-                      </span>
-                      <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
-                        currentBooking.status === 'COMPLETED' ? 'bg-emerald-600/20 text-emerald-500' :
-                        currentBooking.status === 'CANCELLED' || currentBooking.status === 'REJECTED' ? 'bg-rose-600/20 text-rose-500' : 'bg-orangeSecondary/20 text-orangeSecondary'
-                      }`}>
-                        {currentBooking.status === 'PENDING' ? 'Order Placed' : currentBooking.status}
-                      </span>
-                    </div>
 
-                    {/* Middle Info Row */}
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                        <div className="w-6 h-6 rounded-md bg-orangeSecondary flex items-center justify-center text-white text-xs font-bold">
-                          HM
+                {/* Slider Controls Header */}
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-xs font-bold text-slate-400">
+                    Order <span className="text-redPrimary font-black">{cardIndex + 1}</span> of {displayedList.length}
+                  </span>
+
+                  {displayedList.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCardIndex((prev) => (prev - 1 + displayedList.length) % displayedList.length)}
+                        className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-redPrimary text-white transition shadow-md"
+                        title="Previous Order"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs font-black text-slate-300">
+                        {cardIndex + 1} / {displayedList.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCardIndex((prev) => (prev + 1) % displayedList.length)}
+                        className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-redPrimary text-white transition shadow-md"
+                        title="Next Order"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Animated Single Order Card Slider */}
+                <AnimatePresence mode="wait">
+                  {currentBooking && (
+                    <motion.div
+                      key={currentBooking.bookingRef || currentBooking.id || cardIndex}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.25 }}
+                      className="web-card bg-[#1A1A1A] border border-[#333333] p-6 rounded-2xl space-y-4 shadow-2xl relative"
+                    >
+                      {/* Top Row: Ref & Status Badge */}
+                      <div className="flex justify-between items-center pb-3 border-b border-neutral-800">
+                        <span className="font-extrabold text-sm text-white">
+                          {currentBooking.bookingRef || currentBooking.id}
+                        </span>
+                        <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                          currentBooking.status === 'COMPLETED' ? 'bg-emerald-600/20 text-emerald-500' :
+                          currentBooking.status === 'CANCELLED' || currentBooking.status === 'REJECTED' ? 'bg-rose-600/20 text-rose-500' : 'bg-orangeSecondary/20 text-orangeSecondary'
+                        }`}>
+                          {currentBooking.status === 'PENDING' ? 'Order Placed' : currentBooking.status}
+                        </span>
+                      </div>
+
+                      {/* Middle Info Row */}
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-md bg-orangeSecondary flex items-center justify-center text-white text-xs font-bold">
+                            HM
+                          </div>
+                        </div>
+
+                        <div className="flex-1 space-y-1">
+                          <h3 className="font-bold text-base text-white">{currentBooking.serviceTitle} <span className="text-xs text-slate-400">(Qty: {currentBooking.quantity || 1})</span></h3>
+                          <p className="text-xs text-redPrimary font-bold">Payable: ₹{currentBooking.totalAmount || 500} ({currentBooking.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service (COD)' : 'Online'})</p>
+                          <p className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-redPrimary" /> {currentBooking.scheduledDate || 'Today'} | {currentBooking.scheduledTimeSlot || '09:00'}
+                          </p>
+                          <p className="text-xs text-slate-400 font-semibold flex items-start gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0 mt-0.5" /> Service Address ({currentBooking.address || 'Gangtok, Sikkim'})
+                          </p>
                         </div>
                       </div>
 
-                      <div className="flex-1 space-y-1">
-                        <h3 className="font-bold text-base text-white">{currentBooking.serviceTitle} <span className="text-xs text-slate-400">(Qty: {currentBooking.quantity || 1})</span></h3>
-                        <p className="text-xs text-redPrimary font-bold">Payable: ₹{currentBooking.totalAmount || 500} ({currentBooking.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service (COD)' : 'Online'})</p>
-                        <p className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-redPrimary" /> {currentBooking.scheduledDate || 'Today'} | {currentBooking.scheduledTimeSlot || '09:00'}
-                        </p>
-                        <p className="text-xs text-slate-400 font-semibold flex items-start gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0 mt-0.5" /> Service Address ({currentBooking.address || 'Gangtok, Sikkim'})
-                        </p>
+                      {/* Live Status Row */}
+                      <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
+                        <Bike className="w-4 h-4 text-orangeSecondary" />
+                        <span>Live Status: {currentBooking.trackingStatus || 'Order Placed by Customer'}</span>
                       </div>
-                    </div>
 
-                    {/* Live Status Row */}
-                    <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
-                      <Bike className="w-4 h-4 text-orangeSecondary" />
-                      <span>Live Status: {currentBooking.trackingStatus || 'Order Placed by Customer'}</span>
-                    </div>
-
-                    {/* Partner Assignment Details if assigned */}
-                    {currentBooking.assignedPartnerName && (
-                      <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
-                        <div>
-                          <strong>Assigned Mistri: {currentBooking.assignedPartnerName}</strong> ({currentBooking.assignedPartnerSkill || 'Specialist'})
+                      {/* Partner Assignment Details if assigned */}
+                      {currentBooking.assignedPartnerName && (
+                        <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
+                          <div>
+                            <strong>Assigned Mistri: {currentBooking.assignedPartnerName}</strong> ({currentBooking.assignedPartnerSkill || 'Specialist'})
+                          </div>
+                          {currentBooking.assignedPartnerPhone && (
+                            <a href={`tel:${currentBooking.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
+                          )}
                         </div>
-                        {currentBooking.assignedPartnerPhone && (
-                          <a href={`tel:${currentBooking.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
+                      )}
+
+                      {/* Action Buttons Row */}
+                      <div className="space-y-2 pt-1">
+
+                        {/* If CANCELLED or REJECTED: Show ONLY full-width Support button! */}
+                        {currentBooking.status === 'CANCELLED' || currentBooking.status === 'REJECTED' ? (
+                          <div className="w-full">
+                            <a
+                              href="https://wa.me/917430887960"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="w-full py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition shadow-sm"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* If COMPLETED -> Show RATE NOW button or RATED badge with popup message! */}
+                            {currentBooking.status === 'COMPLETED' ? (
+                              <div>
+                                {currentBooking.userRating ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => alert('You have already rated this service.')}
+                                    className="w-full py-2.5 px-4 rounded-xl border border-neutral-800 bg-neutral-900/80 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 cursor-pointer transition opacity-80"
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                    Rated: {currentBooking.userRating}.0 ★
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => openRatingModal(currentBooking)}
+                                    className="w-full py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate Now
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setDetailedOrder(currentBooking)}
+                                className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
+                              >
+                                <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
+                              </button>
+                            )}
+
+                            <a
+                              href="https://wa.me/917430887960"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                            </a>
+                          </div>
+                        )}
+
+                        {/* 1-Minute Dynamic Cancel Button Logic for PENDING Orders */}
+                        {currentBooking.status === 'PENDING' && (
+                          <div>
+                            {isWithinOneMinute(currentBooking.createdAt) ? (
+                              <button
+                                onClick={() => handleCancelBooking(currentBooking.dbKey || currentBooking.id)}
+                                className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
+                              >
+                                Cancel Order (Free within 1 min)
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="w-full py-3 rounded-xl border border-neutral-800 bg-neutral-900/50 text-slate-500 text-xs font-bold cursor-not-allowed opacity-60 text-center"
+                              >
+                                Can't cancel now. Contact Customer Support.
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                    {/* Action Buttons Row */}
-                    <div className="space-y-2 pt-1">
-
-                      {/* If CANCELLED or REJECTED: Show ONLY full-width Support button! */}
-                      {currentBooking.status === 'CANCELLED' || currentBooking.status === 'REJECTED' ? (
-                        <div className="w-full">
-                          <a
-                            href="https://wa.me/917430887960"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-full py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition shadow-sm"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
-                          </a>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                          {/* If COMPLETED -> Show RATE NOW button or RATED badge with popup message! */}
-                          {currentBooking.status === 'COMPLETED' ? (
-                            <div>
-                              {currentBooking.userRating ? (
-                                <button
-                                  type="button"
-                                  onClick={() => alert('You have already rated this service.')}
-                                  className="w-full py-2.5 px-4 rounded-xl border border-neutral-800 bg-neutral-900/80 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 cursor-pointer transition opacity-80"
-                                >
-                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                  Rated: {currentBooking.userRating}.0 ★
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => openRatingModal(currentBooking)}
-                                  className="w-full py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
-                                >
-                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate Now
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setDetailedOrder(currentBooking)}
-                              className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
-                            >
-                              <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
-                            </button>
-                          )}
-
-                          <a
-                            href="https://wa.me/917430887960"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
-                          </a>
-                        </div>
-                      )}
-
-                      {/* 1-Minute Dynamic Cancel Button Logic for PENDING Orders */}
-                      {currentBooking.status === 'PENDING' && (
-                        <div>
-                          {isWithinOneMinute(currentBooking.createdAt) ? (
-                            <button
-                              onClick={() => handleCancelBooking(currentBooking.dbKey || currentBooking.id)}
-                              className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
-                            >
-                              Cancel Order (Free within 1 min)
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              className="w-full py-3 rounded-xl border border-neutral-800 bg-neutral-900/50 text-slate-500 text-xs font-bold cursor-not-allowed opacity-60 text-center"
-                            >
-                              Can't cancel now. Contact Customer Support.
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                {/* Dots Indicator for Slider */}
+                {displayedList.length > 1 && (
+                  <div className="flex justify-center gap-2 pt-2">
+                    {displayedList.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setCardIndex(i)}
+                        className={`h-2 rounded-full transition-all ${
+                          cardIndex === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'
+                        }`}
+                      />
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </>
@@ -498,7 +557,7 @@ export default function TrackingPage() {
                 <p className="text-xs font-bold text-emerald-400 pl-6">{detailedOrder.trackingStatus || 'Order Placed by Customer'}</p>
               </div>
 
-              {/* Order Status Timeline (Requirement 2: Confirmed by HiMistri) */}
+              {/* Order Status Timeline */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-sm font-extrabold text-white">Order Status Timeline</h4>
                 <div className="space-y-4 pl-2">

@@ -200,7 +200,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok (100% FULL ARTWORK DISPLAY - ZERO CROPPING) */}
+        {/* 5. Popular Services in Gangtok (Clean Card Design with Stored Firebase Rating) */}
         <div>
           <div className="flex justify-between items-baseline mb-4 sm:mb-6">
             <div>
@@ -224,7 +224,7 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {popularServices.map((s) => {
-                const rating = parseFloat(s.ratingAverage || 4.9).toFixed(1);
+                const rating = parseFloat(s.ratingAverage || 5.0).toFixed(1);
                 const discountPercent = s.originalPrice && s.discountedPrice
                   ? Math.round(((s.originalPrice - s.discountedPrice) / s.originalPrice) * 100)
                   : 10;
@@ -233,26 +233,26 @@ export default function HomePage() {
                   <motion.div
                     key={s.id}
                     whileHover={{ y: -4 }}
-                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl"
+                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 sm:p-5 rounded-2xl"
                   >
                     <div>
-                      {/* Image Box: Explicit height h-64 sm:h-72 with object-contain ensures 100% of the square artwork (including bottom title banner) is FULLY VISIBLE */}
-                      <div className="relative w-full h-64 sm:h-72 rounded-xl mb-3 sm:mb-4 overflow-hidden bg-[#1A1A1A] flex items-center justify-center p-2 border border-slate-200 dark:border-neutral-800 shadow-inner">
+                      {/* Crisp Clean Full Artwork Display Container */}
+                      <div className="relative w-full aspect-[4/3] rounded-xl mb-3 sm:mb-4 overflow-hidden bg-slate-100 dark:bg-neutral-900 flex items-center justify-center p-1 border border-slate-200 dark:border-neutral-800 shadow-sm">
                         <img
                           src={s.imageUrl || FALLBACK_ICON}
                           alt={s.title}
                           onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                          className="w-full h-full object-contain object-center rounded-lg"
+                          className="w-full h-full object-contain rounded-lg"
                         />
 
                         {/* Discount Badge on Top Left */}
-                        <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider z-10">
+                        <div className="absolute top-2.5 left-2.5 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider z-10">
                           {discountPercent}% OFF
                         </div>
 
-                        {/* Rating Badge on Top Right */}
-                        <div className="absolute top-3 right-3 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10 shadow-md z-10">
-                          <Star className="w-3.5 h-3.5 fill-amber-400" /> {rating}
+                        {/* Rating Badge stored in Firebase on Top Right */}
+                        <div className="absolute top-2.5 right-2.5 bg-black/85 text-amber-400 text-xs font-black px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10 shadow-md z-10">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {rating}
                         </div>
                       </div>
 
@@ -266,8 +266,8 @@ export default function HomePage() {
                         <span className="text-xl sm:text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
                         <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
                       </div>
-                      <button onClick={() => handleHireNow(s)} className="btn-primary py-2 sm:py-2.5 px-4 sm:px-5 text-xs sm:text-sm">
-                        Hire Now
+                      <button onClick={() => handleHireNow(s)} className="btn-primary py-2.5 px-5 text-xs sm:text-sm">
+                        Hire Now <ArrowRight className="w-4 h-4 inline ml-1" />
                       </button>
                     </div>
                   </motion.div>

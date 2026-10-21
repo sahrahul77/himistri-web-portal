@@ -412,9 +412,11 @@ export default function AdminControlPanelPage() {
       title: newSrvTitle,
       originalPrice: parseFloat(newSrvPrice) || 1000,
       discountedPrice: parseFloat(newSrvDiscount) || (parseFloat(newSrvPrice) || 1000),
+      ratingAverage: 5.0,
+      ratingCount: 1,
       imageUrl: newSrvImage || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'
     }).then(() => {
-      setPopupState({ isOpen: true, title: 'Service Created', message: `Service '${newSrvTitle}' connected to Category '${catObj.name}'!`, type: 'success' });
+      setPopupState({ isOpen: true, title: 'Service Created', message: `Service '${newSrvTitle}' connected to Category '${catObj.name}'! Rating set to 5.0 ★`, type: 'success' });
       setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage('');
     });
   };
@@ -487,10 +489,11 @@ export default function AdminControlPanelPage() {
       title: editingService.title,
       originalPrice: parseFloat(editingService.originalPrice) || 1000,
       discountedPrice: parseFloat(editingService.discountedPrice) || 800,
+      ratingAverage: parseFloat(editingService.ratingAverage) || 5.0,
       imageUrl: editingService.imageUrl,
       categoryName: editingService.categoryName
     }).then(() => {
-      setPopupState({ isOpen: true, title: 'Service Updated', message: 'Service details saved successfully!', type: 'success' });
+      setPopupState({ isOpen: true, title: 'Service Updated', message: 'Service details and rating saved successfully!', type: 'success' });
       setEditingService(null);
     });
   };

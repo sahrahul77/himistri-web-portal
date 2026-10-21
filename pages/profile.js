@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 import { ref, onValue, update, push, remove } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { UserCircle, MapPin, Save, Plus, Trash2, Lock, LogIn, Phone, Mail, User } from 'lucide-react';
+import { UserCircle, MapPin, Save, Plus, Trash2, Lock, LogIn, Phone, Mail, User, ShoppingBag, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -20,17 +20,19 @@ export default function ProfilePage() {
   const [newAddrText, setNewAddrText] = useState('');
   const [newPincode, setNewPincode] = useState('737102');
 
+  const [customerBookings, setCustomerBookings] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
+      // 1. Fetch User Profile & Addresses
       const userRef = ref(rtdb, `users/${currentUser.id}`);
-      const unsub = onValue(userRef, (snapshot) => {
+      const unsubUser = onValue(userRef, (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setFullName(data.fullName || '');
-          setEmail(data.email || '');
-          setPhone(data.phoneNumber || '');
+          setFullName(data.fullName || currentUser.fullName || '');
+          setEmail(data.email || currentUser.email || '');
+          setPhone(data.phoneNumber || currentUser.phoneNumber || '');
 
           if (data.addresses) {
             const addrs = Object.keys(data.addresses).map(key => ({
@@ -43,7 +45,34 @@ export default function ProfilePage() {
           }
         }
       });
-      return () => unsub();
+
+      // 2. Fetch Customer's Orders from Firebase
+      const bookingsRef = ref(rtdb, 'bookings');
+      const unsubBookings = onValue(bookingsRef, (snapshot) => {
+        const list = [];
+        if (snapshot.exists()) {
+          snapshot.forEach((child) => {
+            const b = { id: child.key, ...child.val() };
+            const cleanUserPhone = (currentUser.phoneNumber || '').replace(/\D/g, '').slice(-10);
+            const cleanCustPhone = (b.customerPhone || b.userPhone || '').replace(/\D/g, '').slice(-10);
+
+            const phoneMatch = cleanUserPhone.length >= 10 && cleanCustPhone.length >= 10 && cleanUserPhone === cleanCustPhone;
+            const idMatch = b.userId === currentUser.id;
+            const nameMatch = currentUser.fullName && b.userName &&
+              currentUser.fullName.trim().toLowerCase() === b.userName.trim().toLowerCase();
+
+            if (idMatch || phoneMatch || nameMatch) {
+              list.push(b);
+            }
+          });
+        }
+        setCustomerBookings(list);
+      });
+
+      return () => {
+        unsubUser();
+        unsubBookings();
+      };
     }
   }, [currentUser]);
 
@@ -69,7 +98,7 @@ export default function ProfilePage() {
         email,
         phoneNumber: phone
       });
-      alert('Profile details updated successfully in database!');
+      alert('Profile details updated successfully in Firebase!');
     } catch (err) {
       alert('Error updating profile: ' + err.message);
     }
@@ -83,6 +112,10 @@ export default function ProfilePage() {
 
     const newAddrObj = {
       title: newAddrTitle,
+      houseNo: '',
+      streetAddress: newAddrText,
+      landmark: '',
+      pincode: newPincode,
       fullAddress: `${newAddrText}, Pincode: ${newPincode}`,
       createdAt: new Date().toISOString()
     };
@@ -91,7 +124,7 @@ export default function ProfilePage() {
       const addrRef = ref(rtdb, `users/${currentUser.id}/addresses`);
       await push(addrRef, newAddrObj);
       setNewAddrText('');
-      alert('Address saved to your profile!');
+      alert('Address saved to your profile in Firebase!');
     } catch (err) {
       alert('Failed to save address: ' + err.message);
     }
@@ -108,10 +141,12 @@ export default function ProfilePage() {
   };
 
   const isLoggedIn = !!currentUser;
+  const activeCount = customerBookings.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED' && b.status !== 'REJECTED').length;
+  const completedCount = customerBookings.filter(b => b.status === 'COMPLETED').length;
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header isDark={isDark} onToggleTheme={toggleTheme} />
+      <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-10 flex-1 max-w-3xl mx-auto w-full space-y-8">
         {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isLoggedIn ? (
@@ -125,18 +160,45 @@ export default function ProfilePage() {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-redPrimary/10 text-redPrimary">
-                <UserCircle className="w-8 h-8" />
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-redPrimary/10 text-redPrimary">
+                  <UserCircle className="w-8 h-8" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black">{fullName || currentUser.fullName}</h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Customer Account • {phone || currentUser.phoneNumber}</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-black">My Profile</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Manage your personal details and address book</p>
+
+              <Link href="/tracking" className="btn-primary py-2.5 px-4 text-xs">
+                My Orders & Tracking <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Customer Orders Overview KPI Cards */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="web-card text-center p-4">
+                <ShoppingBag className="w-5 h-5 text-redPrimary mx-auto mb-1" />
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Total Orders</span>
+                <strong className="text-xl font-black text-white">{customerBookings.length}</strong>
+              </div>
+
+              <div className="web-card text-center p-4">
+                <Clock className="w-5 h-5 text-orangeSecondary mx-auto mb-1" />
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Active Orders</span>
+                <strong className="text-xl font-black text-orangeSecondary">{activeCount}</strong>
+              </div>
+
+              <div className="web-card text-center p-4">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Completed</span>
+                <strong className="text-xl font-black text-emerald-500">{completedCount}</strong>
               </div>
             </div>
 
             {/* Personal Details Form */}
-            <form onSubmit={handleUpdateProfile} className="web-card space-y-5">
+            <form onSubmit={handleUpdateProfile} className="web-card space-y-5 shadow-xl">
               <h2 className="text-lg font-bold border-b border-slate-100 dark:border-neutral-800 pb-2">Personal Information</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -146,7 +208,7 @@ export default function ProfilePage() {
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-semibold"
+                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-semibold"
                   />
                 </div>
                 <div>
@@ -155,7 +217,7 @@ export default function ProfilePage() {
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-semibold"
+                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-semibold"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -164,18 +226,18 @@ export default function ProfilePage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-semibold"
+                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-semibold"
                   />
                 </div>
               </div>
 
-              <button type="submit" disabled={isSaving} className="btn-primary w-full sm:w-auto">
-                <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Update Profile Details'}
+              <button type="submit" disabled={isSaving} className="btn-primary w-full sm:w-auto py-3 px-6">
+                <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Update Profile Details in Firebase'}
               </button>
             </form>
 
             {/* Address Book */}
-            <div className="web-card space-y-5">
+            <div className="web-card space-y-5 shadow-xl">
               <h2 className="text-lg font-bold border-b border-slate-100 dark:border-neutral-800 pb-2">Saved Addresses (Address Book)</h2>
 
               {addresses.length === 0 ? (
@@ -204,7 +266,7 @@ export default function ProfilePage() {
                   <select
                     value={newAddrTitle}
                     onChange={(e) => setNewAddrTitle(e.target.value)}
-                    className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-bold"
+                    className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-bold"
                   >
                     <option>Home</option>
                     <option>Work</option>
@@ -215,18 +277,18 @@ export default function ProfilePage() {
                     value={newAddrText}
                     onChange={(e) => setNewAddrText(e.target.value)}
                     placeholder="Flat, House no., Building, Locality"
-                    className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm sm:col-span-2"
+                    className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm sm:col-span-2"
                   />
                   <input
                     type="text"
                     value={newPincode}
                     onChange={(e) => setNewPincode(e.target.value)}
                     placeholder="Pincode (e.g. 737102)"
-                    className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm sm:col-span-1"
+                    className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm sm:col-span-1"
                   />
                 </div>
-                <button type="submit" className="btn-outline border-redPrimary text-redPrimary hover:bg-redPrimary hover:text-white w-full sm:w-auto">
-                  <Plus className="w-4 h-4 inline mr-1" /> Save Address
+                <button type="submit" className="btn-outline border-redPrimary text-redPrimary hover:bg-redPrimary hover:text-white w-full sm:w-auto py-3 px-6">
+                  <Plus className="w-4 h-4 inline mr-1" /> Save Address to Firebase
                 </button>
               </form>
             </div>

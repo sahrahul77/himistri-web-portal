@@ -127,16 +127,16 @@ export default function PartnerDashboardPage() {
   const currentCompletedJob = completedJobs[completedSliderIdx] || completedJobs[0];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       {/* Main Container */}
       <main className="flex-1 space-y-6 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full">
         {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isPartner ? (
-          <div className="web-card text-center py-16 space-y-4 max-w-lg mx-auto bg-[#1A1A1A] border border-[#333333]">
+          <div className="web-card text-center py-16 space-y-4 max-w-lg mx-auto bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
             <Lock className="w-16 h-16 text-redPrimary mx-auto" />
-            <h2 className="text-2xl font-black text-white">Partner Access Restricted</h2>
-            <p className="text-xs text-slate-400">Please sign in as a registered HiMistri Service Partner to view your dispatched jobs.</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Partner Access Restricted</h2>
+            <p className="text-xs text-slate-500">Please sign in as a registered HiMistri Service Partner to view your dispatched jobs.</p>
             <Link href="/auth" className="btn-primary inline-flex mt-2">
               <LogIn className="w-4 h-4" /> Partner Login
             </Link>
@@ -171,14 +171,14 @@ export default function PartnerDashboardPage() {
             </div>
 
             {/* Partner Info Card matching Screenshot 100% */}
-            <div className="bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl space-y-5 shadow-2xl">
+            <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl space-y-5 shadow-2xl">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3.5">
                   <div className="w-12 h-12 rounded-full bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-md">
                     <Wrench className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-lg sm:text-xl font-extrabold text-white">{partnerNameRef}</h2>
+                    <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">{partnerNameRef}</h2>
                     <p className="text-xs font-bold text-redPrimary mt-0.5">Skill: {partnerSkillRef}</p>
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export default function PartnerDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleToggleOnline(!isOnline)}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors ${isOnline ? 'bg-emerald-500' : 'bg-neutral-700'}`}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors ${isOnline ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-neutral-700'}`}
                   >
                     <div className={`w-4 h-4 rounded-full bg-white transition-transform ${isOnline ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
@@ -200,35 +200,35 @@ export default function PartnerDashboardPage() {
 
               {/* 3 KPI Box Cards matching Screenshot 100% */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#242424] border border-[#333333] p-3.5 sm:p-4 rounded-xl text-left">
-                  <span className="text-[11px] font-semibold text-slate-400 block">Net Earnings</span>
-                  <span className="text-[10px] text-slate-500 block mb-1">(80%)</span>
-                  <strong className="text-base sm:text-xl font-black text-emerald-500 block">₹{Math.round(totalPartnerEarnings * 0.80)}</strong>
+                <div className="bg-slate-50 dark:bg-[#242424] border border-slate-200 dark:border-[#333333] p-3.5 sm:p-4 rounded-xl text-left">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Net Earnings</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block mb-1">(80%)</span>
+                  <strong className="text-base sm:text-xl font-black text-emerald-600 dark:text-emerald-500 block">₹{Math.round(totalPartnerEarnings * 0.80)}</strong>
                 </div>
 
-                <div className="bg-[#242424] border border-[#333333] p-3.5 sm:p-4 rounded-xl text-center flex flex-col justify-center items-center">
-                  <span className="text-[11px] font-semibold text-slate-400 block mb-2">Completed</span>
-                  <strong className="text-xl sm:text-2xl font-black text-blue-400">{completedJobs.length || 5}</strong>
+                <div className="bg-slate-50 dark:bg-[#242424] border border-slate-200 dark:border-[#333333] p-3.5 sm:p-4 rounded-xl text-center flex flex-col justify-center items-center">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-2">Completed</span>
+                  <strong className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">{completedJobs.length || 5}</strong>
                 </div>
 
-                <div className="bg-[#242424] border border-[#333333] p-3.5 sm:p-4 rounded-xl text-center flex flex-col justify-center items-center">
-                  <span className="text-[11px] font-semibold text-slate-400 block mb-2">Rating</span>
-                  <strong className="text-lg sm:text-xl font-black text-amber-400 flex items-center gap-1">
-                    4.9 <Star className="w-4 h-4 fill-amber-400 text-amber-400 inline" />
+                <div className="bg-slate-50 dark:bg-[#242424] border border-slate-200 dark:border-[#333333] p-3.5 sm:p-4 rounded-xl text-center flex flex-col justify-center items-center">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-2">Rating</span>
+                  <strong className="text-lg sm:text-xl font-black text-amber-500 dark:text-amber-400 flex items-center gap-1">
+                    4.9 <Star className="w-4 h-4 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400 inline" />
                   </strong>
                 </div>
               </div>
             </div>
 
             {/* Sub-Menu Tabs matching Screenshot 100% */}
-            <div className="flex border-b border-[#333333] text-xs sm:text-sm font-bold">
+            <div className="flex border-b border-slate-200 dark:border-[#333333] text-xs sm:text-sm font-bold">
               <button
                 type="button"
                 onClick={() => { setActiveSubTab(0); setCompletedSliderIdx(0); }}
                 className={`py-3 px-4 border-b-2 transition ${
                   activeSubTab === 0
                     ? 'border-b-redPrimary text-redPrimary font-black'
-                    : 'border-b-transparent text-slate-400 hover:text-white'
+                    : 'border-b-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Active Jobs ({activeJobs.length})
@@ -240,7 +240,7 @@ export default function PartnerDashboardPage() {
                 className={`py-3 px-4 border-b-2 transition ${
                   activeSubTab === 1
                     ? 'border-b-redPrimary text-redPrimary font-black'
-                    : 'border-b-transparent text-slate-400 hover:text-white'
+                    : 'border-b-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Earnings & History ({completedJobs.length || 5})
@@ -252,10 +252,10 @@ export default function PartnerDashboardPage() {
                 className={`py-3 px-4 border-b-2 transition ${
                   activeSubTab === 2
                     ? 'border-b-redPrimary text-redPrimary font-black'
-                    : 'border-b-transparent text-slate-400 hover:text-white'
+                    : 'border-b-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Partner Profile ID & Edit
+                Partner Profile ID
               </button>
             </div>
 
@@ -264,37 +264,37 @@ export default function PartnerDashboardPage() {
               <div className="space-y-4 pt-2">
                 {activeJobs.length === 0 ? (
                   <div className="py-20 text-center space-y-3">
-                    <div className="w-16 h-16 rounded-2xl bg-neutral-800 text-slate-400 flex items-center justify-center mx-auto opacity-60">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-neutral-800 text-slate-400 flex items-center justify-center mx-auto opacity-60">
                       <Briefcase className="w-8 h-8" />
                     </div>
-                    <h3 className="text-base font-bold text-slate-300">No active job requests right now.</h3>
+                    <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">No active job requests right now.</h3>
                     <p className="text-xs text-slate-500 max-w-sm mx-auto">
                       New job dispatches from Gangtok customers will appear here automatically.
                     </p>
                   </div>
                 ) : (
                   activeJobs.map((b) => (
-                    <div key={b.id} className="bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl space-y-4 shadow-xl">
-                      <div className="flex justify-between items-center pb-2 border-b border-[#333333]">
-                        <span className="font-extrabold text-sm text-white">Ref ID: {b.bookingRef || b.id}</span>
+                    <div key={b.id} className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 rounded-2xl space-y-4 shadow-xl">
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-[#333333]">
+                        <span className="font-extrabold text-sm text-slate-900 dark:text-white">Ref ID: {b.bookingRef || b.id}</span>
                         <span className="px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-orangeSecondary/20 text-orangeSecondary">
                           {b.status}
                         </span>
                       </div>
 
                       <div className="space-y-1">
-                        <h3 className="font-bold text-base sm:text-lg text-white">{b.serviceTitle} <span className="text-xs text-slate-400">(Qty: {b.quantity || 1})</span></h3>
-                        <p className="text-xs text-emerald-500 font-black">Customer Payable: ₹{b.totalAmount} ({b.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service' : 'Paid Online'})</p>
-                        <p className="text-xs text-slate-300 font-semibold flex items-center gap-1">
-                          <Phone className="w-3.5 h-3.5 text-redPrimary" /> Customer: <strong className="text-white">{b.userName || 'Customer'}</strong> ({b.customerPhone || b.userPhone || '+916296351107'})
+                        <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{b.serviceTitle} <span className="text-xs text-slate-400">(Qty: {b.quantity || 1})</span></h3>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-500 font-black">Customer Payable: ₹{b.totalAmount} ({b.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service' : 'Paid Online'})</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5 text-redPrimary" /> Customer: <strong className="text-slate-900 dark:text-white">{b.userName || 'Customer'}</strong> ({b.customerPhone || b.userPhone || '+916296351107'})
                         </p>
-                        <p className="text-xs text-slate-300 font-semibold flex items-start gap-1">
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold flex items-start gap-1">
                           <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0 mt-0.5" /> Doorstep Address: {b.address}
                         </p>
                       </div>
 
                       {/* Live Status Controls for Partner */}
-                      <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 border-t border-[#333333]">
+                      <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-[#333333]">
                         {b.status === 'ASSIGNED' && (
                           <button
                             onClick={() => handleUpdateStatus(b.id, 'ON_THE_WAY', `Mistri ${partnerNameRef} is on the way to your location`)}
@@ -324,9 +324,9 @@ export default function PartnerDashboardPage() {
 
                         <a
                           href={`tel:${b.customerPhone || b.userPhone || '+916296351107'}`}
-                          className="py-2.5 px-4 rounded-xl border border-[#333333] bg-[#0F0F0F] text-xs font-bold text-white inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
+                          className="py-2.5 px-4 rounded-xl border border-slate-300 dark:border-[#333333] bg-slate-100 dark:bg-[#0F0F0F] text-xs font-bold text-slate-800 dark:text-white inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
                         >
-                          <Phone className="w-3.5 h-3.5 text-emerald-500" /> Call Customer
+                          <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" /> Call Customer
                         </a>
                       </div>
                     </div>
@@ -335,21 +335,21 @@ export default function PartnerDashboardPage() {
               </div>
             )}
 
-            {/* TAB 1: COMPLETED JOBS HISTORY */}
+            {/* TAB 1: COMPLETED JOBS HISTORY (Single-Card Interactive Slider) */}
             {activeSubTab === 1 && (
               <div className="space-y-4 pt-2">
                 {completedJobs.length === 0 ? (
-                  <div className="py-20 text-center space-y-3 bg-[#1A1A1A] border border-[#333333] rounded-2xl p-8">
+                  <div className="py-20 text-center space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl p-8">
                     <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500 opacity-40" />
-                    <h3 className="text-base font-bold text-white">No completed jobs in history yet.</h3>
-                    <p className="text-xs text-slate-400">Completed jobs and earnings dispatches will appear here.</p>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">No completed jobs in history yet.</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Completed jobs and earnings dispatches will appear here.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {/* Slider Header */}
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
-                        Completed Job <span className="text-emerald-500 font-black">{completedSliderIdx + 1}</span> of {completedJobs.length}
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                        Completed Job <span className="text-emerald-600 dark:text-emerald-500 font-black">{completedSliderIdx + 1}</span> of {completedJobs.length}
                       </span>
 
                       {completedJobs.length > 1 && (
@@ -357,17 +357,17 @@ export default function PartnerDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setCompletedSliderIdx((prev) => (prev - 1 + completedJobs.length) % completedJobs.length)}
-                            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-emerald-500 transition"
+                            className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-emerald-500 transition"
                           >
                             <ChevronLeft className="w-4 h-4" />
                           </button>
-                          <span className="text-xs font-black text-slate-300">
+                          <span className="text-xs font-black text-slate-600 dark:text-slate-300">
                             {completedSliderIdx + 1} / {completedJobs.length}
                           </span>
                           <button
                             type="button"
                             onClick={() => setCompletedSliderIdx((prev) => (prev + 1) % completedJobs.length)}
-                            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-emerald-500 transition"
+                            className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-emerald-500 transition"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
@@ -384,24 +384,24 @@ export default function PartnerDashboardPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="bg-[#1A1A1A] border border-[#333333] p-6 rounded-2xl space-y-4 shadow-2xl max-w-lg mx-auto w-full"
+                          className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl space-y-4 shadow-2xl max-w-lg mx-auto w-full"
                         >
-                          <div className="flex justify-between items-center pb-2 border-b border-[#333333]">
-                            <span className="font-extrabold text-sm text-white">Ref ID: {currentCompletedJob.bookingRef || currentCompletedJob.id}</span>
-                            <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-600/20 text-emerald-500">
+                          <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-[#333333]">
+                            <span className="font-extrabold text-sm text-slate-900 dark:text-white">Ref ID: {currentCompletedJob.bookingRef || currentCompletedJob.id}</span>
+                            <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-600/20 text-emerald-600 dark:text-emerald-500">
                               COMPLETED
                             </span>
                           </div>
 
                           <div className="space-y-1">
-                            <h3 className="font-bold text-lg text-white">{currentCompletedJob.serviceTitle} <span className="text-xs text-slate-400">(Qty: {currentCompletedJob.quantity || 1})</span></h3>
-                            <p className="text-sm font-black text-emerald-400">Total Collected: ₹{currentCompletedJob.totalAmount}</p>
-                            <p className="text-xs text-slate-300 font-bold">80% Net Share Earned: ₹{Math.round(currentCompletedJob.totalAmount * 0.80)}</p>
-                            <p className="text-xs text-slate-400 mt-1">Customer: {currentCompletedJob.userName || 'Customer'} ({currentCompletedJob.customerPhone || currentCompletedJob.userPhone})</p>
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">{currentCompletedJob.serviceTitle} <span className="text-xs text-slate-500 dark:text-slate-400">(Qty: {currentCompletedJob.quantity || 1})</span></h3>
+                            <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">Total Collected: ₹{currentCompletedJob.totalAmount}</p>
+                            <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">80% Net Share Earned: ₹{Math.round(currentCompletedJob.totalAmount * 0.80)}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Customer: {currentCompletedJob.userName || 'Customer'} ({currentCompletedJob.customerPhone || currentCompletedJob.userPhone})</p>
                           </div>
 
-                          <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-800/30 flex items-center gap-2 text-xs font-bold text-emerald-500">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-500">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
                             <span>Job completed successfully and payment settled!</span>
                           </div>
                         </motion.div>
@@ -416,7 +416,7 @@ export default function PartnerDashboardPage() {
                             type="button"
                             onClick={() => setCompletedSliderIdx(i)}
                             className={`h-2 rounded-full transition-all ${
-                              completedSliderIdx === i ? 'w-8 bg-emerald-500' : 'w-2 bg-neutral-700 hover:bg-emerald-500/50'
+                              completedSliderIdx === i ? 'w-8 bg-emerald-500' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-emerald-400 dark:hover:bg-emerald-500/50'
                             }`}
                           />
                         ))}
@@ -429,50 +429,50 @@ export default function PartnerDashboardPage() {
 
             {/* TAB 2: PARTNER PROFILE ID & EDIT FORM */}
             {activeSubTab === 2 && (
-              <form onSubmit={handleSavePartnerProfile} className="bg-[#1A1A1A] border border-[#333333] p-6 rounded-2xl space-y-5 shadow-2xl max-w-xl mx-auto">
-                <div className="flex justify-between items-center border-b border-[#333333] pb-3">
+              <form onSubmit={handleSavePartnerProfile} className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl space-y-5 shadow-2xl max-w-xl mx-auto">
+                <div className="flex justify-between items-center border-b border-slate-100 dark:border-[#333333] pb-3">
                   <h3 className="font-black text-lg text-redPrimary flex items-center gap-2">
-                    <Edit className="w-5 h-5" /> Edit Partner Profile Credentials
+                    <Edit className="w-5 h-5" /> Edit Profile Credentials
                   </h3>
-                  <span className="text-[10px] font-extrabold bg-emerald-600/20 text-emerald-500 px-2.5 py-1 rounded-full border border-emerald-600/30">
-                    ✓ Verified Craftsman
+                  <span className="text-[10px] font-extrabold bg-emerald-600/20 text-emerald-600 dark:text-emerald-500 px-2.5 py-1 rounded-full border border-emerald-600/30 shrink-0">
+                    ✓ Verified
                   </span>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">Full Name</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Full Name</label>
                     <input
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       required
                       placeholder="e.g. Dhiraj Jaiswal"
-                      className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-xs font-semibold outline-none focus:border-redPrimary"
+                      className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-[#333333] bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white text-xs font-semibold outline-none focus:border-redPrimary"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">Mobile Phone Number</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Mobile Phone Number</label>
                     <input
                       type="text"
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
                       required
                       placeholder="e.g. +91 6296351107"
-                      className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-xs font-semibold outline-none focus:border-redPrimary"
+                      className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-[#333333] bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white text-xs font-semibold outline-none focus:border-redPrimary"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">Skill Category / Specialization</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Skill Category / Specialization</label>
                     <input
                       type="text"
                       value={editSkill}
                       onChange={(e) => setEditSkill(e.target.value)}
                       required
                       placeholder="e.g. Mobile Application Developer / Electrician / Plumber"
-                      className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-xs font-semibold outline-none focus:border-redPrimary"
+                      className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-[#333333] bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white text-xs font-semibold outline-none focus:border-redPrimary"
                     />
                   </div>
                 </div>

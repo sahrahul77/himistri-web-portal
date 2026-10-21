@@ -9,16 +9,34 @@ export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState([]);
   const [faqs, setFaqs] = useState([]);
 
+  // Robust Snapshot Parser to parse ALL items from Firebase Database
+  const parseFirebaseSnapshot = (snapshot) => {
+    const list = [];
+    if (snapshot && snapshot.exists()) {
+      const val = snapshot.val();
+      if (Array.isArray(val)) {
+        val.forEach((item, index) => {
+          if (item) list.push({ id: item.id || index.toString(), ...item });
+        });
+      } else if (typeof val === 'object' && val !== null) {
+        Object.keys(val).forEach((key) => {
+          if (val[key]) {
+            list.push({ id: key, ...val[key] });
+          }
+        });
+      }
+    }
+    return list;
+  };
+
   useEffect(() => {
     const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      const list = parseFirebaseSnapshot(snapshot);
       setTestimonials(list);
     });
 
     const unsubFaqs = onValue(ref(rtdb, 'faqs'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      const list = parseFirebaseSnapshot(snapshot);
       setFaqs(list);
     });
 
@@ -27,11 +45,11 @@ export default function TestimonialsSection() {
 
   return (
     <div className="space-y-16 my-16">
-      {/* Testimonials Section - Render ONLY if items exist in Firebase Database */}
+      {/* Testimonials Section - Render ALL items stored in Firebase Database */}
       {testimonials.length > 0 && (
         <div>
           <div className="text-center max-w-xl mx-auto mb-10">
-            <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Customer Experience</span>
+            <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Customer Experience ({testimonials.length})</span>
             <h2 className="text-2xl sm:text-3xl font-black mt-1">Loved by 10,000+ Sikkim Residents</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Real ratings and feedback from customers in Gangtok, Deorali & Singtam</p>
           </div>
@@ -68,13 +86,13 @@ export default function TestimonialsSection() {
         </div>
       )}
 
-      {/* FAQ Accordion Section - Render ONLY if items exist in Firebase Database */}
+      {/* FAQ Accordion Section - Render ALL FAQs stored in Firebase Database */}
       {faqs.length > 0 && (
         <div className="web-card max-w-3xl mx-auto shadow-2xl">
           <div className="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-neutral-800 pb-4">
             <HelpCircle className="w-7 h-7 text-redPrimary" />
             <div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">Frequently Asked Questions</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">Frequently Asked Questions ({faqs.length})</h3>
               <p className="text-xs text-slate-500 mt-0.5">Everything you need to know about booking with HiMistri</p>
             </div>
           </div>

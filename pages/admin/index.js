@@ -46,7 +46,7 @@ export default function AdminControlPanelPage() {
   const [editingBanner, setEditingBanner] = useState(null);
   const [editingTestimonial, setEditingTestimonial] = useState(null);
   const [editingFaq, setEditingFaq] = useState(null);
-  const [editingAdminUser, setEditingAdminUser] = useState(null); // Sub-Admin Edit State
+  const [editingAdminUser, setEditingAdminUser] = useState(null);
 
   // Selected Booking for Assign Partner Modal
   const [assigningBooking, setAssigningBooking] = useState(null);
@@ -79,7 +79,7 @@ export default function AdminControlPanelPage() {
   const [newFaqQ, setNewFaqQ] = useState('');
   const [newFaqA, setNewFaqA] = useState('');
 
-  // Sub-Admin Creation Form States with Password
+  // Sub-Admin Creation Form States
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPhone, setNewAdminPhone] = useState('');
@@ -100,7 +100,6 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // Robust Snapshot Parser
   const parseFirebaseSnapshot = (snapshot) => {
     const list = [];
     if (snapshot && snapshot.exists()) {
@@ -121,20 +120,17 @@ export default function AdminControlPanelPage() {
   };
 
   useEffect(() => {
-    // 1. Listen to Bookings
     const unsubBookings = onValue(ref(rtdb, 'bookings'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
       list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setBookings(list);
     });
 
-    // 2. Listen to All Users
     const unsubUsers = onValue(ref(rtdb, 'users'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
       setUsersList(list);
     });
 
-    // 3. Listen to All Categories
     const unsubCategories = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
       setCategoriesList(list);
@@ -143,25 +139,21 @@ export default function AdminControlPanelPage() {
       }
     });
 
-    // 4. Listen to All Services
     const unsubServices = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
       setServicesList(list);
     });
 
-    // 5. Listen to Banners
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
       setBannersList(list);
     });
 
-    // 6. Listen to Testimonials
     const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
       setTestimonialsList(list);
     });
 
-    // 7. Listen to FAQs
     const unsubFaqs = onValue(ref(rtdb, 'faqs'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
       setFaqsList(list);
@@ -201,7 +193,6 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Add Admin Functionality (Max 3 Admins Limit with Password)
   const currentAdmins = usersList.filter(u => (u.role || '').toUpperCase() === 'ADMIN');
 
   const handleAddAdmin = async (e) => {
@@ -319,7 +310,6 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // Add Item Handlers
   const handleAddCategory = (e) => {
     e.preventDefault();
     if (!newCatName) return alert('Category Name is required.');
@@ -402,7 +392,6 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Edit Item Handlers
   const handleSaveCategoryEdit = (e) => {
     e.preventDefault();
     if (!editingCategory) return;
@@ -481,7 +470,6 @@ export default function AdminControlPanelPage() {
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
 
-  // Retrieve ALL Registered Service Partners
   const allPartnersList = usersList.filter(u => {
     const roleUpper = (u.role || '').toUpperCase();
     return roleUpper === 'PARTNER' || roleUpper === 'SERVICE_PARTNER' || u.skillCategory;
@@ -495,7 +483,6 @@ export default function AdminControlPanelPage() {
     return matchesQuery && matchesStatus;
   });
 
-  // Assign Partner Filtering Logic inside Modal
   const getModalPartners = () => {
     if (!assigningBooking) return [];
     const serviceCategoryName = (assigningBooking.serviceCategory || '').toLowerCase();
@@ -526,10 +513,10 @@ export default function AdminControlPanelPage() {
   const currentOrder = filteredOrders[orderSliderIdx] || filteredOrders[0];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      <main className="web-container py-10 flex-1 space-y-6">
+      <main className="web-container py-6 sm:py-10 flex-1 space-y-6 max-w-7xl mx-auto px-4 sm:px-6 w-full">
         {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isAdmin ? (
           <div className="web-card text-center py-16 max-w-lg mx-auto space-y-4">
             <Lock className="w-16 h-16 text-redPrimary mx-auto" />
@@ -541,56 +528,58 @@ export default function AdminControlPanelPage() {
           </div>
         ) : (
           <>
-            {/* Admin Header with Log Out Button */}
-            <div className="web-card flex justify-between items-center bg-gradient-to-r from-redPrimary/20 to-transparent border border-redPrimary/30">
+            {/* Top Admin Header Banner */}
+            <div className="web-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-redPrimary/20 via-neutral-900 to-transparent border border-redPrimary/30 p-5 rounded-2xl sm:rounded-3xl shadow-2xl">
               <div className="flex items-center gap-3">
-                <ShieldCheck className="w-8 h-8 text-redPrimary" />
+                <div className="p-3 rounded-2xl bg-redPrimary/20 text-redPrimary shrink-0">
+                  <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8" />
+                </div>
                 <div>
-                  <h1 className="text-2xl font-black">{adminName}</h1>
-                  <p className="text-xs text-redPrimary font-bold">Lead Platform Administrator • HiMistri Gangtok</p>
+                  <h1 className="text-xl sm:text-2xl font-black">{adminName}</h1>
+                  <p className="text-xs text-redPrimary font-extrabold">Lead Platform Administrator • HiMistri Gangtok</p>
                 </div>
               </div>
 
-              <button onClick={logout} className="btn-primary bg-redPrimary hover:bg-redDark text-xs py-2 px-4 shadow">
-                <LogOut className="w-4 h-4" /> Log Out
+              <button onClick={logout} className="btn-primary bg-redPrimary hover:bg-redDark text-xs py-2.5 px-5 shadow-lg w-full sm:w-auto text-center justify-center">
+                <LogOut className="w-4 h-4 inline mr-1" /> Log Out
               </button>
             </div>
 
             {/* Executive Analytics KPIs */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="web-card flex items-center gap-4">
-                <div className="p-3.5 rounded-2xl bg-emerald-600/15 text-emerald-600">
-                  <DollarSign className="w-7 h-7" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333]">
+                <div className="p-3.5 rounded-2xl bg-emerald-600/15 text-emerald-500 shrink-0">
+                  <DollarSign className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 font-bold">Total Platform Revenue</span>
-                  <p className="text-2xl font-black text-emerald-600">₹{totalRevenue}</p>
+                  <span className="text-[11px] text-slate-400 font-bold block uppercase tracking-wider">Total Platform Revenue</span>
+                  <p className="text-xl sm:text-2xl font-black text-emerald-500">₹{totalRevenue}</p>
                 </div>
               </div>
 
-              <div className="web-card flex items-center gap-4">
-                <div className="p-3.5 rounded-2xl bg-redPrimary/15 text-redPrimary">
-                  <Package className="w-7 h-7" />
+              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333]">
+                <div className="p-3.5 rounded-2xl bg-redPrimary/15 text-redPrimary shrink-0">
+                  <Package className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 font-bold">Active Customer Orders</span>
-                  <p className="text-2xl font-black text-redPrimary">{activeOrdersCount}</p>
+                  <span className="text-[11px] text-slate-400 font-bold block uppercase tracking-wider">Active Customer Orders</span>
+                  <p className="text-xl sm:text-2xl font-black text-redPrimary">{activeOrdersCount}</p>
                 </div>
               </div>
 
-              <div className="web-card flex items-center gap-4">
-                <div className="p-3.5 rounded-2xl bg-blue-500/15 text-blue-500">
-                  <Users className="w-7 h-7" />
+              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333]">
+                <div className="p-3.5 rounded-2xl bg-blue-500/15 text-blue-400 shrink-0">
+                  <Users className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 font-bold">Total Users & Fleet</span>
-                  <p className="text-2xl font-black">{usersList.length}</p>
+                  <span className="text-[11px] text-slate-400 font-bold block uppercase tracking-wider">Total Users & Fleet</span>
+                  <p className="text-xl sm:text-2xl font-black text-white">{usersList.length}</p>
                 </div>
               </div>
             </div>
 
-            {/* Admin Navigation Tabs */}
-            <div className="flex gap-2 overflow-x-auto border-b border-neutral-800 pb-3">
+            {/* Responsive Admin Navigation Tabs with Touch Scroll */}
+            <div className="flex gap-2 overflow-x-auto border-b border-neutral-800 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
               {[
                 { id: 0, label: `Orders (${bookings.length})` },
                 { id: 1, label: 'Analytics 📊' },
@@ -607,8 +596,8 @@ export default function AdminControlPanelPage() {
                 <button
                   key={t.id}
                   onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setUserSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
-                    activeTab === t.id ? 'bg-redPrimary text-white shadow-md' : 'bg-white dark:bg-darkSurface text-slate-400 hover:text-white'
+                  className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition shrink-0 ${
+                    activeTab === t.id ? 'bg-redPrimary text-white shadow-lg scale-105' : 'bg-[#1A1A1A] text-slate-400 border border-[#333333] hover:text-white'
                   }`}
                 >
                   {t.label}
@@ -619,25 +608,25 @@ export default function AdminControlPanelPage() {
             {/* TAB 0: ORDERS */}
             {activeTab === 0 && (
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+                <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
                   <div className="relative flex-1 w-full">
-                    <Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                    <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
                     <input
                       type="text"
                       value={orderQuery}
                       onChange={(e) => { setOrderQuery(e.target.value); setOrderSliderIdx(0); }}
                       placeholder="Search orders by Ref ID, Service, Phone, Address..."
-                      className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-darkSurface text-xs font-medium"
+                      className="w-full pl-10 p-3 rounded-xl border border-[#333333] bg-[#1A1A1A] text-xs font-medium text-white outline-none focus:border-redPrimary"
                     />
                   </div>
 
-                  <div className="flex gap-2 overflow-x-auto">
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                     {['ALL', 'PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].map((st) => (
                       <button
                         key={st}
                         onClick={() => { setOrderStatusFilter(st); setOrderSliderIdx(0); }}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition ${
-                          orderStatusFilter === st ? 'bg-redPrimary text-white border-redPrimary' : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800'
+                        className={`px-3 py-2 rounded-xl text-[10px] sm:text-[11px] font-black border transition shrink-0 ${
+                          orderStatusFilter === st ? 'bg-redPrimary text-white border-redPrimary shadow-md' : 'bg-[#1A1A1A] border-[#333333] text-slate-400'
                         }`}
                       >
                         {st === 'IN_PROGRESS' ? 'ARRIVED / WORK STARTED' : st}
@@ -647,7 +636,7 @@ export default function AdminControlPanelPage() {
                 </div>
 
                 {filteredOrders.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6">No matching customer orders found.</p>
+                  <p className="text-xs text-slate-500 py-6 text-center">No matching customer orders found.</p>
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
@@ -686,20 +675,20 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card space-y-3 shadow-2xl relative"
+                          className="web-card space-y-3 shadow-2xl relative bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl"
                         >
                           <div className="flex justify-between items-center pb-2 border-b border-neutral-800">
                             <span className="font-extrabold text-sm text-white">Ref ID: {currentOrder.bookingRef || currentOrder.id}</span>
                             <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-orangeSecondary/15 text-orangeSecondary">{currentOrder.status || 'PENDING'}</span>
                           </div>
 
-                          <h3 className="font-bold text-lg text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
+                          <h3 className="font-bold text-base sm:text-lg text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
                           <p className="text-xs text-slate-400">Customer: <strong className="text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
                           <p className="text-xs text-slate-400">Address: <strong className="text-white">{currentOrder.address || 'Gangtok'}</strong></p>
 
                           {/* Live Status Bar Right Below Address */}
                           <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
-                            <Bike className="w-4 h-4 text-orangeSecondary" />
+                            <Bike className="w-4 h-4 text-orangeSecondary shrink-0" />
                             <span>Live Status: {currentOrder.trackingStatus || 'Order Placed by Customer'}</span>
                           </div>
 
@@ -714,11 +703,11 @@ export default function AdminControlPanelPage() {
                             </div>
                           )}
 
-                          <div className="flex flex-wrap gap-2 pt-2 border-t border-neutral-800">
+                          <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 border-t border-neutral-800">
                             <button
                               onClick={() => handleUpdateStatus(currentOrder.id, 'CONFIRMED', 'Confirmed by Admin')}
                               disabled={currentOrder.status !== 'PENDING'}
-                              className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm ${
+                              className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm w-full sm:w-auto ${
                                 currentOrder.status !== 'PENDING'
                                   ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
                                   : 'btn-primary bg-redPrimary hover:bg-redDark text-white cursor-pointer'
@@ -731,7 +720,7 @@ export default function AdminControlPanelPage() {
                             <button
                               onClick={() => setAssigningBooking(currentOrder)}
                               disabled={currentOrder.status !== 'CONFIRMED'}
-                              className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm ${
+                              className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm w-full sm:w-auto ${
                                 currentOrder.status !== 'CONFIRMED'
                                   ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
                                   : 'bg-orangeSecondary hover:bg-orange-600 text-white cursor-pointer'
@@ -745,7 +734,7 @@ export default function AdminControlPanelPage() {
                                 : `✓ ${currentOrder.assignedPartnerName ? 'Assigned to ' + currentOrder.assignedPartnerName.split(' ')[0] : 'Partner Assigned'}`}
                             </button>
 
-                            <button onClick={() => setDeletingPath(`bookings/${currentOrder.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold">
+                            <button onClick={() => setDeletingPath(`bookings/${currentOrder.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold w-full sm:w-auto">
                               <Trash2 className="w-3.5 h-3.5 inline" /> Delete
                             </button>
                           </div>
@@ -774,32 +763,32 @@ export default function AdminControlPanelPage() {
             {/* TAB 1: ANALYTICS */}
             {activeTab === 1 && (
               <div className="space-y-6">
-                <div className="web-card space-y-4">
+                <div className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary">
                     <TrendingUp className="w-5 h-5" /> Executive Realtime Sales & Operations Analytics
                   </h3>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                    <div className="p-4 rounded-xl bg-black/20 border border-neutral-800">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
                       <span className="text-xs text-slate-500 block font-bold">Gross GMV</span>
-                      <strong className="text-xl text-emerald-500 font-black">₹{totalRevenue * 1.25}</strong>
+                      <strong className="text-lg sm:text-xl text-emerald-500 font-black">₹{totalRevenue * 1.25}</strong>
                     </div>
-                    <div className="p-4 rounded-xl bg-black/20 border border-neutral-800">
+                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
                       <span className="text-xs text-slate-500 block font-bold">Platform Revenue (20%)</span>
-                      <strong className="text-xl text-emerald-500 font-black">₹{totalRevenue * 0.20}</strong>
+                      <strong className="text-lg sm:text-xl text-emerald-500 font-black">₹{totalRevenue * 0.20}</strong>
                     </div>
-                    <div className="p-4 rounded-xl bg-black/20 border border-neutral-800">
+                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
                       <span className="text-xs text-slate-500 block font-bold">Fulfillment Speed</span>
-                      <strong className="text-xl text-blue-400 font-black">24 Mins</strong>
+                      <strong className="text-lg sm:text-xl text-blue-400 font-black">24 Mins</strong>
                     </div>
-                    <div className="p-4 rounded-xl bg-black/20 border border-neutral-800">
+                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
                       <span className="text-xs text-slate-500 block font-bold">Order Success Rate</span>
-                      <strong className="text-xl text-emerald-500 font-black">98.5%</strong>
+                      <strong className="text-lg sm:text-xl text-emerald-500 font-black">98.5%</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="web-card space-y-3">
+                <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h4 className="font-bold text-sm text-slate-300">Live Order Status Funnel</h4>
                   <div className="space-y-2">
                     {['PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'IN_PROGRESS', 'COMPLETED'].map((st) => {
@@ -825,25 +814,25 @@ export default function AdminControlPanelPage() {
             {/* TAB 2: PAYMENT DETAILS */}
             {activeTab === 2 && (
               <div className="space-y-6">
-                <div className="web-card space-y-4">
+                <div className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary">
                     <CreditCard className="w-5 h-5" /> Financial Revenue & Payment Method Distribution
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 text-center">
+                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800 text-center">
                       <span className="text-xs text-slate-500 block font-bold mb-1">Cash on Service (COD)</span>
                       <strong className="text-lg text-emerald-500 font-black">85% Volume</strong>
                       <p className="text-[10px] text-slate-400 mt-1">Collected directly by partner mistris</p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 text-center">
+                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800 text-center">
                       <span className="text-xs text-slate-500 block font-bold mb-1">Online UPI / QR Code</span>
                       <strong className="text-lg text-blue-400 font-black">10% Volume</strong>
                       <p className="text-[10px] text-slate-400 mt-1">Instant Google Pay & PhonePe</p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-black/20 border border-neutral-800 text-center">
+                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800 text-center">
                       <span className="text-xs text-slate-500 block font-bold mb-1">Razorpay Gateway Cards</span>
                       <strong className="text-lg text-amber-400 font-black">5% Volume</strong>
                       <p className="text-[10px] text-slate-400 mt-1">Netbanking, Credit & Debit Cards</p>
@@ -851,7 +840,7 @@ export default function AdminControlPanelPage() {
                   </div>
                 </div>
 
-                <div className="web-card space-y-3">
+                <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h4 className="font-bold text-sm text-slate-300">Partner Settlement Payout Ledger</h4>
                   <div className="p-4 rounded-xl bg-neutral-900 border border-neutral-800 flex justify-between items-center text-xs">
                     <div>
@@ -866,7 +855,7 @@ export default function AdminControlPanelPage() {
 
             {/* TAB 3: PARTNER FLEET */}
             {activeTab === 3 && (
-              <div className="web-card space-y-3">
+              <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners ({allPartnersList.length})</h3>
                 {allPartnersList.length === 0 ? (
                   <p className="text-xs text-slate-500 py-6">No service partners registered yet.</p>
@@ -874,12 +863,12 @@ export default function AdminControlPanelPage() {
                   allPartnersList.map(p => {
                     const isOnline = p.isOnline === true || p.isOnline === 'true';
                     return (
-                      <div key={p.id} className="p-4 rounded-xl bg-black/20 border border-neutral-800 flex justify-between items-center">
+                      <div key={p.id} className="p-4 rounded-xl bg-black/30 border border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                          <strong className="text-base block">{p.fullName || 'Partner'}</strong>
+                          <strong className="text-base block text-white font-extrabold">{p.fullName || 'Partner'}</strong>
                           <span className="text-xs text-slate-400">Skill: {p.skillCategory || 'Specialist'} | Phone: {p.phoneNumber || 'N/A'}</span>
                         </div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">
                           <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
                             isOnline ? 'bg-emerald-600/20 text-emerald-500 border border-emerald-600/30' : 'bg-slate-700/50 text-slate-400 border border-slate-600/30'
                           }`}>
@@ -923,13 +912,13 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex justify-between items-center text-xs shadow-xl max-w-lg mx-auto"
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs shadow-xl max-w-lg mx-auto gap-4"
                         >
                           <div>
-                            <strong className="text-sm block text-white font-extrabold">{usersList[userSliderIdx].fullName || 'User'}</strong>
+                            <strong className="text-base block text-white font-extrabold">{usersList[userSliderIdx].fullName || 'User'}</strong>
                             <p className="text-xs text-slate-400 mt-1">{usersList[userSliderIdx].email || 'N/A'} • {usersList[userSliderIdx].phoneNumber || 'N/A'}</p>
                           </div>
-                          <div className="flex gap-2 items-center">
+                          <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">
                             <span className={`px-3 py-1 rounded-full text-xs font-black ${ (usersList[userSliderIdx].role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : (usersList[userSliderIdx].role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
                               {usersList[userSliderIdx].role || 'CUSTOMER'}
                             </span>
@@ -954,13 +943,13 @@ export default function AdminControlPanelPage() {
             {/* TAB 5: CATEGORIES MANAGER (With Single-Card Slider) */}
             {activeTab === 5 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddCategory} className="web-card space-y-4">
+                <form onSubmit={handleAddCategory} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Category</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <input type="text" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} placeholder="Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} placeholder="Icon Image URL" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
                   </div>
-                  <button type="submit" className="btn-primary py-3 px-6"><Plus className="w-4 h-4" /> Save Category</button>
+                  <button type="submit" className="btn-primary py-3.5 px-6 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Save Category</button>
                 </form>
 
                 {categoriesList.length === 0 ? (
@@ -988,14 +977,14 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card text-center p-6 bg-[#1A1A1A] border border-[#333333] rounded-2xl shadow-xl flex flex-col items-center gap-3 relative max-w-md mx-auto"
+                          className="web-card text-center p-6 sm:p-8 bg-[#1A1A1A] border border-[#333333] rounded-2xl shadow-xl flex flex-col items-center gap-4 relative max-w-md mx-auto w-full"
                         >
                           <img src={categoriesList[catSliderIdx].iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-16 h-16 object-contain" />
-                          <strong className="text-base block text-white font-extrabold">{categoriesList[catSliderIdx].name}</strong>
+                          <strong className="text-lg block text-white font-extrabold">{categoriesList[catSliderIdx].name}</strong>
 
                           <div className="flex gap-2 justify-center pt-2 w-full">
-                            <button onClick={() => setEditingCategory({ ...categoriesList[catSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-xl font-bold flex-1">Edit</button>
-                            <button onClick={() => setDeletingPath(`categories/${categoriesList[catSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2 rounded-xl font-bold flex-1">Delete</button>
+                            <button onClick={() => setEditingCategory({ ...categoriesList[catSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`categories/${categoriesList[catSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
                         </motion.div>
                       </AnimatePresence>
@@ -1016,18 +1005,18 @@ export default function AdminControlPanelPage() {
             {/* TAB 6: SERVICES MANAGER (With Single-Card Slider) */}
             {activeTab === 6 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddService} className="web-card space-y-4">
+                <form onSubmit={handleAddService} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Service (Connected to Category)</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-bold text-white">
+                    <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+                    <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-bold text-white outline-none focus:border-redPrimary">
                       {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
-                    <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <input type="text" value={newSrvImage} onChange={(e) => setNewSrvImage(e.target.value)} placeholder="Service Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm md:col-span-2 text-white" />
+                    <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+                    <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newSrvImage} onChange={(e) => setNewSrvImage(e.target.value)} placeholder="Service Icon Image URL" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white md:col-span-2 outline-none focus:border-redPrimary" />
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Create & Link Service to Category</button>
+                  <button type="submit" className="btn-primary w-full py-3.5 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Create & Link Service to Category</button>
                 </form>
 
                 {servicesList.length === 0 ? (
@@ -1055,7 +1044,7 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto"
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto w-full"
                         >
                           <div>
                             <img src={servicesList[srvSliderIdx].imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-44 object-cover rounded-xl mb-3" />
@@ -1064,8 +1053,8 @@ export default function AdminControlPanelPage() {
                             <p className="text-lg font-black text-redPrimary mt-1">₹{servicesList[srvSliderIdx].discountedPrice || servicesList[srvSliderIdx].originalPrice}</p>
                           </div>
                           <div className="flex gap-2 mt-4 pt-3 border-t border-neutral-800">
-                            <button onClick={() => setEditingService({ ...servicesList[srvSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
-                            <button onClick={() => setDeletingPath(`services/${servicesList[srvSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
+                            <button onClick={() => setEditingService({ ...servicesList[srvSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`services/${servicesList[srvSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
                         </motion.div>
                       </AnimatePresence>
@@ -1086,14 +1075,14 @@ export default function AdminControlPanelPage() {
             {/* TAB 7: BANNERS MANAGER (With Single-Card Slider) */}
             {activeTab === 7 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddBanner} className="web-card space-y-4">
+                <form onSubmit={handleAddBanner} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Marketing Banner</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <input type="text" value={newBnrImg} onChange={(e) => setNewBnrImg(e.target.value)} placeholder="Banner Image URL" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newBnrImg} onChange={(e) => setNewBnrImg(e.target.value)} placeholder="Banner Image URL" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save Marketing Banner</button>
+                  <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save Marketing Banner</button>
                 </form>
 
                 {bannersList.length === 0 ? (
@@ -1121,16 +1110,16 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex flex-col gap-4 shadow-2xl relative max-w-lg mx-auto"
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-2xl relative max-w-lg mx-auto w-full"
                         >
-                          <img src={bannersList[bnrSliderIdx].imageUrl} className="w-full h-40 object-cover rounded-xl" alt="" />
+                          <img src={bannersList[bnrSliderIdx].imageUrl} className="w-full h-40 sm:h-48 object-cover rounded-xl" alt="" />
                           <div>
-                            <strong className="block text-base font-bold text-white">{bannersList[bnrSliderIdx].title}</strong>
-                            <span className="text-xs text-slate-400">{bannersList[bnrSliderIdx].subtitle}</span>
+                            <strong className="block text-base sm:text-lg font-bold text-white">{bannersList[bnrSliderIdx].title}</strong>
+                            <span className="text-xs text-slate-400 mt-0.5 block">{bannersList[bnrSliderIdx].subtitle}</span>
                           </div>
                           <div className="flex gap-2 pt-2 border-t border-neutral-800">
-                            <button onClick={() => setEditingBanner({ ...bannersList[bnrSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
-                            <button onClick={() => setDeletingPath(`banners/${bannersList[bnrSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
+                            <button onClick={() => setEditingBanner({ ...bannersList[bnrSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`banners/${bannersList[bnrSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
                         </motion.div>
                       </AnimatePresence>
@@ -1151,14 +1140,14 @@ export default function AdminControlPanelPage() {
             {/* TAB 9: CUSTOMER EXPERIENCE (With Single-Card Slider) */}
             {activeTab === 9 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddTestimonial} className="web-card space-y-4">
+                <form onSubmit={handleAddTestimonial} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add Customer Experience Review</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white"></textarea>
+                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
+                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary"></textarea>
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save Customer Review</button>
+                  <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save Customer Review</button>
                 </form>
 
                 {testimonialsList.length === 0 ? (
@@ -1186,7 +1175,7 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto"
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
                         >
                           <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
                             <strong className="block text-base font-bold text-white">{testimonialsList[testSliderIdx].name}</strong>
@@ -1194,8 +1183,8 @@ export default function AdminControlPanelPage() {
                           </div>
                           <p className="text-xs sm:text-sm text-slate-300 italic leading-relaxed">"{testimonialsList[testSliderIdx].text}"</p>
                           <div className="flex gap-2 justify-end pt-2 border-t border-neutral-800">
-                            <button onClick={() => setEditingTestimonial({ ...testimonialsList[testSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
-                            <button onClick={() => setDeletingPath(`testimonials/${testimonialsList[testSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
+                            <button onClick={() => setEditingTestimonial({ ...testimonialsList[testSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`testimonials/${testimonialsList[testSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
                         </motion.div>
                       </AnimatePresence>
@@ -1216,13 +1205,13 @@ export default function AdminControlPanelPage() {
             {/* TAB 10: FAQs (With Single-Card Slider) */}
             {activeTab === 10 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddFaq} className="web-card space-y-4">
+                <form onSubmit={handleAddFaq} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add Frequently Asked Question</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
-                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white"></textarea>
+                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
+                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary"></textarea>
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save FAQ</button>
+                  <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save FAQ</button>
                 </form>
 
                 {faqsList.length === 0 ? (
@@ -1250,13 +1239,13 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto"
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
                         >
                           <strong className="block text-base font-bold text-redPrimary">Q: {faqsList[faqSliderIdx].q}</strong>
                           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">A: {faqsList[faqSliderIdx].a}</p>
                           <div className="flex gap-2 justify-end pt-2 border-t border-neutral-800">
-                            <button onClick={() => setEditingFaq({ ...faqsList[faqSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
-                            <button onClick={() => setDeletingPath(`faqs/${faqsList[faqSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
+                            <button onClick={() => setEditingFaq({ ...faqsList[faqSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`faqs/${faqsList[faqSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
                         </motion.div>
                       </AnimatePresence>
@@ -1274,16 +1263,16 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 8: ADMIN ROLES & CREATION MANAGER (Max 3 Admins with Password & Edit) */}
+            {/* TAB 8: ADMIN ROLES & CREATION MANAGER (Max 3 Admins) */}
             {activeTab === 8 && (
               <div className="space-y-6">
-                <div className="web-card space-y-4">
-                  <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
+                <div className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-neutral-800 pb-3">
                     <div>
                       <h3 className="font-extrabold text-base text-redPrimary">Manage Platform Administrators</h3>
                       <p className="text-xs text-slate-400 mt-0.5">Main Lead Admin can grant administrator authority to maximum 3 accounts.</p>
                     </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30">
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30 shrink-0">
                       Admins: {currentAdmins.length} / 3 Max
                     </span>
                   </div>
@@ -1297,28 +1286,28 @@ export default function AdminControlPanelPage() {
                         value={newAdminName}
                         onChange={(e) => setNewAdminName(e.target.value)}
                         placeholder="Admin Full Name *"
-                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
                       />
                       <input
                         type="email"
                         value={newAdminEmail}
                         onChange={(e) => setNewAdminEmail(e.target.value)}
                         placeholder="Admin Email Address *"
-                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
                       />
                       <input
                         type="text"
                         value={newAdminPhone}
                         onChange={(e) => setNewAdminPhone(e.target.value)}
                         placeholder="Admin Phone Number *"
-                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
                       />
                       <input
                         type="password"
                         value={newAdminPassword}
                         onChange={(e) => setNewAdminPassword(e.target.value)}
                         placeholder="Sub-Admin Password *"
-                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
                       />
                     </div>
 
@@ -1335,12 +1324,12 @@ export default function AdminControlPanelPage() {
                   </form>
                 </div>
 
-                {/* Current Active Admins List with Edit Button */}
-                <div className="web-card space-y-3">
+                {/* Current Active Admins List */}
+                <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h4 className="font-bold text-sm text-slate-300">Active Administrator Accounts ({currentAdmins.length})</h4>
                   <div className="space-y-2">
                     {currentAdmins.map((adm) => (
-                      <div key={adm.id} className="p-4 rounded-xl bg-black/30 border border-neutral-800 flex justify-between items-center text-xs">
+                      <div key={adm.id} className="p-4 rounded-xl bg-black/30 border border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-3">
                         <div className="flex items-center gap-3">
                           <ShieldCheck className="w-5 h-5 text-redPrimary shrink-0" />
                           <div>
@@ -1349,7 +1338,7 @@ export default function AdminControlPanelPage() {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">
                           {adm.email === 'sahrahul77@gmail.com' ? (
                             <span className="px-3 py-1 rounded-full text-xs font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30">
                               Lead Main Admin
@@ -1379,21 +1368,23 @@ export default function AdminControlPanelPage() {
                 </div>
 
                 {/* Edit Main Profile Credentials */}
-                <form onSubmit={handleSaveAdminProfile} className="web-card space-y-4">
+                <form onSubmit={handleSaveAdminProfile} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Edit Lead Admin Profile Credentials</h3>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Admin Name</label>
-                    <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold text-white" />
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Admin Name</label>
+                      <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-semibold text-white outline-none focus:border-redPrimary" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Phone</label>
+                      <input type="text" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-semibold text-white outline-none focus:border-redPrimary" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Email</label>
+                      <input type="text" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-semibold text-white outline-none focus:border-redPrimary" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Phone</label>
-                    <input type="text" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Email</label>
-                    <input type="text" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold text-white" />
-                  </div>
-                  <button type="submit" className="btn-primary w-full py-3">
+                  <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold">
                     Save Profile Credentials
                   </button>
                 </form>

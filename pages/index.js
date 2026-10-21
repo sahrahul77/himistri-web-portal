@@ -189,7 +189,7 @@ export default function HomePage() {
                         src={c.iconUrl || FALLBACK_ICON}
                         alt={c.name}
                         onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                        className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
+                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
                       />
                     </div>
                     <strong className="text-xs font-bold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
@@ -200,7 +200,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok */}
+        {/* 5. Popular Services in Gangtok (100% Un-cropped Square Artwork Display) */}
         <div>
           <div className="flex justify-between items-baseline mb-4 sm:mb-6">
             <div>
@@ -236,19 +236,22 @@ export default function HomePage() {
                     className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl"
                   >
                     <div>
-                      <div className="relative">
+                      {/* Image Container with aspect-square & object-contain to render 100% FULL SQUARE ARTWORK */}
+                      <div className="relative w-full aspect-square rounded-xl mb-3 sm:mb-4 overflow-hidden bg-slate-100 dark:bg-neutral-800/80 flex items-center justify-center p-1.5 border border-slate-200 dark:border-neutral-700/60 shadow-inner">
                         <img
                           src={s.imageUrl || FALLBACK_ICON}
                           alt={s.title}
                           onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                          className="w-full h-40 sm:h-48 object-cover rounded-xl mb-3 sm:mb-4 bg-slate-100 dark:bg-neutral-800"
+                          className="w-full h-full object-contain rounded-lg"
                         />
 
-                        <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider">
+                        {/* Discount Badge on Top Left */}
+                        <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider z-10">
                           {discountPercent}% OFF
                         </div>
 
-                        <div className="absolute top-3 right-3 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10 shadow-md">
+                        {/* Rating Badge on Top Right */}
+                        <div className="absolute top-3 right-3 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10 shadow-md z-10">
                           <Star className="w-3.5 h-3.5 fill-amber-400" /> {rating}
                         </div>
                       </div>

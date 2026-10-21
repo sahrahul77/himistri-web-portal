@@ -303,7 +303,10 @@ export function AdminSliders({
                     className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto w-full"
                   >
                     <div>
-                      <img src={currentSrvObj.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-44 object-cover rounded-xl mb-3" />
+                      {/* 100% Full Square Artwork Container with object-contain */}
+                      <div className="w-full aspect-square rounded-xl mb-3 overflow-hidden bg-slate-100 dark:bg-neutral-800/80 flex items-center justify-center p-1.5 border border-slate-200 dark:border-neutral-700/60 shadow-inner">
+                        <img src={currentSrvObj.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-full object-contain rounded-lg" />
+                      </div>
                       <span className="text-[10px] font-bold text-redPrimary uppercase">{currentSrvObj.categoryName || 'General'}</span>
                       <h4 className="font-bold text-base mt-0.5 text-slate-900 dark:text-white">{currentSrvObj.title}</h4>
                       <p className="text-lg font-black text-redPrimary mt-1">₹{currentSrvObj.discountedPrice || currentSrvObj.originalPrice}</p>

@@ -42,27 +42,27 @@ export default function HomePage() {
     setIsDark(prev => !prev);
   };
 
-  // Sync / Set the exact 10 Himistri Categories in Firebase Realtime Database
-  useEffect(() => {
-    const catMap = {};
-    DEFAULT_CATEGORIES.forEach((c) => {
-      catMap[c.id] = c;
-    });
-    set(ref(rtdb, 'categories'), catMap);
-  }, []);
-
+  // Realtime Listener for Firebase Categories (Will NEVER overwrite or re-add deleted categories)
   useEffect(() => {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) {
+      if (!snapshot.exists()) {
+        // Only seed default 10 categories if database is 100% empty
+        const catMap = {};
+        DEFAULT_CATEGORIES.forEach((c) => {
+          catMap[c.id] = c;
+        });
+        set(ref(rtdb, 'categories'), catMap);
+        setCategories(DEFAULT_CATEGORIES);
+      } else {
+        const list = [];
         const val = snapshot.val();
         if (typeof val === 'object' && val !== null) {
           Object.keys(val).forEach((k) => {
             if (val[k]) list.push({ id: k, ...val[k] });
           });
         }
+        setCategories(list);
       }
-      if (list.length > 0) setCategories(list);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -181,7 +181,7 @@ export default function HomePage() {
             <div className="flex justify-between items-baseline mb-4 sm:mb-6">
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Himistri Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">10 Technical & Household Manpower Categories in Gangtok</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Himistri Manpower Categories in Gangtok</p>
               </div>
               <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3 sm:px-3.5 py-1.5 rounded-full shrink-0">
                 See All ({categories.length})

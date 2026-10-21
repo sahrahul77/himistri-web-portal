@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import PopupModal from '../../components/PopupModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, remove, set, push } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
@@ -32,6 +33,9 @@ export default function AdminControlPanelPage() {
   const [bannersList, setBannersList] = useState([]);
   const [testimonialsList, setTestimonialsList] = useState([]);
   const [faqsList, setFaqsList] = useState([]);
+
+  // Dynamic Popup Modal State
+  const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
   // Delete Confirmation Modal State
   const [deletingPath, setDeletingPath] = useState(null);
@@ -74,6 +78,11 @@ export default function AdminControlPanelPage() {
   const [newFaqQ, setNewFaqQ] = useState('');
   const [newFaqA, setNewFaqA] = useState('');
 
+  // Admin Account Creation Form States (Max 3 Admins)
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPhone, setNewAdminPhone] = useState('');
+
   const [adminName, setAdminName] = useState('Rahul Shah');
   const [adminPhone, setAdminPhone] = useState('+919563213089');
   const [adminEmail, setAdminEmail] = useState('sahrahul77@gmail.com');
@@ -89,7 +98,7 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // Robust Snapshot Parser to retrieve ALL entries from Database
+  // Robust Snapshot Parser to retrieve ALL entries
   const parseFirebaseSnapshot = (snapshot) => {
     const list = [];
     if (snapshot && snapshot.exists()) {
@@ -180,19 +189,114 @@ export default function AdminControlPanelPage() {
       assignedPartnerSkill: partnerObj.skillCategory || 'Specialist',
       trackingStatus: `Mistri ${partnerObj.fullName} assigned to order`
     }).then(() => {
-      alert(`Partner ${partnerObj.fullName} assigned to order!`);
+      setPopupState({
+        isOpen: true,
+        title: 'Partner Dispatched',
+        message: `Mistri ${partnerObj.fullName} assigned to order successfully!`,
+        type: 'success'
+      });
       setAssigningBooking(null);
     });
   };
 
-  // Add Item Handlers (Zero "Firebase" words)
+  // Add Admin Functionality (Max 3 Admins Limit)
+  const currentAdmins = usersList.filter(u => (u.role || '').toUpperCase() === 'ADMIN');
+
+  const handleAddAdmin = async (e) => {
+    e.preventDefault();
+
+    if (currentAdmins.length >= 3) {
+      setPopupState({
+        isOpen: true,
+        title: 'Admin Limit Reached',
+        message: 'Maximum limit of 3 Admins reached for this web application. Demote or remove an existing secondary admin before adding a new one.',
+        type: 'error'
+      });
+      return;
+    }
+
+    if (!newAdminName || !newAdminEmail || !newAdminPhone) {
+      setPopupState({
+        isOpen: true,
+        title: 'Form Incomplete',
+        message: 'Full Name, Email Address, and Mobile Number are required to create an Admin.',
+        type: 'error'
+      });
+      return;
+    }
+
+    const adminUid = 'admin_' + Math.random().toString(36).substring(2, 10);
+
+    try {
+      await set(ref(rtdb, `users/${adminUid}`), {
+        id: adminUid,
+        fullName: newAdminName,
+        email: newAdminEmail,
+        phoneNumber: newAdminPhone,
+        role: 'ADMIN',
+        createdAt: new Date().toISOString()
+      });
+
+      setNewAdminName('');
+      setNewAdminEmail('');
+      setNewAdminPhone('');
+
+      setPopupState({
+        isOpen: true,
+        title: 'New Admin Created!',
+        message: `Admin account for ${newAdminName} created successfully!\nTotal Admins: ${currentAdmins.length + 1} / 3 Max`,
+        type: 'success'
+      });
+    } catch (err) {
+      setPopupState({
+        isOpen: true,
+        title: 'Creation Failed',
+        message: err.message,
+        type: 'error'
+      });
+    }
+  };
+
+  const handleDemoteAdmin = async (adminId, adminEmail) => {
+    if (adminEmail === 'sahrahul77@gmail.com') {
+      setPopupState({
+        isOpen: true,
+        title: 'Action Restricted',
+        message: 'The Lead Main Admin account (sahrahul77@gmail.com) cannot be demoted.',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      await update(ref(rtdb, `users/${adminId}`), { role: 'CUSTOMER' });
+      setPopupState({
+        isOpen: true,
+        title: 'Admin Demoted',
+        message: 'Admin privileges removed. Account updated to Customer role.',
+        type: 'info'
+      });
+    } catch (err) {
+      setPopupState({
+        isOpen: true,
+        title: 'Demotion Failed',
+        message: err.message,
+        type: 'error'
+      });
+    }
+  };
+
+  // Add Item Handlers
   const handleAddCategory = (e) => {
     e.preventDefault();
     if (!newCatName) return alert('Category Name is required.');
     const newRef = push(ref(rtdb, 'categories'));
     const catId = newRef.key;
     set(newRef, { id: catId, name: newCatName, iconUrl: newCatIcon || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png' })
-      .then(() => { alert(`New Category '${newCatName}' created successfully!`); setNewCatName(''); setNewCatIcon(''); });
+      .then(() => {
+        setPopupState({ isOpen: true, title: 'Category Created', message: `Category '${newCatName}' saved successfully!`, type: 'success' });
+        setNewCatName(''); setNewCatIcon('');
+      });
   };
 
   const handleAddService = (e) => {
@@ -211,7 +315,7 @@ export default function AdminControlPanelPage() {
       discountedPrice: parseFloat(newSrvDiscount) || (parseFloat(newSrvPrice) || 1000),
       imageUrl: newSrvImage || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'
     }).then(() => {
-      alert(`New Service '${newSrvTitle}' connected to Category '${catObj.name}' and saved!`);
+      setPopupState({ isOpen: true, title: 'Service Created', message: `Service '${newSrvTitle}' connected to Category '${catObj.name}'!`, type: 'success' });
       setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage('');
     });
   };
@@ -226,7 +330,10 @@ export default function AdminControlPanelPage() {
       title: newBnrTitle,
       subtitle: newBnrSub || 'Doorstep Services across Gangtok',
       imageUrl: newBnrImg || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80'
-    }).then(() => { alert('New Marketing Banner saved successfully!'); setNewBnrTitle(''); setNewBnrSub(''); setNewBnrImg(''); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'Banner Saved', message: 'New marketing banner added successfully!', type: 'success' });
+      setNewBnrTitle(''); setNewBnrSub(''); setNewBnrImg('');
+    });
   };
 
   const handleAddTestimonial = (e) => {
@@ -241,7 +348,10 @@ export default function AdminControlPanelPage() {
       text: newTestText,
       rating: 5,
       service: 'Verified Customer'
-    }).then(() => { alert('New Customer Experience Review saved successfully!'); setNewTestName(''); setNewTestLoc(''); setNewTestText(''); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'Review Added', message: 'New customer review published!', type: 'success' });
+      setNewTestName(''); setNewTestLoc(''); setNewTestText('');
+    });
   };
 
   const handleAddFaq = (e) => {
@@ -253,7 +363,10 @@ export default function AdminControlPanelPage() {
       id: faqId,
       q: newFaqQ,
       a: newFaqA
-    }).then(() => { alert('New FAQ saved successfully!'); setNewFaqQ(''); setNewFaqA(''); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'FAQ Saved', message: 'New FAQ added successfully!', type: 'success' });
+      setNewFaqQ(''); setNewFaqA('');
+    });
   };
 
   // Edit Item Handlers
@@ -263,7 +376,10 @@ export default function AdminControlPanelPage() {
     update(ref(rtdb, `categories/${editingCategory.id}`), {
       name: editingCategory.name,
       iconUrl: editingCategory.iconUrl
-    }).then(() => { alert('Category updated successfully!'); setEditingCategory(null); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'Category Updated', message: 'Category details saved successfully!', type: 'success' });
+      setEditingCategory(null);
+    });
   };
 
   const handleSaveServiceEdit = (e) => {
@@ -275,7 +391,10 @@ export default function AdminControlPanelPage() {
       discountedPrice: parseFloat(editingService.discountedPrice) || 800,
       imageUrl: editingService.imageUrl,
       categoryName: editingService.categoryName
-    }).then(() => { alert('Service updated successfully!'); setEditingService(null); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'Service Updated', message: 'Service details saved successfully!', type: 'success' });
+      setEditingService(null);
+    });
   };
 
   const handleSaveBannerEdit = (e) => {
@@ -285,7 +404,10 @@ export default function AdminControlPanelPage() {
       title: editingBanner.title,
       subtitle: editingBanner.subtitle,
       imageUrl: editingBanner.imageUrl
-    }).then(() => { alert('Banner updated successfully!'); setEditingBanner(null); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'Banner Updated', message: 'Marketing banner updated successfully!', type: 'success' });
+      setEditingBanner(null);
+    });
   };
 
   const handleSaveTestimonialEdit = (e) => {
@@ -296,7 +418,10 @@ export default function AdminControlPanelPage() {
       location: editingTestimonial.location,
       text: editingTestimonial.text,
       rating: parseInt(editingTestimonial.rating) || 5
-    }).then(() => { alert('Customer Experience review updated successfully!'); setEditingTestimonial(null); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'Review Updated', message: 'Customer review updated successfully!', type: 'success' });
+      setEditingTestimonial(null);
+    });
   };
 
   const handleSaveFaqEdit = (e) => {
@@ -305,20 +430,24 @@ export default function AdminControlPanelPage() {
     update(ref(rtdb, `faqs/${editingFaq.id}`), {
       q: editingFaq.q,
       a: editingFaq.a
-    }).then(() => { alert('FAQ updated successfully!'); setEditingFaq(null); });
+    }).then(() => {
+      setPopupState({ isOpen: true, title: 'FAQ Updated', message: 'FAQ updated successfully!', type: 'success' });
+      setEditingFaq(null);
+    });
   };
 
   const handleSaveAdminProfile = (e) => {
     e.preventDefault();
     update(ref(rtdb, 'users/bLfKYzhws9d7zozkzwyemQPI8bG3'), { fullName: adminName, phoneNumber: adminPhone, email: adminEmail })
-      .then(() => alert('Admin Profile ID credentials saved successfully!'));
+      .then(() => {
+        setPopupState({ isOpen: true, title: 'Profile Credentials Saved', message: 'Admin profile credentials updated successfully!', type: 'success' });
+      });
   };
 
   const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
 
-  // Retrieve ALL Registered Service Partners from Users
   const allPartnersList = usersList.filter(u => {
     const roleUpper = (u.role || '').toUpperCase();
     return roleUpper === 'PARTNER' || roleUpper === 'SERVICE_PARTNER' || u.skillCategory;
@@ -332,7 +461,6 @@ export default function AdminControlPanelPage() {
     return matchesQuery && matchesStatus;
   });
 
-  // Assign Partner Filtering Logic inside Modal
   const getModalPartners = () => {
     if (!assigningBooking) return [];
     const serviceCategoryName = (assigningBooking.serviceCategory || '').toLowerCase();
@@ -439,7 +567,7 @@ export default function AdminControlPanelPage() {
                 { id: 7, label: `Banners (${bannersList.length})` },
                 { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
                 { id: 10, label: `FAQs (${faqsList.length})` },
-                { id: 8, label: 'My Admin Profile ID' }
+                { id: 8, label: `Admin Roles (${currentAdmins.length}/3)` }
               ].map((t) => (
                 <button
                   key={t.id}
@@ -453,7 +581,7 @@ export default function AdminControlPanelPage() {
               ))}
             </div>
 
-            {/* TAB 0: ORDERS (With Single-Card Animated Slider Format) */}
+            {/* TAB 0: ORDERS */}
             {activeTab === 0 && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
@@ -731,7 +859,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 4: REGISTERED USERS (With Single-Card Animated Slider) */}
+            {/* TAB 4: REGISTERED USERS (With Single-Card Slider) */}
             {activeTab === 4 && (
               <div className="space-y-4">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
@@ -760,7 +888,7 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex justify-between items-center text-xs shadow-xl"
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex justify-between items-center text-xs shadow-xl max-w-lg mx-auto"
                         >
                           <div>
                             <strong className="text-sm block text-white font-extrabold">{usersList[userSliderIdx].fullName || 'User'}</strong>
@@ -788,14 +916,14 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 5: CATEGORIES MANAGER (With Single-Card Animated Slider) */}
+            {/* TAB 5: CATEGORIES MANAGER (With Single-Card Slider) */}
             {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Category</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <input type="text" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} placeholder="Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="text" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} placeholder="Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
                   </div>
                   <button type="submit" className="btn-primary py-3 px-6"><Plus className="w-4 h-4" /> Save Category</button>
                 </form>
@@ -850,19 +978,19 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 6: SERVICES MANAGER (With Single-Card Animated Slider) */}
+            {/* TAB 6: SERVICES MANAGER (With Single-Card Slider) */}
             {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Service (Connected to Category)</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-bold">
+                    <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-bold text-white">
                       {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
-                    <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <input type="text" value={newSrvImage} onChange={(e) => setNewSrvImage(e.target.value)} placeholder="Service Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm md:col-span-2" />
+                    <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="text" value={newSrvImage} onChange={(e) => setNewSrvImage(e.target.value)} placeholder="Service Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm md:col-span-2 text-white" />
                   </div>
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Create & Link Service to Category</button>
                 </form>
@@ -920,15 +1048,15 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 7: BANNERS MANAGER (With Single-Card Animated Slider) */}
+            {/* TAB 7: BANNERS MANAGER (With Single-Card Slider) */}
             {activeTab === 7 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddBanner} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Marketing Banner</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <input type="text" value={newBnrImg} onChange={(e) => setNewBnrImg(e.target.value)} placeholder="Banner Image URL" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
+                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="text" value={newBnrImg} onChange={(e) => setNewBnrImg(e.target.value)} placeholder="Banner Image URL" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
                   </div>
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save Marketing Banner</button>
                 </form>
@@ -985,15 +1113,15 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 9: CUSTOMER EXPERIENCE (With Single-Card Animated Slider) */}
+            {/* TAB 9: CUSTOMER EXPERIENCE (With Single-Card Slider) */}
             {activeTab === 9 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddTestimonial} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add Customer Experience Review</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm"></textarea>
+                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white"></textarea>
                   </div>
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save Customer Review</button>
                 </form>
@@ -1050,14 +1178,14 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 10: FAQs (With Single-Card Animated Slider) */}
+            {/* TAB 10: FAQs (With Single-Card Slider) */}
             {activeTab === 10 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddFaq} className="web-card space-y-4">
                   <h3 className="font-extrabold text-base text-redPrimary">Add Frequently Asked Question</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
-                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm"></textarea>
+                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white" />
+                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm text-white"></textarea>
                   </div>
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save FAQ</button>
                 </form>
@@ -1111,30 +1239,129 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 8: ADMIN PROFILE */}
+            {/* TAB 8: ADMIN ROLES & CREATION MANAGER (Max 3 Admins) */}
             {activeTab === 8 && (
-              <form onSubmit={handleSaveAdminProfile} className="web-card space-y-4">
-                <h3 className="font-extrabold text-base text-redPrimary">Edit Admin Profile ID Credentials</h3>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Admin Name</label>
-                  <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold" />
+              <div className="space-y-6">
+                <div className="web-card space-y-4">
+                  <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
+                    <div>
+                      <h3 className="font-extrabold text-base text-redPrimary">Manage Platform Administrators</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Main Lead Admin can grant administrator authority to maximum 3 accounts.</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30">
+                      Admins: {currentAdmins.length} / 3 Max
+                    </span>
+                  </div>
+
+                  {/* Create New Admin Account Form */}
+                  <form onSubmit={handleAddAdmin} className="space-y-4 pt-2">
+                    <h4 className="text-sm font-bold text-white">Create New Admin Account</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <input
+                        type="text"
+                        value={newAdminName}
+                        onChange={(e) => setNewAdminName(e.target.value)}
+                        placeholder="Admin Full Name *"
+                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                      />
+                      <input
+                        type="email"
+                        value={newAdminEmail}
+                        onChange={(e) => setNewAdminEmail(e.target.value)}
+                        placeholder="Admin Email Address *"
+                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={newAdminPhone}
+                        onChange={(e) => setNewAdminPhone(e.target.value)}
+                        placeholder="Admin Phone Number *"
+                        className="p-3 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={currentAdmins.length >= 3}
+                      className={`btn-primary w-full py-3.5 text-xs font-black shadow-lg rounded-xl transition ${
+                        currentAdmins.length >= 3 ? 'bg-neutral-800 text-slate-500 cursor-not-allowed opacity-50' : 'bg-redPrimary text-white'
+                      }`}
+                    >
+                      <UserPlus className="w-4 h-4 inline mr-1" />
+                      {currentAdmins.length >= 3 ? 'Admin Limit Reached (3/3 Max)' : 'Create & Grant Admin Role'}
+                    </button>
+                  </form>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Phone</label>
-                  <input type="text" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold" />
+
+                {/* Current Active Admins List */}
+                <div className="web-card space-y-3">
+                  <h4 className="font-bold text-sm text-slate-300">Active Administrator Accounts ({currentAdmins.length})</h4>
+                  <div className="space-y-2">
+                    {currentAdmins.map((adm) => (
+                      <div key={adm.id} className="p-4 rounded-xl bg-black/30 border border-neutral-800 flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-3">
+                          <ShieldCheck className="w-5 h-5 text-redPrimary shrink-0" />
+                          <div>
+                            <strong className="text-white block text-sm">{adm.fullName || 'Admin Account'}</strong>
+                            <span className="text-slate-400">{adm.email || 'N/A'} • {adm.phoneNumber || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 items-center">
+                          {adm.email === 'sahrahul77@gmail.com' ? (
+                            <span className="px-3 py-1 rounded-full text-xs font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30">
+                              Lead Main Admin
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleDemoteAdmin(adm.id, adm.email)}
+                              className="bg-amber-600/80 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition"
+                            >
+                              Demote to Customer
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Email</label>
-                  <input type="text" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold" />
-                </div>
-                <button type="submit" className="btn-primary w-full py-3">
-                  Save Admin Profile Credentials
-                </button>
-              </form>
+
+                {/* Edit Main Profile Credentials */}
+                <form onSubmit={handleSaveAdminProfile} className="web-card space-y-4">
+                  <h3 className="font-extrabold text-base text-redPrimary">Edit Lead Admin Profile Credentials</h3>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Admin Name</label>
+                    <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Phone</label>
+                    <input type="text" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Email</label>
+                    <input type="text" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold text-white" />
+                  </div>
+                  <button type="submit" className="btn-primary w-full py-3">
+                    Save Profile Credentials
+                  </button>
+                </form>
+              </div>
             )}
           </>
         )}
       </main>
+
+      {/* Dynamic Popup Modal Component */}
+      <PopupModal
+        isOpen={popupState.isOpen}
+        onClose={() => setPopupState({ ...popupState, isOpen: false })}
+        title={popupState.title}
+        message={popupState.message}
+        type={popupState.type}
+        actionText="Continue"
+        onAction={popupState.onAction}
+      />
 
       {/* CUSTOM DELETE CONFIRMATION MODAL */}
       {deletingPath && (
@@ -1161,7 +1388,7 @@ export default function AdminControlPanelPage() {
                 type="button"
                 onClick={() => {
                   remove(ref(rtdb, deletingPath)).then(() => {
-                    alert('Item deleted successfully.');
+                    setPopupState({ isOpen: true, title: 'Deleted', message: 'Item deleted successfully.', type: 'info' });
                     setDeletingPath(null);
                   });
                 }}

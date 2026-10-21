@@ -29,12 +29,15 @@ export function AdminModals({
   // Fallback to DEFAULT_CATEGORIES if categoriesList is empty or loading
   const activeCategoriesList = (categoriesList && categoriesList.length > 0) ? categoriesList : DEFAULT_CATEGORIES;
 
-  // Pre-calculate matched category ID for editing service
-  const matchedCategoryId = editingService ? (
-    editingService.categoryId ||
-    (activeCategoriesList.find(c => (c.name || '').toLowerCase() === (editingService.categoryName || '').toLowerCase())?.id) ||
-    ''
-  ) : '';
+  // Robust Lead Developer Category Matcher for Editing Service
+  const matchedCatObj = editingService ? (
+    activeCategoriesList.find(c => c.id === editingService.categoryId) ||
+    activeCategoriesList.find(c => (c.name || '').toLowerCase() === (editingService.categoryName || '').toLowerCase()) ||
+    activeCategoriesList.find(c => (editingService.categoryName || '').toLowerCase().includes((c.name || '').toLowerCase()) || (c.name || '').toLowerCase().includes((editingService.categoryName || '').toLowerCase())) ||
+    activeCategoriesList[0]
+  ) : null;
+
+  const matchedCategoryId = matchedCatObj ? matchedCatObj.id : '';
 
   return (
     <>
@@ -247,7 +250,6 @@ export function AdminModals({
                 }}
                 className="w-full p-3 rounded-lg border border-redPrimary/40 bg-redPrimary/10 text-xs font-extrabold text-redPrimary outline-none focus:border-redPrimary cursor-pointer"
               >
-                <option value="">-- Select Category Connection --</option>
                 {activeCategoriesList.map((cat) => (
                   <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">
                     {cat.name}

@@ -32,6 +32,9 @@ export default function AdminControlPanelPage() {
   const [testimonialsList, setTestimonialsList] = useState([]);
   const [faqsList, setFaqsList] = useState([]);
 
+  // Delete Confirmation Modal State
+  const [deletingPath, setDeletingPath] = useState(null);
+
   // Edit Item Modal States
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingService, setEditingService] = useState(null);
@@ -179,12 +182,6 @@ export default function AdminControlPanelPage() {
       alert(`Partner ${partnerObj.fullName} assigned to order!`);
       setAssigningBooking(null);
     });
-  };
-
-  const handleDeleteItem = (path) => {
-    if (confirm('Delete this item permanently from Firebase Database?')) {
-      remove(ref(rtdb, path));
-    }
   };
 
   // Add Item Handlers
@@ -455,7 +452,7 @@ export default function AdminControlPanelPage() {
               ))}
             </div>
 
-            {/* TAB 0: ORDERS (With Slider View, Live Status Bar Below Address & Disabled Assign Button) */}
+            {/* TAB 0: ORDERS (With Sub-Tabs after ON_THE_WAY: IN_PROGRESS / ARRIVED WORK STARTED) */}
             {activeTab === 0 && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
@@ -470,8 +467,9 @@ export default function AdminControlPanelPage() {
                     />
                   </div>
 
+                  {/* Sub-Tabs including ARRIVED / WORK STARTED after ON_THE_WAY */}
                   <div className="flex gap-2 overflow-x-auto">
-                    {['ALL', 'PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'COMPLETED'].map((st) => (
+                    {['ALL', 'PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].map((st) => (
                       <button
                         key={st}
                         onClick={() => { setOrderStatusFilter(st); setOrderSliderIdx(0); }}
@@ -479,7 +477,7 @@ export default function AdminControlPanelPage() {
                           orderStatusFilter === st ? 'bg-redPrimary text-white border-redPrimary' : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800'
                         }`}
                       >
-                        {st}
+                        {st === 'IN_PROGRESS' ? 'ARRIVED / WORK STARTED' : st}
                       </button>
                     ))}
                   </div>
@@ -592,7 +590,7 @@ export default function AdminControlPanelPage() {
                                 : `✓ ${currentOrder.assignedPartnerName ? 'Assigned to ' + currentOrder.assignedPartnerName.split(' ')[0] : 'Partner Assigned'}`}
                             </button>
 
-                            <button onClick={() => handleDeleteItem(`bookings/${currentOrder.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold">
+                            <button onClick={() => setDeletingPath(`bookings/${currentOrder.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold">
                               <Trash2 className="w-3.5 h-3.5 inline" /> Delete
                             </button>
                           </div>
@@ -656,7 +654,7 @@ export default function AdminControlPanelPage() {
                       return (
                         <div key={st} className="space-y-1">
                           <div className="flex justify-between text-xs font-bold">
-                            <span className="text-slate-400">{st}</span>
+                            <span className="text-slate-400">{st === 'IN_PROGRESS' ? 'ARRIVED / WORK STARTED' : st}</span>
                             <span className="text-white">{count} orders ({percentage}%)</span>
                           </div>
                           <div className="w-full h-2 rounded-full bg-neutral-800 overflow-hidden">
@@ -733,7 +731,7 @@ export default function AdminControlPanelPage() {
                           }`}>
                             {isOnline ? '🟢 ONLINE' : '⚫ OFFLINE'}
                           </span>
-                          <button onClick={() => handleDeleteItem(`users/${p.id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete Partner</button>
+                          <button onClick={() => setDeletingPath(`users/${p.id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete Partner</button>
                         </div>
                       </div>
                     );
@@ -754,7 +752,7 @@ export default function AdminControlPanelPage() {
                         <span className={`px-2 py-0.5 rounded font-bold ${ (u.role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : (u.role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
                           {u.role || 'CUSTOMER'}
                         </span>
-                        <button onClick={() => handleDeleteItem(`users/${u.id}`)} className="bg-rose-800 text-white text-[10px] px-2 py-0.5 rounded font-bold">Delete</button>
+                        <button onClick={() => setDeletingPath(`users/${u.id}`)} className="bg-rose-800 text-white text-[10px] px-2 py-0.5 rounded font-bold">Delete</button>
                       </div>
                     </div>
                   ))}
@@ -798,7 +796,7 @@ export default function AdminControlPanelPage() {
                           </div>
                           <div className="flex gap-2 justify-center mt-2">
                             <button onClick={() => setEditingCategory({ ...c })} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded font-bold">Edit</button>
-                            <button onClick={() => handleDeleteItem(`categories/${c.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
+                            <button onClick={() => setDeletingPath(`categories/${c.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
                           </div>
                         </div>
                       ))}
@@ -851,7 +849,7 @@ export default function AdminControlPanelPage() {
                           </div>
                           <div className="flex gap-2 mt-3">
                             <button onClick={() => setEditingService({ ...s })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Edit</button>
-                            <button onClick={() => handleDeleteItem(`services/${s.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Delete</button>
+                            <button onClick={() => setDeletingPath(`services/${s.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Delete</button>
                           </div>
                         </div>
                       ))}
@@ -901,7 +899,7 @@ export default function AdminControlPanelPage() {
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => setEditingBanner({ ...b })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Edit</button>
-                            <button onClick={() => handleDeleteItem(`banners/${b.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Delete</button>
+                            <button onClick={() => setDeletingPath(`banners/${b.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Delete</button>
                           </div>
                         </div>
                       ))}
@@ -946,7 +944,7 @@ export default function AdminControlPanelPage() {
                           <p className="text-xs text-slate-300 italic">"{t.text}"</p>
                           <div className="flex gap-2 justify-end pt-2">
                             <button onClick={() => setEditingTestimonial({ ...t })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
-                            <button onClick={() => handleDeleteItem(`testimonials/${t.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
+                            <button onClick={() => setDeletingPath(`testimonials/${t.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
                           </div>
                         </div>
                       ))}
@@ -990,7 +988,7 @@ export default function AdminControlPanelPage() {
                           <p className="text-xs text-slate-300">A: {f.a}</p>
                           <div className="flex gap-2 justify-end pt-2">
                             <button onClick={() => setEditingFaq({ ...f })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
-                            <button onClick={() => handleDeleteItem(`faqs/${f.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
+                            <button onClick={() => setDeletingPath(`faqs/${f.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
                           </div>
                         </div>
                       ))}
@@ -1024,6 +1022,44 @@ export default function AdminControlPanelPage() {
           </>
         )}
       </main>
+
+      {/* CUSTOM DELETE CONFIRMATION MODAL (ARE YOU SURE TO DELETE - YES / NO) */}
+      {deletingPath && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#242424] border border-neutral-700 rounded-3xl p-6 sm:p-8 w-full max-w-sm text-white shadow-2xl text-center space-y-5 relative">
+            <div className="w-14 h-14 rounded-full bg-rose-600/20 text-rose-500 flex items-center justify-center mx-auto mb-2">
+              <Trash2 className="w-7 h-7" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-white">Are you sure you want to delete?</h3>
+              <p className="text-xs text-slate-400 mt-1">This item will be permanently removed from Firebase Realtime Database.</p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingPath(null)}
+                className="flex-1 py-3 px-4 rounded-xl border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-xs font-extrabold text-slate-300 transition"
+              >
+                No, Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  remove(ref(rtdb, deletingPath)).then(() => {
+                    alert('Item deleted successfully.');
+                    setDeletingPath(null);
+                  });
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-xs font-extrabold text-white transition shadow-lg"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EDIT MODAL FOR CATEGORIES */}
       {editingCategory && (

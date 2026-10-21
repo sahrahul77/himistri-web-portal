@@ -131,7 +131,7 @@ export default function CategoriesPage() {
           ))}
         </div>
 
-        {/* Services List inside Category (100% Full Square Artwork Display) */}
+        {/* Services List inside Category */}
         <div>
           <h2 className="text-xl sm:text-2xl font-black mb-1 text-slate-900 dark:text-white">
             Services in {selectedCategoryObj?.name || 'All Categories'}
@@ -144,29 +144,35 @@ export default function CategoriesPage() {
               <p className="text-slate-500 dark:text-slate-400 font-bold text-sm">No services found in this category yet.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {filteredServices.map((s) => {
-                const rating = parseFloat(s.ratingAverage || 4.9).toFixed(1);
+                const rating = parseFloat(s.ratingAverage || 5.0).toFixed(1);
                 return (
-                  <div key={s.id} className="web-card flex flex-col justify-between bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl">
+                  <div key={s.id} className="web-card flex flex-col justify-between bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl shadow-xl overflow-hidden">
                     <div>
-                      {/* Full Square Artwork Container */}
-                      <div className="relative w-full h-64 sm:h-72 rounded-xl mb-3 overflow-hidden bg-[#1A1A1A] flex items-center justify-center p-2 border border-slate-200 dark:border-neutral-800 shadow-inner">
+                      <div className="relative w-full h-52 sm:h-60 overflow-hidden bg-slate-100 dark:bg-neutral-800">
                         <img
                           src={s.imageUrl || FALLBACK_ICON}
                           alt={s.title}
                           onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                          className="w-full h-full object-contain object-center rounded-lg"
+                          className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-3 right-3 bg-black/85 text-amber-400 text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-md border border-white/10 shadow-lg z-10">
-                          <Star className="w-3.5 h-3.5 fill-amber-400" /> {rating}
+                      </div>
+
+                      <div className="p-4 sm:p-5 space-y-1">
+                        <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
+
+                        <div className="flex justify-between items-center gap-2">
+                          <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">{s.title}</h3>
+
+                          <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 text-xs font-black shrink-0 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
+                            <Star className="w-3.5 h-3.5 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" /> {rating}
+                          </div>
                         </div>
                       </div>
-                      <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
-                      <h3 className="font-extrabold text-base sm:text-lg mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
                       <div>
                         <span className="text-xl sm:text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
                         <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>

@@ -200,7 +200,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok (Clean Card Design with Stored Firebase Rating) */}
+        {/* 5. Popular Services in Gangtok (Full-Box Occupying Image + Rating at the end of Service Name) */}
         <div>
           <div className="flex justify-between items-baseline mb-4 sm:mb-6">
             <div>
@@ -222,7 +222,7 @@ export default function HomePage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {popularServices.map((s) => {
                 const rating = parseFloat(s.ratingAverage || 5.0).toFixed(1);
                 const discountPercent = s.originalPrice && s.discountedPrice
@@ -233,35 +233,43 @@ export default function HomePage() {
                   <motion.div
                     key={s.id}
                     whileHover={{ y: -4 }}
-                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 sm:p-5 rounded-2xl"
+                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl overflow-hidden"
                   >
                     <div>
-                      {/* Crisp Clean Full Artwork Display Container */}
-                      <div className="relative w-full aspect-[4/3] rounded-xl mb-3 sm:mb-4 overflow-hidden bg-slate-100 dark:bg-neutral-900 flex items-center justify-center p-1 border border-slate-200 dark:border-neutral-800 shadow-sm">
+                      {/* Image occupies ENTIRE top box */}
+                      <div className="relative w-full h-52 sm:h-60 overflow-hidden bg-slate-100 dark:bg-neutral-800">
                         <img
                           src={s.imageUrl || FALLBACK_ICON}
                           alt={s.title}
                           onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                          className="w-full h-full object-contain rounded-lg"
+                          className="w-full h-full object-cover"
                         />
 
                         {/* Discount Badge on Top Left */}
-                        <div className="absolute top-2.5 left-2.5 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider z-10">
+                        <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider z-10">
                           {discountPercent}% OFF
-                        </div>
-
-                        {/* Rating Badge stored in Firebase on Top Right */}
-                        <div className="absolute top-2.5 right-2.5 bg-black/85 text-amber-400 text-xs font-black px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-md border border-white/10 shadow-md z-10">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {rating}
                         </div>
                       </div>
 
-                      <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
-                      <h3 className="font-extrabold text-base sm:text-lg mt-0.5 text-slate-900 dark:text-white">{s.title}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{s.shortDescription || 'Doorstep expert technical service in Gangtok'}</p>
+                      {/* Content Details with Padding */}
+                      <div className="p-4 sm:p-5 space-y-1">
+                        <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
+
+                        {/* Service Title with Rating placed at the end of service name */}
+                        <div className="flex justify-between items-center gap-2">
+                          <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">{s.title}</h3>
+
+                          {/* Rating Badge at the end of service name */}
+                          <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 text-xs font-black shrink-0 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
+                            <Star className="w-3.5 h-3.5 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" /> {rating}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{s.shortDescription || 'Doorstep expert technical service in Gangtok'}</p>
+                      </div>
                     </div>
 
-                    <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
                       <div>
                         <span className="text-xl sm:text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
                         <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>

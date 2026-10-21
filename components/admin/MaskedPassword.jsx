@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Lock } from 'lucide-react';
 
 export function MaskedPassword({ password }) {
   const [show, setShow] = useState(false);
@@ -7,7 +7,8 @@ export function MaskedPassword({ password }) {
 
   return (
     <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-600 dark:text-amber-400 mt-1">
-      <span>🔑 Password: {show ? password : '••••••••'}</span>
+      <Lock className="w-3.5 h-3.5 text-amber-500 inline shrink-0" />
+      <span>Password: {show ? password : '•••••••• (Hashed)'}</span>
       <button
         type="button"
         onClick={() => setShow(!show)}

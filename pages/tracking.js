@@ -2,23 +2,20 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { ref, onValue, update, remove } from 'firebase/database';
+import { ref, onValue, update } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { ListFilter, Clock, MapPin, CheckCircle2, Star, AlertCircle, X, Send, Lock, LogIn } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle } from 'lucide-react';
 
 export default function TrackingPage() {
   const [isDark, setIsDark] = useState(true);
-  const [activeTab, setActiveTab] = useState(0); // 0 = Active, 1 = Completed / History
+  const [activeTab, setActiveTab] = useState(0); // 0=Active, 1=Completed/History, 2=Cancelled
   const [bookings, setBookings] = useState([]);
 
-  const { currentUser, isAuthLoaded } = useAuth();
+  // Selected Order for Live Detailed Tracking Modal
+  const [detailedOrder, setDetailedOrder] = useState(null);
 
-  // Rating Modal States
-  const [ratingBooking, setRatingBooking] = useState(null);
-  const [starCount, setStarCount] = useState(5);
-  const [reviewText, setReviewText] = useState('');
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const { currentUser, isAuthLoaded } = useAuth();
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -55,23 +52,7 @@ export default function TrackingPage() {
     }
   };
 
-  const handleSubmitRating = (e) => {
-    e.preventDefault();
-    if (!ratingBooking) return;
-    setIsSubmittingReview(true);
-
-    update(ref(rtdb, `bookings/${ratingBooking.id}`), {
-      userRating: starCount,
-      userReview: reviewText
-    }).then(() => {
-      setIsSubmittingReview(false);
-      alert('Thank you for rating your service!');
-      setRatingBooking(null);
-      setReviewText('');
-    });
-  };
-
-  // Filter bookings specifically for the logged in customer
+  // Filter bookings for the logged-in customer
   const userBookings = bookings.filter(b => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
@@ -81,9 +62,23 @@ export default function TrackingPage() {
   });
 
   const activeBookings = userBookings.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED' && b.status !== 'REJECTED');
-  const completedBookings = userBookings.filter(b => b.status === 'COMPLETED' || b.status === 'CANCELLED');
+  const completedBookings = userBookings.filter(b => b.status === 'COMPLETED');
+  const cancelledBookings = userBookings.filter(b => b.status === 'CANCELLED' || b.status === 'REJECTED');
 
-  const displayedList = activeTab === 0 ? activeBookings : completedBookings;
+  const displayedList = activeTab === 0 ? activeBookings : activeTab === 1 ? completedBookings : cancelledBookings;
+
+  // Compute Active Timeline Step (1 to 6)
+  const getTimelineStep = (status) => {
+    switch (status) {
+      case 'PENDING': return 1;
+      case 'CONFIRMED': return 2;
+      case 'ASSIGNED': return 3;
+      case 'ON_THE_WAY': return 4;
+      case 'IN_PROGRESS': return 5;
+      case 'COMPLETED': return 6;
+      default: return 1;
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -103,7 +98,7 @@ export default function TrackingPage() {
           </div>
         ) : (
           <>
-            {/* Top Red Header (Matching Mobile App Banner) */}
+            {/* Top Red Header Banner */}
             <div className="bg-redPrimary text-white p-5 rounded-2xl shadow-xl flex justify-between items-center">
               <h1 className="text-2xl font-black tracking-wide">
                 My Bookings History
@@ -113,7 +108,7 @@ export default function TrackingPage() {
               </span>
             </div>
 
-            {/* 2 Navigation Tabs (Exact Replica of Mobile App Design) */}
+            {/* 3 Navigation Tabs (Exact Replica of Screenshot) */}
             <div className="flex border-b border-neutral-800">
               <button
                 onClick={() => setActiveTab(0)}
@@ -136,6 +131,17 @@ export default function TrackingPage() {
               >
                 Completed / History ({completedBookings.length})
               </button>
+
+              <button
+                onClick={() => setActiveTab(2)}
+                className={`flex-1 py-3 text-center text-xs sm:text-sm font-black border-b-2 transition ${
+                  activeTab === 2
+                    ? 'border-b-redPrimary text-redPrimary'
+                    : 'border-b-transparent text-slate-400 hover:text-white'
+                }`}
+              >
+                Cancelled ({cancelledBookings.length})
+              </button>
             </div>
 
             {/* Bookings Content */}
@@ -147,82 +153,75 @@ export default function TrackingPage() {
             ) : (
               <div className="space-y-4">
                 {displayedList.map((b) => (
-                  <div key={b.id} className="web-card space-y-4 shadow-xl border-t-4 border-t-redPrimary">
-                    <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-neutral-800">
-                      <span className="font-extrabold text-sm text-slate-500">
-                        Ref ID: <strong className="text-slate-800 dark:text-slate-200">{b.bookingRef || b.id}</strong>
+                  <div key={b.id} className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl space-y-4 shadow-xl">
+
+                    {/* Top Row: Ref & Status Badge */}
+                    <div className="flex justify-between items-center pb-2 border-b border-neutral-800">
+                      <span className="font-extrabold text-sm text-white">
+                        {b.bookingRef || b.id}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                        b.status === 'COMPLETED' ? 'bg-emerald-600/15 text-emerald-600' :
-                        b.status === 'CANCELLED' ? 'bg-rose-600/15 text-rose-600' : 'bg-orangeSecondary/15 text-orangeSecondary'
+                      <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                        b.status === 'COMPLETED' ? 'bg-emerald-600/20 text-emerald-500' :
+                        b.status === 'CANCELLED' || b.status === 'REJECTED' ? 'bg-rose-600/20 text-rose-500' : 'bg-orangeSecondary/20 text-orangeSecondary'
                       }`}>
-                        {b.status || 'PENDING'}
+                        {b.status === 'PENDING' ? 'Order Placed' : b.status}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-black text-xl mb-1">{b.serviceTitle} <span className="text-xs text-slate-500 font-bold ml-1">(Qty: {b.quantity || 1})</span></h3>
-                        <p className="text-xs font-bold text-slate-500 flex items-center gap-1 mt-1">
-                          <MapPin className="w-3.5 h-3.5 text-redPrimary" /> Address: {b.address || 'Gangtok'}
-                        </p>
-                        <p className="text-xs font-bold text-redPrimary mt-1">
-                          Scheduled: {b.scheduledDate} | {b.scheduledTimeSlot}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-2xl font-black text-redPrimary">₹{b.totalAmount || 500}</span>
-                        <span className="block text-[10px] font-extrabold text-slate-400 uppercase mt-0.5">{b.paymentMethod || 'COD'}</span>
-                      </div>
-                    </div>
-
-                    {/* Live Tracking Status */}
-                    <div className="p-3 rounded-xl bg-orangeSecondary/10 border border-orangeSecondary/20 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-orangeSecondary" />
-                      <span className="text-xs font-bold text-orangeSecondary">
-                        Live Status: {b.trackingStatus || 'Order Placed by Customer'}
-                      </span>
-                    </div>
-
-                    {/* Partner Assignment Details if assigned */}
-                    {b.assignedPartnerName && (
-                      <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
-                        <div>
-                          <strong>Assigned Mistri: {b.assignedPartnerName}</strong> ({b.assignedPartnerSkill || 'Specialist'})
+                    {/* Middle Info Row */}
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                        <div className="w-6 h-6 rounded-md bg-orangeSecondary flex items-center justify-center text-white text-xs font-bold">
+                          HM
                         </div>
-                        {b.assignedPartnerPhone && (
-                          <a href={`tel:${b.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
-                        )}
                       </div>
-                    )}
 
-                    {/* Actions: Cancellation or Star Rating */}
-                    <div className="pt-2 flex justify-between items-center">
+                      <div className="flex-1 space-y-1">
+                        <h3 className="font-bold text-base text-white">{b.serviceTitle} <span className="text-xs text-slate-400">(Qty: {b.quantity || 1})</span></h3>
+                        <p className="text-xs text-redPrimary font-bold">Payable: ₹{b.totalAmount || 500} ({b.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service (COD)' : 'Online'})</p>
+                        <p className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-redPrimary" /> {b.scheduledDate || 'Today'} | {b.scheduledTimeSlot || '09:00'}
+                        </p>
+                        <p className="text-xs text-slate-400 font-semibold flex items-start gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0 mt-0.5" /> Service Address ({b.address || 'Gangtok, Sikkim'})
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Live Status Row */}
+                    <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
+                      <Bike className="w-4 h-4 text-orangeSecondary" />
+                      <span>Live Status: {b.trackingStatus || 'Order Placed by Customer'}</span>
+                    </div>
+
+                    {/* Action Buttons Row matching Screenshot 1 */}
+                    <div className="space-y-2 pt-1">
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          onClick={() => setDetailedOrder(b)}
+                          className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
+                        >
+                          <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
+                        </button>
+
+                        <a
+                          href="https://wa.me/917430887960"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                        </a>
+                      </div>
+
+                      {/* Full-width Cancel Order Button below two buttons matching Screenshot 1 */}
                       {b.status === 'PENDING' && (
                         <button
                           onClick={() => handleCancelBooking(b.id)}
-                          className="bg-rose-800/80 hover:bg-rose-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition"
+                          className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
                         >
-                          Cancel Booking (Free within 1 min)
+                          Cancel Order (Free within 1 min)
                         </button>
-                      )}
-
-                      {b.status === 'COMPLETED' && (
-                        <div className="w-full flex justify-between items-center">
-                          {b.userRating ? (
-                            <div className="flex items-center gap-1.5 text-xs text-amber-400 font-bold">
-                              <span>Your Rating: {b.userRating} ★</span>
-                              {b.userReview && <span className="text-slate-400 font-normal italic">("{b.userReview}")</span>}
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setRatingBooking(b)}
-                              className="btn-primary text-xs py-2 px-4 ml-auto"
-                            >
-                              <Star className="w-3.5 h-3.5 fill-amber-400" /> Rate & Review Service
-                            </button>
-                          )}
-                        </div>
                       )}
                     </div>
                   </div>
@@ -233,45 +232,94 @@ export default function TrackingPage() {
         )}
       </main>
 
-      {/* Star Rating Modal */}
-      {ratingBooking && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-neutral-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative space-y-4">
-            <button onClick={() => setRatingBooking(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-200">
-              <X className="w-5 h-5" />
-            </button>
+      {/* Screenshot 2: Live Order Tracking Detail Modal */}
+      {detailedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl w-full max-w-lg text-white shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
 
-            <h3 className="text-lg font-bold">Rate Your Service</h3>
-            <p className="text-xs text-slate-500">{ratingBooking.serviceTitle} • {ratingBooking.bookingRef}</p>
-
-            <div className="flex justify-center gap-2 my-4 text-amber-400">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setStarCount(star)}
-                  className="hover:scale-125 transition-transform"
-                >
-                  <Star className={`w-8 h-8 ${star <= starCount ? 'fill-amber-400' : 'text-slate-600'}`} />
+            {/* Modal Top Red Bar */}
+            <div className="bg-redPrimary px-6 py-4 flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setDetailedOrder(null)} className="p-1 hover:bg-white/20 rounded-full">
+                  <ArrowLeft className="w-5 h-5 text-white" />
                 </button>
-              ))}
+                <h2 className="text-xl font-black text-white">Live Order Tracking</h2>
+              </div>
+              <button onClick={() => setDetailedOrder(null)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <textarea
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              placeholder="Write feedback for your mistri..."
-              rows={3}
-              className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs"
-            />
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
 
-            <button
-              onClick={handleSubmitRating}
-              disabled={isSubmittingReview}
-              className="btn-primary w-full py-3"
-            >
-              <Send className="w-4 h-4" /> Submit Review
-            </button>
+              {/* Summary Card */}
+              <div className="p-4 rounded-xl bg-[#242424] border border-[#333333] space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-redPrimary">Order Ref: {detailedOrder.bookingRef || detailedOrder.id}</span>
+                  <span className="px-2.5 py-1 rounded-xl text-[10px] font-black bg-orangeSecondary text-white uppercase">{detailedOrder.status}</span>
+                </div>
+                <h3 className="font-extrabold text-base text-white mt-1">{detailedOrder.serviceTitle} (Quantity: {detailedOrder.quantity || 1})</h3>
+                <p className="text-xs text-slate-400 font-semibold">Total Amount: ₹{detailedOrder.totalAmount} ({detailedOrder.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service (COD)' : 'Online'})</p>
+              </div>
+
+              {/* Real-time Tracking Update Box */}
+              <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-800/40 space-y-1">
+                <div className="flex items-center gap-2 text-emerald-500 font-bold text-xs">
+                  <Bike className="w-4 h-4" /> Real-Time Tracking Update
+                </div>
+                <p className="text-xs font-bold text-emerald-400 pl-6">{detailedOrder.trackingStatus || 'Order Placed by Customer'}</p>
+              </div>
+
+              {/* Order Status Timeline (6 Stages matching Screenshot 2) */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-sm font-extrabold text-white">Order Status Timeline</h4>
+
+                <div className="space-y-4 pl-2">
+                  {[
+                    { step: 1, label: '1. Order Placed' },
+                    { step: 2, label: '2. Confirmed by Admin' },
+                    { step: 3, label: '3. Skilled Mistri Assigned' },
+                    { step: 4, label: '4. Mistri On The Way' },
+                    { step: 5, label: '5. Service Work In Progress' },
+                    { step: 6, label: '6. Order Completed' }
+                  ].map((stage) => {
+                    const currentStep = getTimelineStep(detailedOrder.status);
+                    const isPassed = stage.step <= currentStep;
+                    const isCurrent = stage.step === currentStep;
+
+                    return (
+                      <div key={stage.step} className="flex items-start gap-3">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                          isPassed ? 'bg-redPrimary text-white' : 'border-2 border-slate-600 text-transparent'
+                        }`}>
+                          {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : <Circle className="w-2 h-2" />}
+                        </div>
+                        <div>
+                          <p className={`text-xs font-bold ${isPassed ? 'text-white' : 'text-slate-500'}`}>{stage.label}</p>
+                          {isCurrent && <p className="text-[10px] font-bold text-redPrimary">Current Active Status</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Service Address Card */}
+              <div className="p-4 rounded-xl bg-[#242424] border border-[#333333] space-y-1">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                  <MapPin className="w-4 h-4 text-redPrimary" /> Service Address
+                </div>
+                <p className="text-xs text-slate-400 pl-6">{detailedOrder.address}</p>
+              </div>
+
+              {/* Red Return to Home Button */}
+              <button
+                onClick={() => { setDetailedOrder(null); window.location.href = '/'; }}
+                className="btn-primary w-full py-3.5 text-sm font-black bg-redPrimary text-white rounded-xl shadow-lg flex items-center justify-center gap-2"
+              >
+                <Home className="w-4 h-4" /> Return to Home
+              </button>
+            </div>
           </div>
         </div>
       )}

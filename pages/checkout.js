@@ -19,7 +19,7 @@ export default function CheckoutPage() {
   const [date, setDate] = useState('');
   const [slot, setSlot] = useState('');
 
-  // Booking Plan & Duration States
+  // Booking Plan & Duration Dropdown States
   const [bookingPlan, setBookingPlan] = useState('HOURLY'); // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
   const [durationValue, setDurationValue] = useState(1);
 
@@ -273,19 +273,19 @@ export default function CheckoutPage() {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-black">Complete Your Doorstep Booking</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Select duration plan, schedule date & address in Gangtok, Sikkim</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Select duration dropdowns, schedule date & address in Gangtok, Sikkim</p>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              {/* Left 2 Columns: Order Form & Plan Duration */}
+              {/* Left 2 Columns: Order Form & Duration Dropdowns */}
               <div className="lg:col-span-2 space-y-6">
 
                 {/* Selected Service Card */}
                 <div className="web-card p-5 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <img src={service.imageUrl} alt="" className="w-16 h-16 object-cover rounded-xl bg-neutral-800" />
+                    <img src={service.imageUrl} alt="" className="w-16 h-16 object-contain rounded-xl bg-neutral-800 p-1" />
                     <div>
                       <span className="text-[10px] font-black text-redPrimary uppercase">{service.categoryName || 'General'}</span>
                       <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">{service.title}</h3>
@@ -300,52 +300,50 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* NEW: Booking Duration Basis Plan Selector */}
+                {/* DURATION PLAN DROPDOWNS */}
                 <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
                   <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
-                    <Timer className="w-5 h-5" /> Select Booking Duration Basis
+                    <Timer className="w-5 h-5" /> Select Booking Duration Basis (Dropdowns)
                   </h3>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                    {DURATION_PLANS.map((plan) => (
-                      <button
-                        key={plan.id}
-                        type="button"
-                        onClick={() => handlePlanChange(plan.id)}
-                        className={`p-3 rounded-xl border text-left transition-all ${
-                          bookingPlan === plan.id
-                            ? 'bg-redPrimary/10 border-redPrimary text-redPrimary font-extrabold shadow-md scale-102'
-                            : 'bg-slate-50 dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-slate-300 hover:border-redPrimary/50'
-                        }`}
-                      >
-                        <span className="text-xs block font-black">{plan.label}</span>
-                        <span className="text-[10px] text-slate-500 block mt-0.5">{plan.desc}</span>
-                      </button>
-                    ))}
-                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-neutral-900 p-4 rounded-xl border border-slate-200 dark:border-neutral-800">
 
-                  {/* Duration Units Picker Dropdown */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    {/* Dropdown 1: Duration Plan Basis */}
                     <div>
-                      <label className="text-xs font-black text-slate-900 dark:text-white block">
-                        Specify Duration ({bookingPlan} BASIS):
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                        <Timer className="w-4 h-4 text-redPrimary" /> 1. Duration Basis Plan *
                       </label>
-                      <span className="text-[11px] text-slate-500">
-                        Selected: <strong className="text-redPrimary">{durationText}</strong>
-                      </span>
+                      <select
+                        value={bookingPlan}
+                        onChange={(e) => handlePlanChange(e.target.value)}
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary shadow-sm cursor-pointer"
+                      >
+                        {DURATION_PLANS.map((plan) => (
+                          <option key={plan.id} value={plan.id}>
+                            {plan.label} ({plan.desc})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <select
-                      value={durationValue}
-                      onChange={(e) => setDurationValue(parseInt(e.target.value, 10))}
-                      className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary w-full sm:w-auto"
-                    >
-                      {durationOptions.map((unit) => (
-                        <option key={unit} value={unit}>
-                          {unit} {bookingPlan === 'HOURLY' ? (unit === 1 ? 'Hour' : 'Hours') : bookingPlan === 'DAILY' ? (unit === 1 ? 'Day' : 'Days') : bookingPlan === 'WEEKLY' ? (unit === 1 ? 'Week' : 'Weeks') : bookingPlan === 'MONTHLY' ? (unit === 1 ? 'Month' : 'Months') : (unit === 1 ? 'Year' : 'Years')}
-                        </option>
-                      ))}
-                    </select>
+                    {/* Dropdown 2: Duration Units */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-redPrimary" /> 2. Duration Units (<strong className="text-redPrimary">{durationText}</strong>) *
+                      </label>
+                      <select
+                        value={durationValue}
+                        onChange={(e) => setDurationValue(parseInt(e.target.value, 10))}
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary shadow-sm cursor-pointer"
+                      >
+                        {durationOptions.map((unit) => (
+                          <option key={unit} value={unit}>
+                            {unit} {bookingPlan === 'HOURLY' ? (unit === 1 ? 'Hour' : 'Hours') : bookingPlan === 'DAILY' ? (unit === 1 ? 'Day' : 'Days') : bookingPlan === 'WEEKLY' ? (unit === 1 ? 'Week' : 'Weeks') : bookingPlan === 'MONTHLY' ? (unit === 1 ? 'Month' : 'Months') : (unit === 1 ? 'Year' : 'Years')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                   </div>
                 </div>
 

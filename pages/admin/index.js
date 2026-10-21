@@ -445,7 +445,7 @@ export default function AdminControlPanelPage() {
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setActiveTab(t.id)}
+                  onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); }}
                   className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                     activeTab === t.id ? 'bg-redPrimary text-white shadow-md' : 'bg-white dark:bg-darkSurface text-slate-400 hover:text-white'
                   }`}
@@ -540,7 +540,7 @@ export default function AdminControlPanelPage() {
                           {/* Service Address */}
                           <p className="text-xs text-slate-400">Address: <strong className="text-white">{currentOrder.address || 'Gangtok'}</strong></p>
 
-                          {/* LIVE STATUS BAR RIGHT BELOW ADDRESS (Requirement 3) */}
+                          {/* LIVE STATUS BAR RIGHT BELOW ADDRESS */}
                           <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
                             <Bike className="w-4 h-4 text-orangeSecondary" />
                             <span>Live Status: {currentOrder.trackingStatus || 'Order Placed by Customer'}</span>
@@ -574,7 +574,7 @@ export default function AdminControlPanelPage() {
                               {currentOrder.status === 'PENDING' ? 'Confirm Order' : '✓ Confirmed'}
                             </button>
 
-                            {/* Assign Partner Button - DISABLED ONCE PARTNER IS ASSIGNED (Requirement 2) */}
+                            {/* Assign Partner Button - DISABLED ONCE PARTNER IS ASSIGNED */}
                             <button
                               onClick={() => setAssigningBooking(currentOrder)}
                               disabled={currentOrder.status !== 'CONFIRMED'}
@@ -647,7 +647,6 @@ export default function AdminControlPanelPage() {
                   </div>
                 </div>
 
-                {/* Order Status Funnel Breakdown */}
                 <div className="web-card space-y-3">
                   <h4 className="font-bold text-sm text-slate-300">Live Order Status Funnel</h4>
                   <div className="space-y-2">
@@ -700,7 +699,6 @@ export default function AdminControlPanelPage() {
                   </div>
                 </div>
 
-                {/* Financial Payouts Ledger */}
                 <div className="web-card space-y-3">
                   <h4 className="font-bold text-sm text-slate-300">Partner Settlement Payout Ledger</h4>
                   <div className="p-4 rounded-xl bg-neutral-900 border border-neutral-800 flex justify-between items-center text-xs">
@@ -764,7 +762,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 5: CATEGORIES MANAGER (With Slider) */}
+            {/* TAB 5: CATEGORIES MANAGER (With Interactive Slider) */}
             {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4">
@@ -776,24 +774,41 @@ export default function AdminControlPanelPage() {
                   <button type="submit" className="btn-primary py-3 px-6"><Plus className="w-4 h-4" /> Add Category to Firebase</button>
                 </form>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {categoriesList.map((c) => (
-                    <div key={c.id} className="web-card text-center p-4 relative group flex flex-col justify-between">
-                      <div>
-                        <img src={c.iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={c.name} className="w-10 h-10 object-contain mx-auto mb-2" />
-                        <strong className="text-xs block mb-2 text-white">{c.name}</strong>
-                      </div>
-                      <div className="flex gap-2 justify-center mt-2">
-                        <button onClick={() => setEditingCategory({ ...c })} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded font-bold">Edit</button>
-                        <button onClick={() => handleDeleteItem(`categories/${c.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
-                      </div>
+                {categoriesList.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-xs font-bold text-slate-400">
+                        Category <span className="text-redPrimary font-black">{catSliderIdx + 1}</span> of {categoriesList.length}
+                      </span>
+                      {categoriesList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setCatSliderIdx((prev) => (prev - 1 + categoriesList.length) % categoriesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-300">{catSliderIdx + 1} / {categoriesList.length}</span>
+                          <button type="button" onClick={() => setCatSliderIdx((prev) => (prev + 1) % categoriesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {categoriesList.map((c, idx) => (
+                        <div key={c.id} className={`web-card text-center p-4 relative group flex flex-col justify-between transition-all ${idx === catSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
+                          <div>
+                            <img src={c.iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={c.name} className="w-10 h-10 object-contain mx-auto mb-2" />
+                            <strong className="text-xs block mb-2 text-white">{c.name}</strong>
+                          </div>
+                          <div className="flex gap-2 justify-center mt-2">
+                            <button onClick={() => setEditingCategory({ ...c })} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded font-bold">Edit</button>
+                            <button onClick={() => handleDeleteItem(`categories/${c.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB 6: SERVICES MANAGER */}
+            {/* TAB 6: SERVICES MANAGER (With Interactive Slider) */}
             {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4">
@@ -810,26 +825,43 @@ export default function AdminControlPanelPage() {
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Create & Link Service to Category</button>
                 </form>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {servicesList.map((s) => (
-                    <div key={s.id} className="web-card flex flex-col justify-between">
-                      <div>
-                        <img src={s.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={s.title} className="w-full h-32 object-cover rounded-lg mb-2" />
-                        <span className="text-[10px] font-bold text-redPrimary uppercase">{s.categoryName || 'General'}</span>
-                        <h4 className="font-bold text-sm mt-0.5 text-white">{s.title}</h4>
-                        <p className="text-sm font-black text-redPrimary mt-1">₹{s.discountedPrice || s.originalPrice}</p>
-                      </div>
-                      <div className="flex gap-2 mt-3">
-                        <button onClick={() => setEditingService({ ...s })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Edit</button>
-                        <button onClick={() => handleDeleteItem(`services/${s.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Delete</button>
-                      </div>
+                {servicesList.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-xs font-bold text-slate-400">
+                        Service <span className="text-redPrimary font-black">{srvSliderIdx + 1}</span> of {servicesList.length}
+                      </span>
+                      {servicesList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setSrvSliderIdx((prev) => (prev - 1 + servicesList.length) % servicesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-300">{srvSliderIdx + 1} / {servicesList.length}</span>
+                          <button type="button" onClick={() => setSrvSliderIdx((prev) => (prev + 1) % servicesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {servicesList.map((s, idx) => (
+                        <div key={s.id} className={`web-card flex flex-col justify-between transition-all ${idx === srvSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
+                          <div>
+                            <img src={s.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={s.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                            <span className="text-[10px] font-bold text-redPrimary uppercase">{s.categoryName || 'General'}</span>
+                            <h4 className="font-bold text-sm mt-0.5 text-white">{s.title}</h4>
+                            <p className="text-sm font-black text-redPrimary mt-1">₹{s.discountedPrice || s.originalPrice}</p>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button onClick={() => setEditingService({ ...s })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Edit</button>
+                            <button onClick={() => handleDeleteItem(`services/${s.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Delete</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB 7: BANNERS MANAGER */}
+            {/* TAB 7: BANNERS MANAGER (With Interactive Slider) */}
             {activeTab === 7 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddBanner} className="web-card space-y-4">
@@ -842,27 +874,44 @@ export default function AdminControlPanelPage() {
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add Banner to Firebase</button>
                 </form>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {bannersList.map((b) => (
-                    <div key={b.id} className="web-card flex justify-between items-center">
-                      <div className="flex gap-4 items-center">
-                        <img src={b.imageUrl} className="w-16 h-12 object-cover rounded-lg" alt="" />
-                        <div>
-                          <strong className="block text-sm font-bold text-white">{b.title}</strong>
-                          <span className="text-xs text-slate-400">{b.subtitle}</span>
+                {bannersList.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-xs font-bold text-slate-400">
+                        Banner <span className="text-redPrimary font-black">{bnrSliderIdx + 1}</span> of {bannersList.length}
+                      </span>
+                      {bannersList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setBnrSliderIdx((prev) => (prev - 1 + bannersList.length) % bannersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-300">{bnrSliderIdx + 1} / {bannersList.length}</span>
+                          <button type="button" onClick={() => setBnrSliderIdx((prev) => (prev + 1) % bannersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setEditingBanner({ ...b })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Edit</button>
-                        <button onClick={() => handleDeleteItem(`banners/${b.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Delete</button>
-                      </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {bannersList.map((b, idx) => (
+                        <div key={b.id} className={`web-card flex justify-between items-center transition-all ${idx === bnrSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
+                          <div className="flex gap-4 items-center">
+                            <img src={b.imageUrl} className="w-16 h-12 object-cover rounded-lg" alt="" />
+                            <div>
+                              <strong className="block text-sm font-bold text-white">{b.title}</strong>
+                              <span className="text-xs text-slate-400">{b.subtitle}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => setEditingBanner({ ...b })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Edit</button>
+                            <button onClick={() => handleDeleteItem(`banners/${b.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Delete</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB 9: CUSTOMER EXPERIENCE (TESTIMONIALS) */}
+            {/* TAB 9: CUSTOMER EXPERIENCE (TESTIMONIALS - With Interactive Slider) */}
             {activeTab === 9 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddTestimonial} className="web-card space-y-4">
@@ -875,22 +924,39 @@ export default function AdminControlPanelPage() {
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add Review to Firebase</button>
                 </form>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {testimonialsList.map((t) => (
-                    <div key={t.id} className="web-card space-y-2 relative">
-                      <strong className="block text-sm font-bold text-white">{t.name} <span className="text-xs font-normal text-slate-400">({t.location})</span></strong>
-                      <p className="text-xs text-slate-300 italic">"{t.text}"</p>
-                      <div className="flex gap-2 justify-end pt-2">
-                        <button onClick={() => setEditingTestimonial({ ...t })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
-                        <button onClick={() => handleDeleteItem(`testimonials/${t.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
-                      </div>
+                {testimonialsList.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-xs font-bold text-slate-400">
+                        Review <span className="text-redPrimary font-black">{testSliderIdx + 1}</span> of {testimonialsList.length}
+                      </span>
+                      {testimonialsList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setTestSliderIdx((prev) => (prev - 1 + testimonialsList.length) % testimonialsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-300">{testSliderIdx + 1} / {testimonialsList.length}</span>
+                          <button type="button" onClick={() => setTestSliderIdx((prev) => (prev + 1) % testimonialsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {testimonialsList.map((t, idx) => (
+                        <div key={t.id} className={`web-card space-y-2 relative transition-all ${idx === testSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
+                          <strong className="block text-sm font-bold text-white">{t.name} <span className="text-xs font-normal text-slate-400">({t.location})</span></strong>
+                          <p className="text-xs text-slate-300 italic">"{t.text}"</p>
+                          <div className="flex gap-2 justify-end pt-2">
+                            <button onClick={() => setEditingTestimonial({ ...t })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
+                            <button onClick={() => handleDeleteItem(`testimonials/${t.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB 10: FAQs */}
+            {/* TAB 10: FAQs (With Interactive Slider) */}
             {activeTab === 10 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddFaq} className="web-card space-y-4">
@@ -902,18 +968,35 @@ export default function AdminControlPanelPage() {
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add FAQ to Firebase</button>
                 </form>
 
-                <div className="grid grid-cols-1 gap-4">
-                  {faqsList.map((f) => (
-                    <div key={f.id} className="web-card space-y-2 relative">
-                      <strong className="block text-sm font-bold text-redPrimary">Q: {f.q}</strong>
-                      <p className="text-xs text-slate-300">A: {f.a}</p>
-                      <div className="flex gap-2 justify-end pt-2">
-                        <button onClick={() => setEditingFaq({ ...f })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
-                        <button onClick={() => handleDeleteItem(`faqs/${f.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
-                      </div>
+                {faqsList.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-xs font-bold text-slate-400">
+                        FAQ <span className="text-redPrimary font-black">{faqSliderIdx + 1}</span> of {faqsList.length}
+                      </span>
+                      {faqsList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setFaqSliderIdx((prev) => (prev - 1 + faqsList.length) % faqsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-300">{faqSliderIdx + 1} / {faqsList.length}</span>
+                          <button type="button" onClick={() => setFaqSliderIdx((prev) => (prev + 1) % faqsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      {faqsList.map((f, idx) => (
+                        <div key={f.id} className={`web-card space-y-2 relative transition-all ${idx === faqSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl' : ''}`}>
+                          <strong className="block text-sm font-bold text-redPrimary">Q: {f.q}</strong>
+                          <p className="text-xs text-slate-300">A: {f.a}</p>
+                          <div className="flex gap-2 justify-end pt-2">
+                            <button onClick={() => setEditingFaq({ ...f })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
+                            <button onClick={() => handleDeleteItem(`faqs/${f.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

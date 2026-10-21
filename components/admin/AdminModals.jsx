@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Trash2, Save, Upload, User, Eye, EyeOff, Star } from 'lucide-react';
+import { X, UserPlus, Trash2, Save, Upload, User, Eye, EyeOff, Star, Layers } from 'lucide-react';
 import PopupModal from '../PopupModal';
+import { DEFAULT_CATEGORIES } from '../../lib/defaultData';
 
 export function AdminModals({
   popupState, setPopupState,
@@ -24,6 +25,9 @@ export function AdminModals({
 }) {
   const [showCreatePwd, setShowCreatePwd] = useState(false);
   const [showEditPwd, setShowEditPwd] = useState(false);
+
+  // Fallback to DEFAULT_CATEGORIES if categoriesList is empty or loading
+  const activeCategoriesList = (categoriesList && categoriesList.length > 0) ? categoriesList : DEFAULT_CATEGORIES;
 
   return (
     <>
@@ -207,35 +211,38 @@ export function AdminModals({
         </div>
       )}
 
-      {/* EDIT MODAL FOR SERVICES */}
+      {/* EDIT MODAL FOR SERVICES (PROMINENT CATEGORY CONNECTION DROPDOWN) */}
       {editingService && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
           <form onSubmit={handleSaveServiceEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button type="button" onClick={() => setEditingService(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary">Edit Service</h3>
+            <h3 className="text-lg font-bold text-redPrimary flex items-center gap-2">
+              <Layers className="w-5 h-5" /> Edit Service Details
+            </h3>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Title</label>
-              <input type="text" value={editingService.title} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Title *</label>
+              <input type="text" value={editingService.title || ''} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
             </div>
 
             {/* Category Dropdown Selector inside Edit Service Modal */}
             <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Category Connection *</label>
+              <label className="text-[11px] font-extrabold text-redPrimary block mb-1">Category Connection *</label>
               <select
                 value={editingService.categoryId || ''}
                 onChange={(e) => {
-                  const selectedCat = (categoriesList || []).find(c => c.id === e.target.value);
+                  const selectedCat = activeCategoriesList.find(c => c.id === e.target.value || c.name === e.target.value);
                   setEditingService({
                     ...editingService,
                     categoryId: e.target.value,
                     categoryName: selectedCat ? selectedCat.name : editingService.categoryName
                   });
                 }}
-                className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                className="w-full p-3 rounded-lg border border-redPrimary/40 bg-redPrimary/10 text-xs font-extrabold text-redPrimary outline-none focus:border-redPrimary cursor-pointer"
               >
-                {(categoriesList || []).map((cat) => (
-                  <option key={cat.id} value={cat.id}>
+                <option value="">-- Select Category Connection --</option>
+                {activeCategoriesList.map((cat) => (
+                  <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">
                     {cat.name}
                   </option>
                 ))}
@@ -245,11 +252,11 @@ export function AdminModals({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Original Price (₹)</label>
-                <input type="number" value={editingService.originalPrice} onChange={(e) => setEditingService({ ...editingService, originalPrice: e.target.value })} placeholder="Original Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+                <input type="number" value={editingService.originalPrice || ''} onChange={(e) => setEditingService({ ...editingService, originalPrice: e.target.value })} placeholder="Original Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
               </div>
               <div>
                 <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Discount Price (₹)</label>
-                <input type="number" value={editingService.discountedPrice} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+                <input type="number" value={editingService.discountedPrice || ''} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
               </div>
             </div>
 
@@ -283,7 +290,7 @@ export function AdminModals({
                     className="hidden"
                   />
                 </label>
-                <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or paste Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+                <input type="text" value={editingService.imageUrl || ''} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or paste Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
               </div>
             </div>
 

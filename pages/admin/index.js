@@ -17,13 +17,14 @@ export default function AdminControlPanelPage() {
 
   // Slider Index States for Admin Tabs
   const [orderSliderIdx, setOrderSliderIdx] = useState(0);
+  const [userSliderIdx, setUserSliderIdx] = useState(0);
   const [catSliderIdx, setCatSliderIdx] = useState(0);
   const [srvSliderIdx, setSrvSliderIdx] = useState(0);
   const [bnrSliderIdx, setBnrSliderIdx] = useState(0);
   const [testSliderIdx, setTestSliderIdx] = useState(0);
   const [faqSliderIdx, setFaqSliderIdx] = useState(0);
 
-  // Realtime Firebase States
+  // Realtime Database States
   const [bookings, setBookings] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
@@ -88,7 +89,7 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // Robust Snapshot Parser to retrieve ALL entries from Firebase Database
+  // Robust Snapshot Parser to retrieve ALL entries from Database
   const parseFirebaseSnapshot = (snapshot) => {
     const list = [];
     if (snapshot && snapshot.exists()) {
@@ -184,14 +185,14 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Add Item Handlers
+  // Add Item Handlers (Zero "Firebase" words)
   const handleAddCategory = (e) => {
     e.preventDefault();
     if (!newCatName) return alert('Category Name is required.');
     const newRef = push(ref(rtdb, 'categories'));
     const catId = newRef.key;
     set(newRef, { id: catId, name: newCatName, iconUrl: newCatIcon || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png' })
-      .then(() => { alert(`New Category '${newCatName}' created in Firebase!`); setNewCatName(''); setNewCatIcon(''); });
+      .then(() => { alert(`New Category '${newCatName}' created successfully!`); setNewCatName(''); setNewCatIcon(''); });
   };
 
   const handleAddService = (e) => {
@@ -210,7 +211,7 @@ export default function AdminControlPanelPage() {
       discountedPrice: parseFloat(newSrvDiscount) || (parseFloat(newSrvPrice) || 1000),
       imageUrl: newSrvImage || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'
     }).then(() => {
-      alert(`New Service '${newSrvTitle}' connected to Category '${catObj.name}' and saved to Firebase!`);
+      alert(`New Service '${newSrvTitle}' connected to Category '${catObj.name}' and saved!`);
       setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage('');
     });
   };
@@ -225,7 +226,7 @@ export default function AdminControlPanelPage() {
       title: newBnrTitle,
       subtitle: newBnrSub || 'Doorstep Services across Gangtok',
       imageUrl: newBnrImg || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80'
-    }).then(() => { alert('New Marketing Banner saved to Firebase!'); setNewBnrTitle(''); setNewBnrSub(''); setNewBnrImg(''); });
+    }).then(() => { alert('New Marketing Banner saved successfully!'); setNewBnrTitle(''); setNewBnrSub(''); setNewBnrImg(''); });
   };
 
   const handleAddTestimonial = (e) => {
@@ -240,7 +241,7 @@ export default function AdminControlPanelPage() {
       text: newTestText,
       rating: 5,
       service: 'Verified Customer'
-    }).then(() => { alert('New Customer Experience Review saved to Firebase!'); setNewTestName(''); setNewTestLoc(''); setNewTestText(''); });
+    }).then(() => { alert('New Customer Experience Review saved successfully!'); setNewTestName(''); setNewTestLoc(''); setNewTestText(''); });
   };
 
   const handleAddFaq = (e) => {
@@ -252,7 +253,7 @@ export default function AdminControlPanelPage() {
       id: faqId,
       q: newFaqQ,
       a: newFaqA
-    }).then(() => { alert('New FAQ saved to Firebase!'); setNewFaqQ(''); setNewFaqA(''); });
+    }).then(() => { alert('New FAQ saved successfully!'); setNewFaqQ(''); setNewFaqA(''); });
   };
 
   // Edit Item Handlers
@@ -310,14 +311,14 @@ export default function AdminControlPanelPage() {
   const handleSaveAdminProfile = (e) => {
     e.preventDefault();
     update(ref(rtdb, 'users/bLfKYzhws9d7zozkzwyemQPI8bG3'), { fullName: adminName, phoneNumber: adminPhone, email: adminEmail })
-      .then(() => alert('Admin Profile ID credentials saved to Firebase Database!'));
+      .then(() => alert('Admin Profile ID credentials saved successfully!'));
   };
 
   const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
 
-  // Retrieve ALL Registered Service Partners from Firebase Users
+  // Retrieve ALL Registered Service Partners from Users
   const allPartnersList = usersList.filter(u => {
     const roleUpper = (u.role || '').toUpperCase();
     return roleUpper === 'PARTNER' || roleUpper === 'SERVICE_PARTNER' || u.skillCategory;
@@ -442,7 +443,7 @@ export default function AdminControlPanelPage() {
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); }}
+                  onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setUserSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); }}
                   className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                     activeTab === t.id ? 'bg-redPrimary text-white shadow-md' : 'bg-white dark:bg-darkSurface text-slate-400 hover:text-white'
                   }`}
@@ -452,7 +453,7 @@ export default function AdminControlPanelPage() {
               ))}
             </div>
 
-            {/* TAB 0: ORDERS (With Sub-Tabs after ON_THE_WAY: IN_PROGRESS / ARRIVED WORK STARTED) */}
+            {/* TAB 0: ORDERS (With Single-Card Animated Slider Format) */}
             {activeTab === 0 && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
@@ -467,7 +468,6 @@ export default function AdminControlPanelPage() {
                     />
                   </div>
 
-                  {/* Sub-Tabs including ARRIVED / WORK STARTED after ON_THE_WAY */}
                   <div className="flex gap-2 overflow-x-auto">
                     {['ALL', 'PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].map((st) => (
                       <button
@@ -484,10 +484,9 @@ export default function AdminControlPanelPage() {
                 </div>
 
                 {filteredOrders.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6">No matching customer orders in Firebase Database.</p>
+                  <p className="text-xs text-slate-500 py-6">No matching customer orders found.</p>
                 ) : (
                   <div className="space-y-4">
-                    {/* Order Slider Controls */}
                     <div className="flex justify-between items-center px-1">
                       <span className="text-xs font-bold text-slate-400">
                         Order <span className="text-redPrimary font-black">{orderSliderIdx + 1}</span> of {filteredOrders.length}
@@ -516,7 +515,6 @@ export default function AdminControlPanelPage() {
                       )}
                     </div>
 
-                    {/* Animated Single Order Card Slider */}
                     {currentOrder && (
                       <AnimatePresence mode="wait">
                         <motion.div
@@ -534,17 +532,14 @@ export default function AdminControlPanelPage() {
 
                           <h3 className="font-bold text-lg text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
                           <p className="text-xs text-slate-400">Customer: <strong className="text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
-
-                          {/* Service Address */}
                           <p className="text-xs text-slate-400">Address: <strong className="text-white">{currentOrder.address || 'Gangtok'}</strong></p>
 
-                          {/* LIVE STATUS BAR RIGHT BELOW ADDRESS */}
+                          {/* Live Status Bar Right Below Address */}
                           <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
                             <Bike className="w-4 h-4 text-orangeSecondary" />
                             <span>Live Status: {currentOrder.trackingStatus || 'Order Placed by Customer'}</span>
                           </div>
 
-                          {/* Assigned Partner Details */}
                           {currentOrder.assignedPartnerName && (
                             <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
                               <div>
@@ -556,9 +551,7 @@ export default function AdminControlPanelPage() {
                             </div>
                           )}
 
-                          {/* Action Buttons */}
                           <div className="flex flex-wrap gap-2 pt-2 border-t border-neutral-800">
-                            {/* Confirm Order Button - Disabled once confirmed */}
                             <button
                               onClick={() => handleUpdateStatus(currentOrder.id, 'CONFIRMED', 'Confirmed by Admin')}
                               disabled={currentOrder.status !== 'PENDING'}
@@ -572,7 +565,6 @@ export default function AdminControlPanelPage() {
                               {currentOrder.status === 'PENDING' ? 'Confirm Order' : '✓ Confirmed'}
                             </button>
 
-                            {/* Assign Partner Button - DISABLED ONCE PARTNER IS ASSIGNED */}
                             <button
                               onClick={() => setAssigningBooking(currentOrder)}
                               disabled={currentOrder.status !== 'CONFIRMED'}
@@ -598,7 +590,6 @@ export default function AdminControlPanelPage() {
                       </AnimatePresence>
                     )}
 
-                    {/* Dots Indicator for Orders Slider */}
                     {filteredOrders.length > 1 && (
                       <div className="flex justify-center gap-2 pt-2">
                         {filteredOrders.map((_, i) => (
@@ -715,7 +706,7 @@ export default function AdminControlPanelPage() {
               <div className="web-card space-y-3">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners ({allPartnersList.length})</h3>
                 {allPartnersList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6">No service partners registered in Firebase Database yet.</p>
+                  <p className="text-xs text-slate-500 py-6">No service partners registered yet.</p>
                 ) : (
                   allPartnersList.map(p => {
                     const isOnline = p.isOnline === true || p.isOnline === 'true';
@@ -740,27 +731,64 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 4: REGISTERED USERS */}
+            {/* TAB 4: REGISTERED USERS (With Single-Card Animated Slider) */}
             {activeTab === 4 && (
-              <div className="web-card space-y-3">
+              <div className="space-y-4">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
-                <div className="space-y-2">
-                  {usersList.map((u) => (
-                    <div key={u.id} className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
-                      <div><strong>{u.fullName || 'User'}</strong> ({u.email || 'N/A'}) - {u.phoneNumber || 'N/A'}</div>
-                      <div className="flex gap-2 items-center">
-                        <span className={`px-2 py-0.5 rounded font-bold ${ (u.role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : (u.role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
-                          {u.role || 'CUSTOMER'}
-                        </span>
-                        <button onClick={() => setDeletingPath(`users/${u.id}`)} className="bg-rose-800 text-white text-[10px] px-2 py-0.5 rounded font-bold">Delete</button>
-                      </div>
+                {usersList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No registered users found.</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-xs font-bold text-slate-400">
+                        User Account <span className="text-redPrimary font-black">{userSliderIdx + 1}</span> of {usersList.length}
+                      </span>
+                      {usersList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setUserSliderIdx((prev) => (prev - 1 + usersList.length) % usersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-300">{userSliderIdx + 1} / {usersList.length}</span>
+                          <button type="button" onClick={() => setUserSliderIdx((prev) => (prev + 1) % usersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+
+                    {usersList[userSliderIdx] && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={usersList[userSliderIdx].id || userSliderIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex justify-between items-center text-xs shadow-xl"
+                        >
+                          <div>
+                            <strong className="text-sm block text-white font-extrabold">{usersList[userSliderIdx].fullName || 'User'}</strong>
+                            <p className="text-xs text-slate-400 mt-1">{usersList[userSliderIdx].email || 'N/A'} • {usersList[userSliderIdx].phoneNumber || 'N/A'}</p>
+                          </div>
+                          <div className="flex gap-2 items-center">
+                            <span className={`px-3 py-1 rounded-full text-xs font-black ${ (usersList[userSliderIdx].role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : (usersList[userSliderIdx].role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
+                              {usersList[userSliderIdx].role || 'CUSTOMER'}
+                            </span>
+                            <button onClick={() => setDeletingPath(`users/${usersList[userSliderIdx].id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete</button>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {usersList.length > 1 && (
+                      <div className="flex justify-center gap-2 pt-2">
+                        {usersList.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setUserSliderIdx(i)} className={`h-2 rounded-full transition-all ${userSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB 5: CATEGORIES MANAGER (With Interactive Slider) */}
+            {/* TAB 5: CATEGORIES MANAGER (With Single-Card Animated Slider) */}
             {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4">
@@ -769,10 +797,12 @@ export default function AdminControlPanelPage() {
                     <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <input type="text" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} placeholder="Icon Image URL" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                   </div>
-                  <button type="submit" className="btn-primary py-3 px-6"><Plus className="w-4 h-4" /> Add Category to Firebase</button>
+                  <button type="submit" className="btn-primary py-3 px-6"><Plus className="w-4 h-4" /> Save Category</button>
                 </form>
 
-                {categoriesList.length > 0 && (
+                {categoriesList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No categories found.</p>
+                ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                       <span className="text-xs font-bold text-slate-400">
@@ -787,26 +817,40 @@ export default function AdminControlPanelPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      {categoriesList.map((c, idx) => (
-                        <div key={c.id} className={`web-card text-center p-4 relative group flex flex-col justify-between transition-all ${idx === catSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
-                          <div>
-                            <img src={c.iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={c.name} className="w-10 h-10 object-contain mx-auto mb-2" />
-                            <strong className="text-xs block mb-2 text-white">{c.name}</strong>
+                    {categoriesList[catSliderIdx] && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={categoriesList[catSliderIdx].id || catSliderIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="web-card text-center p-6 bg-[#1A1A1A] border border-[#333333] rounded-2xl shadow-xl flex flex-col items-center gap-3 relative max-w-md mx-auto"
+                        >
+                          <img src={categoriesList[catSliderIdx].iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-16 h-16 object-contain" />
+                          <strong className="text-base block text-white font-extrabold">{categoriesList[catSliderIdx].name}</strong>
+
+                          <div className="flex gap-2 justify-center pt-2 w-full">
+                            <button onClick={() => setEditingCategory({ ...categoriesList[catSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`categories/${categoriesList[catSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2 rounded-xl font-bold flex-1">Delete</button>
                           </div>
-                          <div className="flex gap-2 justify-center mt-2">
-                            <button onClick={() => setEditingCategory({ ...c })} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded font-bold">Edit</button>
-                            <button onClick={() => setDeletingPath(`categories/${c.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {categoriesList.length > 1 && (
+                      <div className="flex justify-center gap-2 pt-2">
+                        {categoriesList.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setCatSliderIdx(i)} className={`h-2 rounded-full transition-all ${catSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* TAB 6: SERVICES MANAGER (With Interactive Slider) */}
+            {/* TAB 6: SERVICES MANAGER (With Single-Card Animated Slider) */}
             {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4">
@@ -823,7 +867,9 @@ export default function AdminControlPanelPage() {
                   <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Create & Link Service to Category</button>
                 </form>
 
-                {servicesList.length > 0 && (
+                {servicesList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No services found.</p>
+                ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                       <span className="text-xs font-bold text-slate-400">
@@ -838,28 +884,43 @@ export default function AdminControlPanelPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {servicesList.map((s, idx) => (
-                        <div key={s.id} className={`web-card flex flex-col justify-between transition-all ${idx === srvSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
+                    {servicesList[srvSliderIdx] && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={servicesList[srvSliderIdx].id || srvSliderIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto"
+                        >
                           <div>
-                            <img src={s.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={s.title} className="w-full h-32 object-cover rounded-lg mb-2" />
-                            <span className="text-[10px] font-bold text-redPrimary uppercase">{s.categoryName || 'General'}</span>
-                            <h4 className="font-bold text-sm mt-0.5 text-white">{s.title}</h4>
-                            <p className="text-sm font-black text-redPrimary mt-1">₹{s.discountedPrice || s.originalPrice}</p>
+                            <img src={servicesList[srvSliderIdx].imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-44 object-cover rounded-xl mb-3" />
+                            <span className="text-[10px] font-bold text-redPrimary uppercase">{servicesList[srvSliderIdx].categoryName || 'General'}</span>
+                            <h4 className="font-bold text-base mt-0.5 text-white">{servicesList[srvSliderIdx].title}</h4>
+                            <p className="text-lg font-black text-redPrimary mt-1">₹{servicesList[srvSliderIdx].discountedPrice || servicesList[srvSliderIdx].originalPrice}</p>
                           </div>
-                          <div className="flex gap-2 mt-3">
-                            <button onClick={() => setEditingService({ ...s })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Edit</button>
-                            <button onClick={() => setDeletingPath(`services/${s.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex-1">Delete</button>
+                          <div className="flex gap-2 mt-4 pt-3 border-t border-neutral-800">
+                            <button onClick={() => setEditingService({ ...servicesList[srvSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`services/${servicesList[srvSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {servicesList.length > 1 && (
+                      <div className="flex justify-center gap-2 pt-2">
+                        {servicesList.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setSrvSliderIdx(i)} className={`h-2 rounded-full transition-all ${srvSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* TAB 7: BANNERS MANAGER (With Interactive Slider) */}
+            {/* TAB 7: BANNERS MANAGER (With Single-Card Animated Slider) */}
             {activeTab === 7 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddBanner} className="web-card space-y-4">
@@ -869,10 +930,12 @@ export default function AdminControlPanelPage() {
                     <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <input type="text" value={newBnrImg} onChange={(e) => setNewBnrImg(e.target.value)} placeholder="Banner Image URL" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add Banner to Firebase</button>
+                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save Marketing Banner</button>
                 </form>
 
-                {bannersList.length > 0 && (
+                {bannersList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No banners found.</p>
+                ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                       <span className="text-xs font-bold text-slate-400">
@@ -887,29 +950,42 @@ export default function AdminControlPanelPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {bannersList.map((b, idx) => (
-                        <div key={b.id} className={`web-card flex justify-between items-center transition-all ${idx === bnrSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
-                          <div className="flex gap-4 items-center">
-                            <img src={b.imageUrl} className="w-16 h-12 object-cover rounded-lg" alt="" />
-                            <div>
-                              <strong className="block text-sm font-bold text-white">{b.title}</strong>
-                              <span className="text-xs text-slate-400">{b.subtitle}</span>
-                            </div>
+                    {bannersList[bnrSliderIdx] && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={bannersList[bnrSliderIdx].id || bnrSliderIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl flex flex-col gap-4 shadow-2xl relative max-w-lg mx-auto"
+                        >
+                          <img src={bannersList[bnrSliderIdx].imageUrl} className="w-full h-40 object-cover rounded-xl" alt="" />
+                          <div>
+                            <strong className="block text-base font-bold text-white">{bannersList[bnrSliderIdx].title}</strong>
+                            <span className="text-xs text-slate-400">{bannersList[bnrSliderIdx].subtitle}</span>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => setEditingBanner({ ...b })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Edit</button>
-                            <button onClick={() => setDeletingPath(`banners/${b.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold">Delete</button>
+                          <div className="flex gap-2 pt-2 border-t border-neutral-800">
+                            <button onClick={() => setEditingBanner({ ...bannersList[bnrSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`banners/${bannersList[bnrSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {bannersList.length > 1 && (
+                      <div className="flex justify-center gap-2 pt-2">
+                        {bannersList.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setBnrSliderIdx(i)} className={`h-2 rounded-full transition-all ${bnrSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* TAB 9: CUSTOMER EXPERIENCE (TESTIMONIALS - With Interactive Slider) */}
+            {/* TAB 9: CUSTOMER EXPERIENCE (With Single-Card Animated Slider) */}
             {activeTab === 9 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddTestimonial} className="web-card space-y-4">
@@ -919,10 +995,12 @@ export default function AdminControlPanelPage() {
                     <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm"></textarea>
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add Review to Firebase</button>
+                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save Customer Review</button>
                 </form>
 
-                {testimonialsList.length > 0 && (
+                {testimonialsList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No customer reviews found.</p>
+                ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                       <span className="text-xs font-bold text-slate-400">
@@ -937,24 +1015,42 @@ export default function AdminControlPanelPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {testimonialsList.map((t, idx) => (
-                        <div key={t.id} className={`web-card space-y-2 relative transition-all ${idx === testSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl scale-105' : ''}`}>
-                          <strong className="block text-sm font-bold text-white">{t.name} <span className="text-xs font-normal text-slate-400">({t.location})</span></strong>
-                          <p className="text-xs text-slate-300 italic">"{t.text}"</p>
-                          <div className="flex gap-2 justify-end pt-2">
-                            <button onClick={() => setEditingTestimonial({ ...t })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
-                            <button onClick={() => setDeletingPath(`testimonials/${t.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
+                    {testimonialsList[testSliderIdx] && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={testimonialsList[testSliderIdx].id || testSliderIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto"
+                        >
+                          <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
+                            <strong className="block text-base font-bold text-white">{testimonialsList[testSliderIdx].name}</strong>
+                            <span className="text-xs text-slate-400">({testimonialsList[testSliderIdx].location})</span>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                          <p className="text-xs sm:text-sm text-slate-300 italic leading-relaxed">"{testimonialsList[testSliderIdx].text}"</p>
+                          <div className="flex gap-2 justify-end pt-2 border-t border-neutral-800">
+                            <button onClick={() => setEditingTestimonial({ ...testimonialsList[testSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`testimonials/${testimonialsList[testSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {testimonialsList.length > 1 && (
+                      <div className="flex justify-center gap-2 pt-2">
+                        {testimonialsList.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setTestSliderIdx(i)} className={`h-2 rounded-full transition-all ${testSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* TAB 10: FAQs (With Interactive Slider) */}
+            {/* TAB 10: FAQs (With Single-Card Animated Slider) */}
             {activeTab === 10 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddFaq} className="web-card space-y-4">
@@ -963,10 +1059,12 @@ export default function AdminControlPanelPage() {
                     <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm"></textarea>
                   </div>
-                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Add FAQ to Firebase</button>
+                  <button type="submit" className="btn-primary w-full py-3"><Plus className="w-4 h-4" /> Save FAQ</button>
                 </form>
 
-                {faqsList.length > 0 && (
+                {faqsList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No FAQs found.</p>
+                ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                       <span className="text-xs font-bold text-slate-400">
@@ -981,18 +1079,33 @@ export default function AdminControlPanelPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
-                      {faqsList.map((f, idx) => (
-                        <div key={f.id} className={`web-card space-y-2 relative transition-all ${idx === faqSliderIdx ? 'border-2 border-redPrimary bg-redPrimary/10 shadow-xl' : ''}`}>
-                          <strong className="block text-sm font-bold text-redPrimary">Q: {f.q}</strong>
-                          <p className="text-xs text-slate-300">A: {f.a}</p>
-                          <div className="flex gap-2 justify-end pt-2">
-                            <button onClick={() => setEditingFaq({ ...f })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Edit</button>
-                            <button onClick={() => setDeletingPath(`faqs/${f.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete</button>
+                    {faqsList[faqSliderIdx] && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={faqsList[faqSliderIdx].id || faqSliderIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto"
+                        >
+                          <strong className="block text-base font-bold text-redPrimary">Q: {faqsList[faqSliderIdx].q}</strong>
+                          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">A: {faqsList[faqSliderIdx].a}</p>
+                          <div className="flex gap-2 justify-end pt-2 border-t border-neutral-800">
+                            <button onClick={() => setEditingFaq({ ...faqsList[faqSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Edit</button>
+                            <button onClick={() => setDeletingPath(`faqs/${faqsList[faqSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex-1">Delete</button>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {faqsList.length > 1 && (
+                      <div className="flex justify-center gap-2 pt-2">
+                        {faqsList.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setFaqSliderIdx(i)} className={`h-2 rounded-full transition-all ${faqSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1015,7 +1128,7 @@ export default function AdminControlPanelPage() {
                   <input type="text" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-semibold" />
                 </div>
                 <button type="submit" className="btn-primary w-full py-3">
-                  Save Admin Profile Credentials to Firebase
+                  Save Admin Profile Credentials
                 </button>
               </form>
             )}
@@ -1023,7 +1136,7 @@ export default function AdminControlPanelPage() {
         )}
       </main>
 
-      {/* CUSTOM DELETE CONFIRMATION MODAL (ARE YOU SURE TO DELETE - YES / NO) */}
+      {/* CUSTOM DELETE CONFIRMATION MODAL */}
       {deletingPath && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#242424] border border-neutral-700 rounded-3xl p-6 sm:p-8 w-full max-w-sm text-white shadow-2xl text-center space-y-5 relative">
@@ -1033,7 +1146,7 @@ export default function AdminControlPanelPage() {
 
             <div>
               <h3 className="text-xl font-black text-white">Are you sure you want to delete?</h3>
-              <p className="text-xs text-slate-400 mt-1">This item will be permanently removed from Firebase Realtime Database.</p>
+              <p className="text-xs text-slate-400 mt-1">This item will be permanently removed.</p>
             </div>
 
             <div className="flex gap-3 pt-2">

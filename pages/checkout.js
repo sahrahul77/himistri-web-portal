@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PopupModal from '../components/PopupModal';
 import { ref, set, push, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -28,6 +29,9 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Dynamic Popup Modal State
+  const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
   const [service, setService] = useState(null);
 
@@ -55,7 +59,7 @@ export default function CheckoutPage() {
             }));
             setSavedAddressesList(addrs);
 
-            // Auto pre-fill all 4 address fields from the customer's primary saved address!
+            // Auto pre-fill all 4 address fields from primary saved address
             if (addrs.length > 0) {
               const firstAddr = addrs[0];
               setSelectedSavedAddr(firstAddr.id);
@@ -110,15 +114,33 @@ export default function CheckoutPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
-    if (!service) return alert('No service selected for checkout. Please go back to catalog.');
+    if (!service) {
+      setPopupState({
+        isOpen: true,
+        title: 'Cart is Empty',
+        message: 'No service selected for checkout. Please browse the catalog.',
+        type: 'error'
+      });
+      return;
+    }
 
     if (!streetAddress) {
-      alert('Compulsory: Please enter Street Address / Locality in Gangtok.');
+      setPopupState({
+        isOpen: true,
+        title: 'Address Required',
+        message: 'Please enter a valid Street Address / Locality in Gangtok.',
+        type: 'error'
+      });
       return;
     }
 
     if (!date || !slot) {
-      alert('Compulsory: Please select a valid Custom Service Date and Arrival Time.');
+      setPopupState({
+        isOpen: true,
+        title: 'Schedule Required',
+        message: 'Please select a valid Custom Service Date and Arrival Time.',
+        type: 'error'
+      });
       return;
     }
 
@@ -172,12 +194,24 @@ export default function CheckoutPage() {
       .then(() => {
         setIsSubmitting(false);
         localStorage.removeItem('himistri_checkout_service');
-        alert(`Order Placed Successfully!\nRef ID: ${bookingRef}\nAmount: ₹${totalPrice}\nAddress saved to Profile!`);
-        window.location.href = '/tracking';
+
+        // Show Sleek Professional Dynamic Popup Modal
+        setPopupState({
+          isOpen: true,
+          title: 'Order Placed Successfully!',
+          message: `Ref ID: ${bookingRef}\nAmount: ₹${totalPrice}\nAddress saved to Profile!`,
+          type: 'success',
+          onAction: () => { window.location.href = '/tracking'; }
+        });
       })
       .catch((err) => {
         setIsSubmitting(false);
-        alert('Order submission failed: ' + err.message);
+        setPopupState({
+          isOpen: true,
+          title: 'Order Submission Failed',
+          message: err.message,
+          type: 'error'
+        });
       });
   };
 
@@ -375,6 +409,17 @@ export default function CheckoutPage() {
           </div>
         </div>
       </main>
+
+      {/* Dynamic Popup Modal Component */}
+      <PopupModal
+        isOpen={popupState.isOpen}
+        onClose={() => setPopupState({ ...popupState, isOpen: false })}
+        title={popupState.title}
+        message={popupState.message}
+        type={popupState.type}
+        actionText="View My Orders & Track"
+        onAction={popupState.onAction}
+      />
     </div>
   );
 }

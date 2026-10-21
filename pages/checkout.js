@@ -366,7 +366,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Complete Structured Address Details */}
+                {/* Complete Structured Address Details matching Profile 100% */}
                 <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
                   <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
                     <MapPin className="w-5 h-5" /> Doorstep Service Address in Gangtok
@@ -382,45 +382,99 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Address Tag</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-neutral-900 p-4 rounded-2xl border border-slate-200 dark:border-neutral-800">
+
+                    {/* Address Type Tag Selector */}
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Type of Address *</label>
                       <div className="flex gap-2">
-                        {['Home', 'Work', 'Office', 'Other'].map(t => (
-                          <button key={t} type="button" onClick={() => setNewAddrType(t)} className={`flex-1 py-2 text-xs font-bold rounded-lg border transition ${newAddrType === t ? 'bg-redPrimary text-white border-redPrimary' : 'bg-slate-50 dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-slate-300'}`}>{t}</button>
+                        {['Home', 'Work', 'Office', 'Other'].map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setNewAddrType(t)}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold border transition ${
+                              newAddrType === t ? 'bg-redPrimary text-white border-redPrimary shadow-md' : 'bg-white dark:bg-neutral-800 text-slate-400 border-slate-200 dark:border-neutral-700'
+                            }`}
+                          >
+                            {t === 'Home' ? '🏡 Home' : t === 'Work' ? '🏢 Work' : t === 'Office' ? '💼 Office' : '📍 Other'}
+                          </button>
                         ))}
                       </div>
                     </div>
 
+                    {/* House No / Tower / Block */}
                     <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Building / House No.</label>
-                      <input type="text" value={houseNo} onChange={(e) => setHouseNo(e.target.value)} placeholder="e.g. House No. 42 / Flat 3B" className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">House No. / Tower / Block</label>
+                      <input
+                        type="text"
+                        value={houseNo}
+                        onChange={(e) => setHouseNo(e.target.value)}
+                        placeholder="e.g. Flat 4B / Block C"
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
                     </div>
 
-                    <div className="sm:col-span-2">
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
-                      <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder="e.g. Upper Syari Road, Near Deorali Taxi Stand *" required className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    {/* Address (Building, Street, Area) */}
+                    <div>
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
+                      <input
+                        type="text"
+                        value={streetAddress}
+                        onChange={(e) => setStreetAddress(e.target.value)}
+                        placeholder="e.g. Upper Syari, Deorali-Bazar *"
+                        required
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
                     </div>
 
+                    {/* Locality / Town */}
                     <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Locality / Town</label>
-                      <input type="text" value={locality} onChange={(e) => setLocality(e.target.value)} placeholder="e.g. Near ICDS Center" className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Locality / Town</label>
+                      <input
+                        type="text"
+                        value={locality}
+                        onChange={(e) => setLocality(e.target.value)}
+                        placeholder="e.g. Near ICDS Center"
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
                     </div>
 
+                    {/* City / District */}
                     <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">City / District</label>
-                      <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Gangtok" className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">City / District</label>
+                      <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="Gangtok"
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
                     </div>
 
+                    {/* State (Default Fixed = Sikkim) */}
                     <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">State (Fixed)</label>
-                      <input type="text" value="Sikkim" disabled className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-200 dark:bg-neutral-950 text-slate-500 text-xs font-bold cursor-not-allowed" />
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">State (Default Fixed)</label>
+                      <input
+                        type="text"
+                        value="Sikkim"
+                        disabled
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-200 dark:bg-neutral-950 text-slate-500 text-xs font-bold cursor-not-allowed"
+                      />
                     </div>
 
+                    {/* Pincode (Default = 737101) */}
                     <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Pincode (Default: 737101)</label>
-                      <input type="text" value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="737101" className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Pincode (Default: 737101)</label>
+                      <input
+                        type="text"
+                        value={pincode}
+                        onChange={(e) => setPincode(e.target.value)}
+                        placeholder="737101"
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
                     </div>
+
                   </div>
                 </div>
 

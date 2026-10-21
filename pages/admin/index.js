@@ -14,7 +14,7 @@ import {
 
 export default function AdminControlPanelPage() {
   const [isDark, setIsDark] = useState(true);
-  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile, 9=Testimonials, 10=FAQs
+  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs
 
   // Slider Index States for Admin Tabs
   const [orderSliderIdx, setOrderSliderIdx] = useState(0);
@@ -48,6 +48,9 @@ export default function AdminControlPanelPage() {
   const [editingFaq, setEditingFaq] = useState(null);
   const [editingAdminUser, setEditingAdminUser] = useState(null);
 
+  // Modal to create sub admin
+  const [isCreateSubAdminOpen, setIsCreateSubAdminOpen] = useState(false);
+
   // Selected Booking for Assign Partner Modal
   const [assigningBooking, setAssigningBooking] = useState(null);
   const [assignFilterTab, setAssignFilterTab] = useState(0); // 0=Skill Matched, 1=Free, 2=All Fleet
@@ -79,7 +82,7 @@ export default function AdminControlPanelPage() {
   const [newFaqQ, setNewFaqQ] = useState('');
   const [newFaqA, setNewFaqA] = useState('');
 
-  // Sub-Admin Creation Form States
+  // Sub-Admin Creation Form States with Password
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPhone, setNewAdminPhone] = useState('');
@@ -235,6 +238,7 @@ export default function AdminControlPanelPage() {
       setNewAdminEmail('');
       setNewAdminPhone('');
       setNewAdminPassword('');
+      setIsCreateSubAdminOpen(false);
 
       setPopupState({
         isOpen: true,
@@ -540,9 +544,19 @@ export default function AdminControlPanelPage() {
                 </div>
               </div>
 
-              <button onClick={logout} className="btn-primary bg-redPrimary hover:bg-redDark text-xs py-2.5 px-5 shadow-lg w-full sm:w-auto text-center justify-center">
-                <LogOut className="w-4 h-4 inline mr-1" /> Log Out
-              </button>
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateSubAdminOpen(true)}
+                  className="btn-primary bg-emerald-600 hover:bg-emerald-700 text-xs py-2.5 px-4 shadow-lg w-full sm:w-auto text-center justify-center flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-4 h-4" /> + Create Sub-Admin ({currentAdmins.length}/3)
+                </button>
+
+                <button onClick={logout} className="btn-primary bg-redPrimary hover:bg-redDark text-xs py-2.5 px-4 shadow-lg w-full sm:w-auto text-center justify-center">
+                  <LogOut className="w-4 h-4 inline mr-1" /> Log Out
+                </button>
+              </div>
             </div>
 
             {/* Executive Analytics KPIs */}
@@ -578,7 +592,7 @@ export default function AdminControlPanelPage() {
               </div>
             </div>
 
-            {/* Responsive Admin Navigation Tabs with Touch Scroll */}
+            {/* Responsive Admin Navigation Tabs */}
             <div className="flex gap-2 overflow-x-auto border-b border-neutral-800 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
               {[
                 { id: 0, label: `Orders (${bookings.length})` },
@@ -591,7 +605,7 @@ export default function AdminControlPanelPage() {
                 { id: 7, label: `Banners (${bannersList.length})` },
                 { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
                 { id: 10, label: `FAQs (${faqsList.length})` },
-                { id: 8, label: `Admin Roles (${currentAdmins.length}/3)` }
+                { id: 8, label: `Manage Sub-Admins 🔑 (${currentAdmins.length}/3)` }
               ].map((t) => (
                 <button
                   key={t.id}
@@ -686,7 +700,6 @@ export default function AdminControlPanelPage() {
                           <p className="text-xs text-slate-400">Customer: <strong className="text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
                           <p className="text-xs text-slate-400">Address: <strong className="text-white">{currentOrder.address || 'Gangtok'}</strong></p>
 
-                          {/* Live Status Bar Right Below Address */}
                           <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
                             <Bike className="w-4 h-4 text-orangeSecondary shrink-0" />
                             <span>Live Status: {currentOrder.trackingStatus || 'Order Placed by Customer'}</span>
@@ -883,10 +896,21 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 4: REGISTERED USERS (With Single-Card Slider) */}
+            {/* TAB 4: REGISTERED USERS (With Direct Edit Sub-Admin Credentials Button & Slider) */}
             {activeTab === 4 && (
               <div className="space-y-4">
-                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateSubAdminOpen(true)}
+                    className="btn-primary bg-emerald-600 hover:bg-emerald-700 text-xs py-2 px-4 shadow-md font-black"
+                  >
+                    <UserPlus className="w-4 h-4 inline mr-1" /> + Create Sub-Admin Account ({currentAdmins.length}/3)
+                  </button>
+                </div>
+
                 {usersList.length === 0 ? (
                   <p className="text-xs text-slate-500 py-6">No registered users found.</p>
                 ) : (
@@ -917,11 +941,26 @@ export default function AdminControlPanelPage() {
                           <div>
                             <strong className="text-base block text-white font-extrabold">{usersList[userSliderIdx].fullName || 'User'}</strong>
                             <p className="text-xs text-slate-400 mt-1">{usersList[userSliderIdx].email || 'N/A'} • {usersList[userSliderIdx].phoneNumber || 'N/A'}</p>
+                            {usersList[userSliderIdx].password && (
+                              <p className="text-[11px] text-amber-400 font-bold mt-1">🔑 Password: {usersList[userSliderIdx].password}</p>
+                            )}
                           </div>
+
                           <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">
-                            <span className={`px-3 py-1 rounded-full text-xs font-black ${ (usersList[userSliderIdx].role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : (usersList[userSliderIdx].role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-black ${ (usersList[userSliderIdx].role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary border border-redPrimary/30' : (usersList[userSliderIdx].role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
                               {usersList[userSliderIdx].role || 'CUSTOMER'}
                             </span>
+
+                            {(usersList[userSliderIdx].role || '').toUpperCase() === 'ADMIN' && (
+                              <button
+                                type="button"
+                                onClick={() => setEditingAdminUser({ ...usersList[userSliderIdx] })}
+                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold"
+                              >
+                                Edit Credentials
+                              </button>
+                            )}
+
                             <button onClick={() => setDeletingPath(`users/${usersList[userSliderIdx].id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete</button>
                           </div>
                         </motion.div>
@@ -1335,6 +1374,9 @@ export default function AdminControlPanelPage() {
                           <div>
                             <strong className="text-white block text-sm">{adm.fullName || 'Admin Account'}</strong>
                             <span className="text-slate-400">{adm.email || 'N/A'} • {adm.phoneNumber || 'N/A'}</span>
+                            {adm.password && (
+                              <p className="text-[11px] text-amber-400 font-bold mt-0.5">🔑 Password: {adm.password}</p>
+                            )}
                           </div>
                         </div>
 
@@ -1404,6 +1446,43 @@ export default function AdminControlPanelPage() {
         actionText="Continue"
         onAction={popupState.onAction}
       />
+
+      {/* CUSTOM CREATE SUB-ADMIN MODAL */}
+      {isCreateSubAdminOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <form onSubmit={handleAddAdmin} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 sm:p-8 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+            <button type="button" onClick={() => setIsCreateSubAdminOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            <h3 className="text-lg font-bold text-redPrimary flex items-center gap-2"><UserPlus className="w-5 h-5" /> Create Sub-Admin Account</h3>
+            <p className="text-xs text-slate-400">Max 3 Admins allowed ({currentAdmins.length}/3 registered).</p>
+
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Full Name *</label>
+                <input type="text" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} placeholder="e.g. Passang Bhutia" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white outline-none focus:border-redPrimary" />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Email Address *</label>
+                <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="e.g. subadmin@gmail.com" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white outline-none focus:border-redPrimary" />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Phone Number *</label>
+                <input type="text" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} placeholder="e.g. +91 9563213089" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white outline-none focus:border-redPrimary" />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Sub-Admin Password *</label>
+                <input type="text" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Enter Sub-Admin Password" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white font-bold outline-none focus:border-redPrimary" />
+              </div>
+            </div>
+
+            <button type="submit" disabled={currentAdmins.length >= 3} className={`btn-primary w-full py-3.5 text-xs font-black shadow-lg rounded-xl transition ${currentAdmins.length >= 3 ? 'bg-neutral-800 text-slate-500 cursor-not-allowed' : 'bg-redPrimary text-white'}`}>
+              Save & Create Sub-Admin
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* CUSTOM DELETE CONFIRMATION MODAL */}
       {deletingPath && (

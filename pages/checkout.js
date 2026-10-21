@@ -49,15 +49,20 @@ export default function CheckoutPage() {
         if (snapshot.exists()) {
           const data = snapshot.val();
           if (data.addresses) {
-            const addrs = Object.values(data.addresses);
+            const addrs = Object.keys(data.addresses).map(k => ({
+              id: k,
+              ...data.addresses[k]
+            }));
             setSavedAddressesList(addrs);
-            // Default select the first saved address if available
+
+            // Auto pre-fill all 4 address fields from the customer's primary saved address!
             if (addrs.length > 0) {
-              const firstAddr = addrs[0].fullAddress;
-              setSelectedSavedAddr(firstAddr);
-              const parts = firstAddr.split(', Pincode: ');
-              setStreetAddress(parts[0] || firstAddr);
-              if (parts[1]) setPincode(parts[1]);
+              const firstAddr = addrs[0];
+              setSelectedSavedAddr(firstAddr.id);
+              setHouseNo(firstAddr.houseNo || '');
+              setStreetAddress(firstAddr.streetAddress || firstAddr.fullAddress || '');
+              setLandmark(firstAddr.landmark || '');
+              if (firstAddr.pincode) setPincode(firstAddr.pincode);
             }
           }
         }
@@ -88,12 +93,17 @@ export default function CheckoutPage() {
       setStreetAddress('');
       setLandmark('');
     } else {
-      const parts = val.split(', Pincode: ');
-      const addrMain = parts[0] || val;
-      setStreetAddress(addrMain);
-      setHouseNo('');
-      setLandmark('');
-      if (parts[1]) setPincode(parts[1]);
+      const matchedAddr = savedAddressesList.find(a => a.id === val || a.fullAddress === val);
+      if (matchedAddr) {
+        setHouseNo(matchedAddr.houseNo || '');
+        setStreetAddress(matchedAddr.streetAddress || matchedAddr.fullAddress || '');
+        setLandmark(matchedAddr.landmark || '');
+        if (matchedAddr.pincode) setPincode(matchedAddr.pincode);
+      } else {
+        const parts = val.split(', Pincode: ');
+        setStreetAddress(parts[0] || val);
+        if (parts[1]) setPincode(parts[1]);
+      }
     }
   };
 
@@ -102,8 +112,8 @@ export default function CheckoutPage() {
     if (!currentUser) return;
     if (!service) return alert('No service selected for checkout. Please go back to catalog.');
 
-    if (!houseNo || !streetAddress) {
-      alert('Compulsory: Please enter House No. and Street Address in Gangtok.');
+    if (!streetAddress) {
+      alert('Compulsory: Please enter Street Address / Locality in Gangtok.');
       return;
     }
 
@@ -116,14 +126,18 @@ export default function CheckoutPage() {
 
     const bookingRef = 'HM-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.floor(100 + Math.random() * 900);
     const bookingId = 'bk_' + Math.random().toString(36).substring(2, 10);
-    const fullAddrString = `${houseNo}, ${streetAddress}, ${landmark ? landmark + ', ' : ''}Gangtok, Sikkim. PIN: ${pincode}`;
+    const fullAddrString = `${houseNo ? houseNo + ', ' : ''}${streetAddress}, ${landmark ? landmark + ', ' : ''}Gangtok, Sikkim. PIN: ${pincode}`;
 
-    // 1. If it's a new address, save it to the Customer Profile in Firebase Realtime Database
+    // Save structured address object if adding a new address
     if (selectedSavedAddr === 'new' && currentUser) {
       try {
         const userAddrRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
         await set(userAddrRef, {
           title: newAddrType,
+          houseNo: houseNo,
+          streetAddress: streetAddress,
+          landmark: landmark,
+          pincode: pincode,
           fullAddress: fullAddrString,
           createdAt: new Date().toISOString()
         });
@@ -132,7 +146,7 @@ export default function CheckoutPage() {
       }
     }
 
-    // 2. Create the Booking Object in Firebase Database
+    // Create Booking in Firebase
     const bookingData = {
       id: bookingId,
       bookingRef: bookingRef,
@@ -174,7 +188,7 @@ export default function CheckoutPage() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl w-full max-w-xl shadow-2xl relative max-h-[95vh] overflow-y-auto">
 
-          {/* Top Navbar Header inside Modal */}
+          {/* Top Navbar Header */}
           <div className="sticky top-0 bg-[#1A1A1A] z-10 border-b border-[#333333] px-6 py-4 flex justify-between items-center">
             <div>
               <h3 className="text-xl font-bold">Checkout & Booking</h3>
@@ -223,7 +237,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Native Custom Date & Time Pickers */}
+                {/* Custom Date & Time Pickers */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
                   <div>
                     <label className="text-xs font-black text-slate-500 flex items-center gap-1.5 mb-2 uppercase tracking-wider">
@@ -264,12 +278,12 @@ export default function CheckoutPage() {
                     className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-sm font-bold shadow-sm outline-none focus:border-redPrimary"
                   >
                     <option value="new">+ Add New Address in Gangtok</option>
-                    {savedAddressesList.map((a, i) => (
-                      <option key={i} value={a.fullAddress}>{a.title} - {a.fullAddress}</option>
+                    {savedAddressesList.map((a) => (
+                      <option key={a.id} value={a.id}>{a.title} - {a.fullAddress}</option>
                     ))}
                   </select>
 
-                  {/* Address Label Selector (Home / Work / Other) for New Addresses */}
+                  {/* Address Tag Selector for New Address */}
                   {selectedSavedAddr === 'new' && (
                     <div className="flex items-center gap-3 pt-1">
                       <span className="text-xs font-extrabold text-slate-400">Save Address As:</span>
@@ -295,8 +309,7 @@ export default function CheckoutPage() {
                       type="text"
                       value={houseNo}
                       onChange={(e) => setHouseNo(e.target.value)}
-                      placeholder="Flat / House No. / Building *"
-                      required
+                      placeholder="Flat / House No. / Building"
                       className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
                     />
                     <input

@@ -16,9 +16,9 @@ export default function TrackingPage() {
   // Selected Order for Live Detailed Tracking Modal
   const [detailedOrder, setDetailedOrder] = useState(null);
 
-  // Selected Order for Star Rating Modal
+  // Selected Order for Star Rating Modal (Default 0 stars so user MUST choose explicitly)
   const [ratingBooking, setRatingBooking] = useState(null);
-  const [starCount, setStarCount] = useState(5);
+  const [starCount, setStarCount] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
@@ -72,10 +72,22 @@ export default function TrackingPage() {
     return diffInSeconds <= 60;
   };
 
+  const openRatingModal = (booking) => {
+    setRatingBooking(booking);
+    setStarCount(0); // Reset star count to 0 so customer is forced to select
+    setReviewText('');
+  };
+
   // Submit Star Rating & Review
   const handleSubmitRating = async (e) => {
     e.preventDefault();
     if (!ratingBooking) return;
+
+    if (starCount === 0) {
+      alert('Please select a rating from 1 to 5 stars before submitting.');
+      return;
+    }
+
     setIsSubmittingReview(true);
 
     try {
@@ -117,7 +129,7 @@ export default function TrackingPage() {
       }
 
       setIsSubmittingReview(false);
-      alert(`Thank you! Your ${starCount}★ rating and review for ${ratingBooking.serviceTitle} have been published!`);
+      alert(`Thank you! Your ${starCount}★ rating and review for ${ratingBooking.serviceTitle} have been submitted successfully!`);
       setRatingBooking(null);
       setReviewText('');
     } catch (err) {
@@ -126,13 +138,20 @@ export default function TrackingPage() {
     }
   };
 
-  // Filter bookings for the logged-in customer
+  // Robust Customer Filter: Ensures completed orders are NEVER hidden from customer account
   const userBookings = bookings.filter(b => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
+
     const cleanUserPhone = (currentUser.phoneNumber || '').replace(/\D/g, '').slice(-10);
     const cleanCustPhone = (b.customerPhone || b.userPhone || '').replace(/\D/g, '').slice(-10);
-    return (cleanUserPhone.length >= 10 && cleanUserPhone === cleanCustPhone) || b.userId === currentUser.id;
+
+    const phoneMatch = cleanUserPhone.length >= 10 && cleanCustPhone.length >= 10 && cleanUserPhone === cleanCustPhone;
+    const idMatch = b.userId === currentUser.id;
+    const nameMatch = currentUser.fullName && b.userName &&
+      currentUser.fullName.trim().toLowerCase() === b.userName.trim().toLowerCase();
+
+    return idMatch || phoneMatch || nameMatch;
   });
 
   const activeBookings = userBookings.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED' && b.status !== 'REJECTED');
@@ -311,7 +330,7 @@ export default function TrackingPage() {
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => setRatingBooking(b)}
+                                  onClick={() => openRatingModal(b)}
                                   className="w-full py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
                                 >
                                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate Now
@@ -382,15 +401,17 @@ export default function TrackingPage() {
               </div>
               <h3 className="text-xl font-extrabold text-white">Rate Your Service</h3>
               <p className="text-xs text-redPrimary font-bold">{ratingBooking.serviceTitle} • {ratingBooking.bookingRef || ratingBooking.id}</p>
+              <p className="text-[11px] text-slate-400">Please select 1 to 5 stars to submit your review</p>
             </div>
 
+            {/* Interactive 5-Star Selection */}
             <div className="flex justify-center gap-2 my-6 text-amber-400">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   type="button"
                   onClick={() => setStarCount(star)}
-                  className="hover:scale-125 transition-transform p-1"
+                  className="hover:scale-125 transition-transform p-1 focus:outline-none"
                 >
                   <Star className={`w-9 h-9 ${star <= starCount ? 'fill-amber-400 text-amber-400' : 'text-slate-700'}`} />
                 </button>
@@ -400,17 +421,19 @@ export default function TrackingPage() {
             <textarea
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
-              placeholder="Write feedback for your mistri and service experience..."
+              placeholder="Write feedback for your mistri and service experience (Optional)..."
               rows={3}
               className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
             />
 
             <button
               onClick={handleSubmitRating}
-              disabled={isSubmittingReview}
-              className="btn-primary w-full py-3.5 text-sm font-bold shadow-xl bg-redPrimary text-white rounded-xl"
+              disabled={isSubmittingReview || starCount === 0}
+              className={`btn-primary w-full py-3.5 text-sm font-bold shadow-xl rounded-xl transition ${
+                starCount === 0 ? 'opacity-50 cursor-not-allowed bg-neutral-800 text-slate-500' : 'bg-redPrimary text-white'
+              }`}
             >
-              <Send className="w-4 h-4 mr-1 inline" /> {isSubmittingReview ? 'Submitting Rating...' : 'Submit Rating & Review'}
+              <Send className="w-4 h-4 mr-1 inline" /> {isSubmittingReview ? 'Submitting Rating...' : starCount === 0 ? 'Select Stars First' : `Submit ${starCount}★ Rating`}
             </button>
           </div>
         </div>

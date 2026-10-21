@@ -70,6 +70,8 @@ export default function AdminControlPanelPage() {
     const unsubBookings = onValue(ref(rtdb, 'bookings'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      // Sort Descending by CreatedAt (Latest order at top!)
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setBookings(list);
     });
 

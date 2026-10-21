@@ -2,21 +2,23 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, push, get, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle, Send } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TrackingPage() {
   const [isDark, setIsDark] = useState(true);
   const [activeTab, setActiveTab] = useState(0); // 0=Active, 1=Completed/History, 2=Cancelled
+  const [cardIndex, setCardIndex] = useState(0); // Slider Index for cards
   const [bookings, setBookings] = useState([]);
   const [nowTime, setNowTime] = useState(Date.now());
 
   // Selected Order for Live Detailed Tracking Modal
   const [detailedOrder, setDetailedOrder] = useState(null);
 
-  // Selected Order for Star Rating Modal (Default 0 stars so user MUST choose explicitly)
+  // Selected Order for Star Rating Modal
   const [ratingBooking, setRatingBooking] = useState(null);
   const [starCount, setStarCount] = useState(0);
   const [reviewText, setReviewText] = useState('');
@@ -55,6 +57,12 @@ export default function TrackingPage() {
     return () => unsubscribe();
   }, []);
 
+  // Reset slider index when switching tabs
+  const handleTabChange = (tabIdx) => {
+    setActiveTab(tabIdx);
+    setCardIndex(0);
+  };
+
   const handleCancelBooking = (bookingId) => {
     if (confirm('Cancel this booking free of charge?')) {
       update(ref(rtdb, `bookings/${bookingId}`), {
@@ -74,11 +82,10 @@ export default function TrackingPage() {
 
   const openRatingModal = (booking) => {
     setRatingBooking(booking);
-    setStarCount(0); // Reset star count to 0 so customer is forced to select
+    setStarCount(0);
     setReviewText('');
   };
 
-  // Submit Star Rating & Review
   const handleSubmitRating = async (e) => {
     e.preventDefault();
     if (!ratingBooking) return;
@@ -91,13 +98,11 @@ export default function TrackingPage() {
     setIsSubmittingReview(true);
 
     try {
-      // 1. Update Booking with userRating & userReview in Firebase
       await update(ref(rtdb, `bookings/${ratingBooking.id}`), {
         userRating: starCount,
         userReview: reviewText || 'Great doorstep service experience!'
       });
 
-      // 2. Recalculate Service's Rating Average & update in Firebase /services/$serviceId (Safely)
       try {
         if (ratingBooking.serviceId) {
           const serviceRef = ref(rtdb, `services/${ratingBooking.serviceId}`);
@@ -113,7 +118,6 @@ export default function TrackingPage() {
         console.error("Service rating calculation warning:", _srvErr);
       }
 
-      // 3. Save as a new Testimonial in Firebase /testimonials (Safely)
       try {
         const testRef = push(ref(rtdb, 'testimonials'));
         await set(testRef, {
@@ -138,7 +142,7 @@ export default function TrackingPage() {
     }
   };
 
-  // Robust Customer Filter: Ensures completed orders are NEVER hidden from customer account
+  // Filter bookings for the logged-in customer
   const userBookings = bookings.filter(b => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
@@ -159,6 +163,7 @@ export default function TrackingPage() {
   const cancelledBookings = userBookings.filter(b => b.status === 'CANCELLED' || b.status === 'REJECTED');
 
   const displayedList = activeTab === 0 ? activeBookings : activeTab === 1 ? completedBookings : cancelledBookings;
+  const currentBooking = displayedList[cardIndex] || displayedList[0];
 
   const getTimelineStep = (status) => {
     switch (status) {
@@ -203,7 +208,7 @@ export default function TrackingPage() {
             {/* 3 Navigation Tabs */}
             <div className="flex border-b border-neutral-800">
               <button
-                onClick={() => setActiveTab(0)}
+                onClick={() => handleTabChange(0)}
                 className={`flex-1 py-3 text-center text-xs sm:text-sm font-black border-b-2 transition ${
                   activeTab === 0
                     ? 'border-b-redPrimary text-redPrimary'
@@ -214,7 +219,7 @@ export default function TrackingPage() {
               </button>
 
               <button
-                onClick={() => setActiveTab(1)}
+                onClick={() => handleTabChange(1)}
                 className={`flex-1 py-3 text-center text-xs sm:text-sm font-black border-b-2 transition ${
                   activeTab === 1
                     ? 'border-b-redPrimary text-redPrimary'
@@ -225,7 +230,7 @@ export default function TrackingPage() {
               </button>
 
               <button
-                onClick={() => setActiveTab(2)}
+                onClick={() => handleTabChange(2)}
                 className={`flex-1 py-3 text-center text-xs sm:text-sm font-black border-b-2 transition ${
                   activeTab === 2
                     ? 'border-b-redPrimary text-redPrimary'
@@ -236,7 +241,7 @@ export default function TrackingPage() {
               </button>
             </div>
 
-            {/* Bookings Content */}
+            {/* Interactive Slider Container */}
             {displayedList.length === 0 ? (
               <div className="web-card py-20 text-center text-slate-500 space-y-2 border-dashed">
                 <Clock className="w-12 h-12 mx-auto text-slate-600 opacity-40 mb-2" />
@@ -244,143 +249,197 @@ export default function TrackingPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {displayedList.map((b) => (
-                  <div key={b.id} className="web-card bg-[#1A1A1A] border border-[#333333] p-5 rounded-2xl space-y-4 shadow-xl">
 
-                    {/* Top Row: Ref & Status Badge */}
-                    <div className="flex justify-between items-center pb-2 border-b border-neutral-800">
-                      <span className="font-extrabold text-sm text-white">
-                        {b.bookingRef || b.id}
+                {/* Slider Navigation Bar */}
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-xs font-bold text-slate-400">
+                    Order <span className="text-redPrimary font-black">{cardIndex + 1}</span> of {displayedList.length}
+                  </span>
+
+                  {displayedList.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCardIndex((prev) => (prev - 1 + displayedList.length) % displayedList.length)}
+                        className="p-2 rounded-xl bg-[#1A1A1A] border border-[#333333] hover:border-redPrimary text-white transition shadow-md"
+                        title="Previous Order"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs font-black text-slate-300">
+                        {cardIndex + 1} / {displayedList.length}
                       </span>
-                      <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
-                        b.status === 'COMPLETED' ? 'bg-emerald-600/20 text-emerald-500' :
-                        b.status === 'CANCELLED' || b.status === 'REJECTED' ? 'bg-rose-600/20 text-rose-500' : 'bg-orangeSecondary/20 text-orangeSecondary'
-                      }`}>
-                        {b.status === 'PENDING' ? 'Order Placed' : b.status}
-                      </span>
+                      <button
+                        onClick={() => setCardIndex((prev) => (prev + 1) % displayedList.length)}
+                        className="p-2 rounded-xl bg-[#1A1A1A] border border-[#333333] hover:border-redPrimary text-white transition shadow-md"
+                        title="Next Order"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
+                  )}
+                </div>
 
-                    {/* Middle Info Row */}
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                        <div className="w-6 h-6 rounded-md bg-orangeSecondary flex items-center justify-center text-white text-xs font-bold">
-                          HM
+                {/* Animated Order Card Slide */}
+                <AnimatePresence mode="wait">
+                  {currentBooking && (
+                    <motion.div
+                      key={currentBooking.id || cardIndex}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="web-card bg-[#1A1A1A] border border-[#333333] p-6 rounded-2xl space-y-4 shadow-2xl relative"
+                    >
+                      {/* Top Row: Ref & Status Badge */}
+                      <div className="flex justify-between items-center pb-3 border-b border-neutral-800">
+                        <span className="font-extrabold text-sm text-white">
+                          {currentBooking.bookingRef || currentBooking.id}
+                        </span>
+                        <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                          currentBooking.status === 'COMPLETED' ? 'bg-emerald-600/20 text-emerald-500' :
+                          currentBooking.status === 'CANCELLED' || currentBooking.status === 'REJECTED' ? 'bg-rose-600/20 text-rose-500' : 'bg-orangeSecondary/20 text-orangeSecondary'
+                        }`}>
+                          {currentBooking.status === 'PENDING' ? 'Order Placed' : currentBooking.status}
+                        </span>
+                      </div>
+
+                      {/* Middle Info Row */}
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-md bg-orangeSecondary flex items-center justify-center text-white text-xs font-bold">
+                            HM
+                          </div>
+                        </div>
+
+                        <div className="flex-1 space-y-1">
+                          <h3 className="font-bold text-base text-white">{currentBooking.serviceTitle} <span className="text-xs text-slate-400">(Qty: {currentBooking.quantity || 1})</span></h3>
+                          <p className="text-xs text-redPrimary font-bold">Payable: ₹{currentBooking.totalAmount || 500} ({currentBooking.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service (COD)' : 'Online'})</p>
+                          <p className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-redPrimary" /> {currentBooking.scheduledDate || 'Today'} | {currentBooking.scheduledTimeSlot || '09:00'}
+                          </p>
+                          <p className="text-xs text-slate-400 font-semibold flex items-start gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0 mt-0.5" /> Service Address ({currentBooking.address || 'Gangtok, Sikkim'})
+                          </p>
                         </div>
                       </div>
 
-                      <div className="flex-1 space-y-1">
-                        <h3 className="font-bold text-base text-white">{b.serviceTitle} <span className="text-xs text-slate-400">(Qty: {b.quantity || 1})</span></h3>
-                        <p className="text-xs text-redPrimary font-bold">Payable: ₹{b.totalAmount || 500} ({b.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service (COD)' : 'Online'})</p>
-                        <p className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-redPrimary" /> {b.scheduledDate || 'Today'} | {b.scheduledTimeSlot || '09:00'}
-                        </p>
-                        <p className="text-xs text-slate-400 font-semibold flex items-start gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0 mt-0.5" /> Service Address ({b.address || 'Gangtok, Sikkim'})
-                        </p>
+                      {/* Live Status Row */}
+                      <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
+                        <Bike className="w-4 h-4 text-orangeSecondary" />
+                        <span>Live Status: {currentBooking.trackingStatus || 'Order Placed by Customer'}</span>
                       </div>
-                    </div>
 
-                    {/* Live Status Row */}
-                    <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
-                      <Bike className="w-4 h-4 text-orangeSecondary" />
-                      <span>Live Status: {b.trackingStatus || 'Order Placed by Customer'}</span>
-                    </div>
-
-                    {/* Partner Assignment Details if assigned */}
-                    {b.assignedPartnerName && (
-                      <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
-                        <div>
-                          <strong>Assigned Mistri: {b.assignedPartnerName}</strong> ({b.assignedPartnerSkill || 'Specialist'})
+                      {/* Partner Assignment Details if assigned */}
+                      {currentBooking.assignedPartnerName && (
+                        <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
+                          <div>
+                            <strong>Assigned Mistri: {currentBooking.assignedPartnerName}</strong> ({currentBooking.assignedPartnerSkill || 'Specialist'})
+                          </div>
+                          {currentBooking.assignedPartnerPhone && (
+                            <a href={`tel:${currentBooking.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
+                          )}
                         </div>
-                        {b.assignedPartnerPhone && (
-                          <a href={`tel:${b.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
+                      )}
+
+                      {/* Action Buttons Row */}
+                      <div className="space-y-2 pt-1">
+
+                        {/* If CANCELLED or REJECTED: Show ONLY full-width Support button! */}
+                        {currentBooking.status === 'CANCELLED' || currentBooking.status === 'REJECTED' ? (
+                          <div className="w-full">
+                            <a
+                              href="https://wa.me/917430887960"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="w-full py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition shadow-sm"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* If COMPLETED -> Show RATE NOW button or RATED badge with popup message! */}
+                            {currentBooking.status === 'COMPLETED' ? (
+                              <div>
+                                {currentBooking.userRating ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => alert('You have already rated this service.')}
+                                    className="w-full py-2.5 px-4 rounded-xl border border-neutral-800 bg-neutral-900/80 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 cursor-pointer transition opacity-80"
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                    Rated: {currentBooking.userRating}.0 ★
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => openRatingModal(currentBooking)}
+                                    className="w-full py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate Now
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setDetailedOrder(currentBooking)}
+                                className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
+                              >
+                                <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
+                              </button>
+                            )}
+
+                            <a
+                              href="https://wa.me/917430887960"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                            </a>
+                          </div>
+                        )}
+
+                        {/* 1-Minute Dynamic Cancel Button Logic for PENDING Orders */}
+                        {currentBooking.status === 'PENDING' && (
+                          <div>
+                            {isWithinOneMinute(currentBooking.createdAt) ? (
+                              <button
+                                onClick={() => handleCancelBooking(currentBooking.id)}
+                                className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
+                              >
+                                Cancel Order (Free within 1 min)
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="w-full py-3 rounded-xl border border-neutral-800 bg-neutral-900/50 text-slate-500 text-xs font-bold cursor-not-allowed opacity-60 text-center"
+                              >
+                                Can't cancel now. Contact Customer Support.
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                    {/* Action Buttons Row */}
-                    <div className="space-y-2 pt-1">
-
-                      {/* If CANCELLED or REJECTED: Show ONLY full-width Support button! */}
-                      {b.status === 'CANCELLED' || b.status === 'REJECTED' ? (
-                        <div className="w-full">
-                          <a
-                            href="https://wa.me/917430887960"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-full py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition shadow-sm"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
-                          </a>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                          {/* If COMPLETED -> Show RATE NOW button or RATED badge with popup message! */}
-                          {b.status === 'COMPLETED' ? (
-                            <div>
-                              {b.userRating ? (
-                                <button
-                                  type="button"
-                                  onClick={() => alert('You have already rated this service.')}
-                                  className="w-full py-2.5 px-4 rounded-xl border border-neutral-800 bg-neutral-900/80 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 cursor-pointer transition opacity-80"
-                                >
-                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                  Rated: {b.userRating}.0 ★
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => openRatingModal(b)}
-                                  className="w-full py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
-                                >
-                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate Now
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setDetailedOrder(b)}
-                              className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
-                            >
-                              <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
-                            </button>
-                          )}
-
-                          <a
-                            href="https://wa.me/917430887960"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
-                          </a>
-                        </div>
-                      )}
-
-                      {/* 1-Minute Dynamic Cancel Button Logic for PENDING Orders */}
-                      {b.status === 'PENDING' && (
-                        <div>
-                          {isWithinOneMinute(b.createdAt) ? (
-                            <button
-                              onClick={() => handleCancelBooking(b.id)}
-                              className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
-                            >
-                              Cancel Order (Free within 1 min)
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              className="w-full py-3 rounded-xl border border-neutral-800 bg-neutral-900/50 text-slate-500 text-xs font-bold cursor-not-allowed opacity-60 text-center"
-                            >
-                              Can't cancel now. Contact Customer Support.
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                {/* Dots Indicator for Slider */}
+                {displayedList.length > 1 && (
+                  <div className="flex justify-center gap-2 pt-2">
+                    {displayedList.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCardIndex(i)}
+                        className={`h-2 rounded-full transition-all ${
+                          cardIndex === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'
+                        }`}
+                      />
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </>
@@ -404,7 +463,6 @@ export default function TrackingPage() {
               <p className="text-[11px] text-slate-400">Please select 1 to 5 stars to submit your review</p>
             </div>
 
-            {/* Interactive 5-Star Selection */}
             <div className="flex justify-center gap-2 my-6 text-amber-400">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button

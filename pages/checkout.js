@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { ref, set, onValue } from 'firebase/database';
+import { ref, set, push, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X } from 'lucide-react';
@@ -20,6 +20,7 @@ export default function CheckoutPage() {
   // Address Form States
   const [savedAddressesList, setSavedAddressesList] = useState([]);
   const [selectedSavedAddr, setSelectedSavedAddr] = useState('new');
+  const [newAddrType, setNewAddrType] = useState('Home'); // Home, Work, Other
   const [houseNo, setHouseNo] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [landmark, setLandmark] = useState('');
@@ -50,7 +51,7 @@ export default function CheckoutPage() {
           if (data.addresses) {
             const addrs = Object.values(data.addresses);
             setSavedAddressesList(addrs);
-            // Default select the first saved address
+            // Default select the first saved address if available
             if (addrs.length > 0) {
               const firstAddr = addrs[0].fullAddress;
               setSelectedSavedAddr(firstAddr);
@@ -96,7 +97,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
     if (!service) return alert('No service selected for checkout. Please go back to catalog.');
@@ -117,6 +118,21 @@ export default function CheckoutPage() {
     const bookingId = 'bk_' + Math.random().toString(36).substring(2, 10);
     const fullAddrString = `${houseNo}, ${streetAddress}, ${landmark ? landmark + ', ' : ''}Gangtok, Sikkim. PIN: ${pincode}`;
 
+    // 1. If it's a new address, save it to the Customer Profile in Firebase Realtime Database
+    if (selectedSavedAddr === 'new' && currentUser) {
+      try {
+        const userAddrRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
+        await set(userAddrRef, {
+          title: newAddrType,
+          fullAddress: fullAddrString,
+          createdAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Could not save address to user profile:", err);
+      }
+    }
+
+    // 2. Create the Booking Object in Firebase Database
     const bookingData = {
       id: bookingId,
       bookingRef: bookingRef,
@@ -130,7 +146,7 @@ export default function CheckoutPage() {
       quantity: quantity,
       totalAmount: totalPrice,
       scheduledDate: date,
-      scheduledTimeSlot: slot, // Saved as raw time string e.g. "14:30"
+      scheduledTimeSlot: slot,
       address: fullAddrString,
       paymentMethod: paymentMethod,
       status: 'PENDING',
@@ -142,7 +158,7 @@ export default function CheckoutPage() {
       .then(() => {
         setIsSubmitting(false);
         localStorage.removeItem('himistri_checkout_service');
-        alert(`Order Placed Successfully!\nRef ID: ${bookingRef}\nAmount: ₹${totalPrice}`);
+        alert(`Order Placed Successfully!\nRef ID: ${bookingRef}\nAmount: ₹${totalPrice}\nAddress saved to Profile!`);
         window.location.href = '/tracking';
       })
       .catch((err) => {
@@ -252,6 +268,27 @@ export default function CheckoutPage() {
                       <option key={i} value={a.fullAddress}>{a.title} - {a.fullAddress}</option>
                     ))}
                   </select>
+
+                  {/* Address Label Selector (Home / Work / Other) for New Addresses */}
+                  {selectedSavedAddr === 'new' && (
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="text-xs font-extrabold text-slate-400">Save Address As:</span>
+                      {['Home', 'Work', 'Other'].map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => setNewAddrType(tag)}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition ${
+                            newAddrType === tag
+                              ? 'bg-redPrimary text-white border-redPrimary shadow-md'
+                              : 'bg-[#0F0F0F] text-slate-400 border-[#333333] hover:border-slate-500'
+                          }`}
+                        >
+                          {tag === 'Home' ? '🏡 Home' : tag === 'Work' ? '🏢 Work' : '📍 Other'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#242424] p-4 rounded-xl border border-[#333333]">
                     <input

@@ -19,7 +19,7 @@ export function AdminModals({
   editingFaq, setEditingFaq, handleSaveFaqEdit,
   assigningBooking, setAssigningBooking, assignFilterTab, setAssignFilterTab,
   modalPartners = [], handleAssignPartnerConfirm,
-  skillMatchedCount, freePartnersCount, allPartnersList = [],
+  skillMatchedCount, freePartnersCount, allPartnersList = [], categoriesList = [],
   handleImageFileUpload
 }) {
   const [showCreatePwd, setShowCreatePwd] = useState(false);
@@ -217,6 +217,29 @@ export function AdminModals({
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Title</label>
               <input type="text" value={editingService.title} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+            </div>
+
+            {/* Category Dropdown Selector inside Edit Service Modal */}
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Category Connection *</label>
+              <select
+                value={editingService.categoryId || ''}
+                onChange={(e) => {
+                  const selectedCat = (categoriesList || []).find(c => c.id === e.target.value);
+                  setEditingService({
+                    ...editingService,
+                    categoryId: e.target.value,
+                    categoryName: selectedCat ? selectedCat.name : editingService.categoryName
+                  });
+                }}
+                className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+              >
+                {(categoriesList || []).map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

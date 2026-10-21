@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, MapPin, Calendar, Clock, CreditCard, Plus, Minus, LogIn, Lock, Map } from 'lucide-react';
 import { ref, set, push, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
+import PopupModal from './PopupModal';
 import Link from 'next/link';
 
 export default function CheckoutModal({ isOpen, onClose, service, currentUser }) {
@@ -22,6 +23,9 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
 
   const [payment, setPayment] = useState('CASH_ON_DELIVERY');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Dynamic Popup Modal State
+  const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
   useEffect(() => {
     // Default Custom Pickers
@@ -90,7 +94,12 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     if (!streetAddress) {
-      alert('Compulsory: Please enter Address (Building, Street, Area).');
+      setPopupState({
+        isOpen: true,
+        title: 'Address Required',
+        message: 'Please enter Address (Building, Street, Area).',
+        type: 'error'
+      });
       return;
     }
 
@@ -145,12 +154,25 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
     try {
       await set(ref(rtdb, 'bookings/' + bookingId), bookingData);
       setIsSubmitting(false);
-      alert(`Order Placed Successfully!\nRef ID: ${bookingRef}\nAmount: ₹${totalPrice}\nAddress saved to Profile!`);
-      onClose();
-      window.location.href = '/tracking';
+
+      setPopupState({
+        isOpen: true,
+        title: 'Order Placed Successfully!',
+        message: `Ref ID: ${bookingRef}\nAmount: ₹${totalPrice}\nAddress saved to Profile!`,
+        type: 'success',
+        onAction: () => {
+          onClose();
+          window.location.href = '/tracking';
+        }
+      });
     } catch (err) {
       setIsSubmitting(false);
-      alert('Order submission failed: ' + err.message);
+      setPopupState({
+        isOpen: true,
+        title: 'Order Submission Failed',
+        message: err.message,
+        type: 'error'
+      });
     }
   };
 
@@ -298,6 +320,16 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
           </>
         )}
       </div>
+
+      <PopupModal
+        isOpen={popupState.isOpen}
+        onClose={() => setPopupState({ ...popupState, isOpen: false })}
+        title={popupState.title}
+        message={popupState.message}
+        type={popupState.type}
+        actionText="View My Orders & Track"
+        onAction={popupState.onAction}
+      />
     </div>
   );
 }

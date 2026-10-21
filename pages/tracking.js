@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PopupModal from '../components/PopupModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, push, get, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
@@ -23,6 +24,9 @@ export default function TrackingPage() {
   const [starCount, setStarCount] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // Dynamic Popup Modal State
+  const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -52,7 +56,6 @@ export default function TrackingPage() {
         });
       }
 
-      // Deduplicate bookings by bookingRef / id so NO order is EVER duplicated!
       const uniqueMap = new Map();
       const statusPriority = { 'COMPLETED': 5, 'IN_PROGRESS': 4, 'ON_THE_WAY': 3, 'ASSIGNED': 2, 'CONFIRMED': 1, 'PENDING': 0, 'CANCELLED': 0, 'REJECTED': 0 };
 
@@ -71,7 +74,6 @@ export default function TrackingPage() {
       });
 
       const deduplicatedList = Array.from(uniqueMap.values());
-      // Sort Descending by CreatedAt (Latest order at top!)
       deduplicatedList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       setBookings(deduplicatedList);
@@ -80,19 +82,23 @@ export default function TrackingPage() {
     return () => unsubscribe();
   }, []);
 
-  // Reset slider index when switching tabs
   const handleTabChange = (tabIdx) => {
     setActiveTab(tabIdx);
     setCardIndex(0);
   };
 
   const handleCancelBooking = (bookingId) => {
-    if (confirm('Cancel this booking free of charge?')) {
-      update(ref(rtdb, `bookings/${bookingId}`), {
-        status: 'CANCELLED',
-        trackingStatus: 'Order Cancelled by Customer'
-      }).then(() => alert('Booking cancelled successfully.'));
-    }
+    update(ref(rtdb, `bookings/${bookingId}`), {
+      status: 'CANCELLED',
+      trackingStatus: 'Order Cancelled by Customer'
+    }).then(() => {
+      setPopupState({
+        isOpen: true,
+        title: 'Order Cancelled',
+        message: 'Your booking has been cancelled free of charge.',
+        type: 'info'
+      });
+    });
   };
 
   const isWithinOneMinute = (createdAtStr) => {
@@ -114,7 +120,12 @@ export default function TrackingPage() {
     if (!ratingBooking) return;
 
     if (starCount === 0) {
-      alert('Please select a rating from 1 to 5 stars before submitting.');
+      setPopupState({
+        isOpen: true,
+        title: 'Rating Required',
+        message: 'Please select a rating from 1 to 5 stars before submitting.',
+        type: 'error'
+      });
       return;
     }
 
@@ -157,12 +168,23 @@ export default function TrackingPage() {
       }
 
       setIsSubmittingReview(false);
-      alert(`Thank you! Your ${starCount}★ rating and review for ${ratingBooking.serviceTitle} have been submitted successfully!`);
       setRatingBooking(null);
       setReviewText('');
+
+      setPopupState({
+        isOpen: true,
+        title: 'Thank You!',
+        message: `Your ${starCount}★ rating and review for ${ratingBooking.serviceTitle} have been published successfully!`,
+        type: 'success'
+      });
     } catch (err) {
       setIsSubmittingReview(false);
-      alert('Failed to submit rating: ' + err.message);
+      setPopupState({
+        isOpen: true,
+        title: 'Rating Submission Failed',
+        message: err.message,
+        type: 'error'
+      });
     }
   };
 
@@ -390,7 +412,12 @@ export default function TrackingPage() {
                                 {currentBooking.userRating ? (
                                   <button
                                     type="button"
-                                    onClick={() => alert('You have already rated this service.')}
+                                    onClick={() => setPopupState({
+                                      isOpen: true,
+                                      title: 'Already Rated',
+                                      message: 'You have already rated this service.',
+                                      type: 'info'
+                                    })}
                                     className="w-full py-2.5 px-4 rounded-xl border border-neutral-800 bg-neutral-900/80 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 cursor-pointer transition opacity-80"
                                   >
                                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -472,6 +499,17 @@ export default function TrackingPage() {
           </>
         )}
       </main>
+
+      {/* Dynamic Popup Modal Component */}
+      <PopupModal
+        isOpen={popupState.isOpen}
+        onClose={() => setPopupState({ ...popupState, isOpen: false })}
+        title={popupState.title}
+        message={popupState.message}
+        type={popupState.type}
+        actionText="Continue"
+        onAction={popupState.onAction}
+      />
 
       {/* Star Rating & Review Modal */}
       {ratingBooking && (

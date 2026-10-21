@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PopupModal from '../components/PopupModal';
 import { ref, onValue, update, push, remove, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -23,16 +24,18 @@ export default function ProfilePage() {
   const [addrStreet, setAddrStreet] = useState('');
   const [addrLocality, setAddrLocality] = useState('');
   const [addrCity, setAddrCity] = useState('Gangtok');
-  const [addrState, setAddrState] = useState('Sikkim'); // Fixed
+  const [addrState, setAddrState] = useState('Sikkim');
   const [addrPincode, setAddrPincode] = useState('737101');
-  const [addrType, setAddrType] = useState('Home'); // Home, Work, Office, Other
+  const [addrType, setAddrType] = useState('Home');
 
   const [customerBookings, setCustomerBookings] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Dynamic Popup Modal State
+  const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
+
   useEffect(() => {
     if (currentUser) {
-      // 1. Fetch User Profile & Saved Addresses
       const userRef = ref(rtdb, `users/${currentUser.id}`);
       const unsubUser = onValue(userRef, (snapshot) => {
         if (snapshot.exists()) {
@@ -53,7 +56,6 @@ export default function ProfilePage() {
         }
       });
 
-      // 2. Fetch Customer's Orders from Firebase
       const bookingsRef = ref(rtdb, 'bookings');
       const unsubBookings = onValue(bookingsRef, (snapshot) => {
         const list = [];
@@ -105,9 +107,19 @@ export default function ProfilePage() {
         email,
         phoneNumber: phone
       });
-      alert('Profile details updated successfully in Firebase!');
+      setPopupState({
+        isOpen: true,
+        title: 'Profile Updated',
+        message: 'Your personal information has been updated successfully.',
+        type: 'success'
+      });
     } catch (err) {
-      alert('Error updating profile: ' + err.message);
+      setPopupState({
+        isOpen: true,
+        title: 'Update Failed',
+        message: err.message,
+        type: 'error'
+      });
     }
     setIsSaving(false);
   };
@@ -137,7 +149,15 @@ export default function ProfilePage() {
   const handleSaveAddress = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
-    if (!addrStreet) return alert('Street Address / Locality is required.');
+    if (!addrStreet) {
+      setPopupState({
+        isOpen: true,
+        title: 'Address Required',
+        message: 'Street Address / Locality is required.',
+        type: 'error'
+      });
+      return;
+    }
 
     const fullAddrStr = `${addrHouseNo ? addrHouseNo + ', ' : ''}${addrStreet}, ${addrLocality ? addrLocality + ', ' : ''}${addrCity || 'Gangtok'}, Sikkim. PIN: ${addrPincode || '737101'}`;
 
@@ -155,28 +175,50 @@ export default function ProfilePage() {
 
     try {
       if (editingAddrId) {
-        // Update Existing Address
         await update(ref(rtdb, `users/${currentUser.id}/addresses/${editingAddrId}`), addrData);
-        alert('Address updated successfully in Firebase!');
+        setPopupState({
+          isOpen: true,
+          title: 'Address Updated',
+          message: 'Your address details have been updated successfully.',
+          type: 'success'
+        });
       } else {
-        // Add New Address
         const newRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
         await set(newRef, { ...addrData, createdAt: new Date().toISOString() });
-        alert('New address saved to your profile!');
+        setPopupState({
+          isOpen: true,
+          title: 'Address Saved',
+          message: 'New address added to your profile address book.',
+          type: 'success'
+        });
       }
       handleResetAddressForm();
     } catch (err) {
-      alert('Failed to save address: ' + err.message);
+      setPopupState({
+        isOpen: true,
+        title: 'Save Failed',
+        message: err.message,
+        type: 'error'
+      });
     }
   };
 
   const handleDeleteAddress = async (addrId) => {
-    if (confirm('Delete this saved address?')) {
-      try {
-        await remove(ref(rtdb, `users/${currentUser.id}/addresses/${addrId}`));
-      } catch (err) {
-        alert('Failed to delete address: ' + err.message);
-      }
+    try {
+      await remove(ref(rtdb, `users/${currentUser.id}/addresses/${addrId}`));
+      setPopupState({
+        isOpen: true,
+        title: 'Address Removed',
+        message: 'The address has been removed from your saved list.',
+        type: 'info'
+      });
+    } catch (err) {
+      setPopupState({
+        isOpen: true,
+        title: 'Deletion Failed',
+        message: err.message,
+        type: 'error'
+      });
     }
   };
 
@@ -272,11 +314,11 @@ export default function ProfilePage() {
               </div>
 
               <button type="submit" disabled={isSaving} className="btn-primary w-full sm:w-auto py-3 px-6">
-                <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Update Profile Details in Firebase'}
+                <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Update Profile Details'}
               </button>
             </form>
 
-            {/* Address Book with Full Structured Editing */}
+            {/* Address Book */}
             <div className="web-card space-y-5 shadow-xl">
               <h2 className="text-lg font-bold border-b border-slate-100 dark:border-neutral-800 pb-2">Saved Addresses (Address Book)</h2>
 
@@ -306,7 +348,7 @@ export default function ProfilePage() {
                           onClick={() => handleDeleteAddress(addr.id)}
                           className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2.5 py-1 rounded-lg font-extrabold flex items-center gap-1"
                         >
-                          <Trash2 className="w-3 h-3" /> Delete
+                          <Trash2 className="w-3.5 h-3.5" /> Delete
                         </button>
                       </div>
                     </div>
@@ -314,7 +356,7 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* Add / Edit Structured Address Form (Matching User Requirements 100%) */}
+              {/* Add / Edit Structured Address Form */}
               <form onSubmit={handleSaveAddress} className="pt-4 border-t border-slate-100 dark:border-neutral-800 space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="font-extrabold text-sm text-redPrimary">
@@ -422,13 +464,23 @@ export default function ProfilePage() {
                 </div>
 
                 <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold rounded-xl shadow-lg">
-                  <Plus className="w-4 h-4 inline mr-1" /> {editingAddrId ? 'Save Address Updates in Firebase' : 'Save Address to Firebase'}
+                  <Plus className="w-4 h-4 inline mr-1" /> {editingAddrId ? 'Save Address Updates' : 'Save Address'}
                 </button>
               </form>
             </div>
           </>
         )}
       </main>
+
+      <PopupModal
+        isOpen={popupState.isOpen}
+        onClose={() => setPopupState({ ...popupState, isOpen: false })}
+        title={popupState.title}
+        message={popupState.message}
+        type={popupState.type}
+        actionText="Continue"
+        onAction={popupState.onAction}
+      />
 
       <Footer />
     </div>

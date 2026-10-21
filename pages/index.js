@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
-import { FALLBACK_ICON } from '../lib/defaultData';
+import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -20,10 +20,10 @@ export default function HomePage() {
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Live Firebase Realtime Database Data (Pure Database - Zero Mock Data)
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
-  const [banners, setBanners] = useState([]);
+  // Live Firebase States initialized with defaults so page is NEVER empty
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
+  const [banners, setBanners] = useState(DEFAULT_BANNERS);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -39,22 +39,40 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    // 1. Listen to Categories
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setCategories(list);
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      if (list.length > 0) setCategories(list);
     });
 
+    // 2. Listen to Services
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setServices(list);
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      if (list.length > 0) setServices(list);
     });
 
+    // 3. Listen to Banners
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setBanners(list);
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      if (list.length > 0) setBanners(list);
     });
 
     return () => { unsubCat(); unsubSrv(); unsubBanners(); };
@@ -78,7 +96,7 @@ export default function HomePage() {
     return matchesSearch && matchesChip;
   });
 
-  // Display max 6 categories and top 10 popular services on Home directly from Firebase
+  // Display EXACTLY 6 Categories and 10 Popular Services on Home
   const displayCategories = categories.slice(0, 6);
   const popularServices = filteredServices.slice(0, 10);
 
@@ -102,27 +120,17 @@ export default function HomePage() {
 
         {/* 2. Quick Filter Chips Row */}
         <div className="flex gap-2.5 overflow-x-auto pb-2 justify-start sm:justify-center">
-          <button
-            onClick={() => setActiveChip('ALL')}
-            className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all ${
-              activeChip === 'ALL'
-                ? 'bg-white dark:bg-darkSurface text-slate-900 dark:text-white border-slate-300 dark:border-neutral-700 shadow-md scale-105'
-                : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-300 border-transparent hover:border-redPrimary'
-            }`}
-          >
-            ⚡ All Services
-          </button>
-          {categories.map((c) => (
+          {['ALL', 'Plumber', 'Electrician', 'Barber', 'Cleaner', 'Carpenter', 'Tutor'].map((chip) => (
             <button
-              key={c.id}
-              onClick={() => setActiveChip(c.name)}
+              key={chip}
+              onClick={() => setActiveChip(chip)}
               className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all ${
-                activeChip === c.name
+                activeChip === chip
                   ? 'bg-white dark:bg-darkSurface text-slate-900 dark:text-white border-slate-300 dark:border-neutral-700 shadow-md scale-105'
                   : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-300 border-transparent hover:border-redPrimary'
               }`}
             >
-              ⚡ {c.name}
+              ⚡ {chip === 'ALL' ? 'All Services' : chip}
             </button>
           ))}
         </div>
@@ -130,13 +138,13 @@ export default function HomePage() {
         {/* 3. Hero Banner Carousel */}
         <HeroBanner banners={banners} />
 
-        {/* 4. Explore Categories Grid (Max 6 Categories from Firebase) */}
+        {/* 4. Explore Categories Grid (6 Categories) */}
         {displayCategories.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-6">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">Explore Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Technical & Household Categories in Gangtok</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">10+ Technical & Household Categories in Gangtok</p>
               </div>
               <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3.5 py-1.5 rounded-full">
                 See All ({categories.length})
@@ -166,7 +174,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok (Max 10 Services from Firebase) */}
+        {/* 5. Popular Services in Gangtok (10 Services) */}
         {popularServices.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-6">

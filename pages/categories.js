@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import TestimonialsSection from '../components/TestimonialsSection';
-import { FALLBACK_ICON } from '../lib/defaultData';
+import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -16,9 +16,9 @@ export default function CategoriesPage() {
   // Start with ALL, but if user clicked a category from homepage, use that ID
   const [selectedCatId, setSelectedCatId] = useState('ALL');
 
-  // Live Firebase States (No Mock Data)
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
+  // Live Firebase States
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -36,14 +36,24 @@ export default function CategoriesPage() {
   useEffect(() => {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setCategories(list);
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      if (list.length > 0) setCategories(list);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setServices(list);
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      if (list.length > 0) setServices(list);
     });
 
     return () => { unsubCat(); unsubSrv(); };
@@ -77,11 +87,11 @@ export default function CategoriesPage() {
           </div>
           <div>
             <h1 className="text-2xl font-black">Sikkim Service Categories</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Technical & Household Categories Available in Gangtok</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">10+ Technical & Household Categories Available in Gangtok</p>
           </div>
         </div>
 
-        {/* Top Category Grid (Always Visible from Firebase) */}
+        {/* Top Category Grid (Always Visible - All Categories) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           <div
             onClick={() => { setSelectedCatId('ALL'); router.replace('/categories', undefined, { shallow: true }); }}

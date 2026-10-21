@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Trash2, Save, Upload, User, Eye, EyeOff } from 'lucide-react';
+import { X, UserPlus, Trash2, Save, Upload, User, Eye, EyeOff, Star } from 'lucide-react';
 import PopupModal from '../PopupModal';
 
 export function AdminModals({
@@ -227,6 +227,24 @@ export function AdminModals({
               <div>
                 <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Discount Price (₹)</label>
                 <input type="number" value={editingService.discountedPrice} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              </div>
+            </div>
+
+            {/* Service Rating Field */}
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Rating Average (★ Max 5.0)</label>
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />
+                <input
+                  type="number"
+                  step="0.1"
+                  min="1.0"
+                  max="5.0"
+                  value={editingService.ratingAverage || 5.0}
+                  onChange={(e) => setEditingService({ ...editingService, ratingAverage: e.target.value })}
+                  placeholder="Service Rating (e.g. 5.0)"
+                  className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white"
+                />
               </div>
             </div>
 

@@ -10,7 +10,7 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
@@ -70,6 +70,7 @@ export default function AdminControlPanelPage() {
   const [newSrvCatId, setNewSrvCatId] = useState('');
   const [newSrvPrice, setNewSrvPrice] = useState('');
   const [newSrvDiscount, setNewSrvDiscount] = useState('');
+  const [newSrvRating, setNewSrvRating] = useState('5.0');
   const [newSrvImage, setNewSrvImage] = useState('');
 
   const [newBnrTitle, setNewBnrTitle] = useState('');
@@ -412,12 +413,12 @@ export default function AdminControlPanelPage() {
       title: newSrvTitle,
       originalPrice: parseFloat(newSrvPrice) || 1000,
       discountedPrice: parseFloat(newSrvDiscount) || (parseFloat(newSrvPrice) || 1000),
-      ratingAverage: 5.0,
+      ratingAverage: parseFloat(newSrvRating) || 5.0,
       ratingCount: 1,
       imageUrl: newSrvImage || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'
     }).then(() => {
-      setPopupState({ isOpen: true, title: 'Service Created', message: `Service '${newSrvTitle}' connected to Category '${catObj.name}'! Rating set to 5.0 ★`, type: 'success' });
-      setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage('');
+      setPopupState({ isOpen: true, title: 'Service Created', message: `Service '${newSrvTitle}' saved with default ${newSrvRating || 5.0}★ rating!`, type: 'success' });
+      setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage(''); setNewSrvRating('5.0');
     });
   };
 
@@ -1007,7 +1008,7 @@ export default function AdminControlPanelPage() {
                 setEditingTestimonial={setEditingTestimonial}
                 setEditingFaq={setEditingFaq}
                 handleAddCategory={handleAddCategory} newCatName={newCatName} setNewCatName={setNewCatName} newCatIcon={newCatIcon} setNewCatIcon={setNewCatIcon}
-                handleAddService={handleAddService} newSrvTitle={newSrvTitle} setNewSrvTitle={setNewSrvTitle} newSrvCatId={newSrvCatId} setNewSrvCatId={setNewSrvCatId} newSrvPrice={newSrvPrice} setNewSrvPrice={setNewSrvPrice} newSrvDiscount={newSrvDiscount} setNewSrvDiscount={setNewSrvDiscount} newSrvImage={newSrvImage} setNewSrvImage={setNewSrvImage}
+                handleAddService={handleAddService} newSrvTitle={newSrvTitle} setNewSrvTitle={setNewSrvTitle} newSrvCatId={newSrvCatId} setNewSrvCatId={setNewSrvCatId} newSrvPrice={newSrvPrice} setNewSrvPrice={setNewSrvPrice} newSrvDiscount={newSrvDiscount} setNewSrvDiscount={setNewSrvDiscount} newSrvRating={newSrvRating} setNewSrvRating={setNewSrvRating} newSrvImage={newSrvImage} setNewSrvImage={setNewSrvImage}
                 handleAddBanner={handleAddBanner} newBnrTitle={newBnrTitle} setNewBnrTitle={setNewBnrTitle} newBnrSub={newBnrSub} setNewBnrSub={setNewBnrSub} newBnrImg={newBnrImg} setNewBnrImg={setNewBnrImg}
                 handleAddTestimonial={handleAddTestimonial} newTestName={newTestName} setNewTestName={setNewTestName} newTestLoc={newTestLoc} setNewTestLoc={setNewTestLoc} newTestText={newTestText} setNewTestText={setNewTestText}
                 handleAddFaq={handleAddFaq} newFaqQ={newFaqQ} setNewFaqQ={setNewFaqQ} newFaqA={newFaqA} setNewFaqA={setNewFaqA}

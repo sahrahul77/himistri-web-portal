@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, Users, UserPlus, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Users, UserPlus, Upload, Star } from 'lucide-react';
 
 export function AdminSliders({
   activeTab,
@@ -30,7 +30,7 @@ export function AdminSliders({
   setEditingFaq,
   // Creation Handlers & Forms
   handleAddCategory, newCatName, setNewCatName, newCatIcon, setNewCatIcon,
-  handleAddService, newSrvTitle, setNewSrvTitle, newSrvCatId, setNewSrvCatId, newSrvPrice, setNewSrvPrice, newSrvDiscount, setNewSrvDiscount, newSrvImage, setNewSrvImage,
+  handleAddService, newSrvTitle, setNewSrvTitle, newSrvCatId, setNewSrvCatId, newSrvPrice, setNewSrvPrice, newSrvDiscount, setNewSrvDiscount, newSrvRating, setNewSrvRating, newSrvImage, setNewSrvImage,
   handleAddBanner, newBnrTitle, setNewBnrTitle, newBnrSub, setNewBnrSub, newBnrImg, setNewBnrImg,
   handleAddTestimonial, newTestName, setNewTestName, newTestLoc, setNewTestLoc, newTestText, setNewTestText,
   handleAddFaq, newFaqQ, setNewFaqQ, newFaqA, setNewFaqA,
@@ -241,6 +241,24 @@ export function AdminSliders({
               <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
               <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
 
+              {/* Service Rating Input */}
+              <div className="md:col-span-2">
+                <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Rating Average (★ Max 5.0)</label>
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-amber-500 fill-amber-400 shrink-0" />
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1.0"
+                    max="5.0"
+                    value={newSrvRating || '5.0'}
+                    onChange={(e) => setNewSrvRating(e.target.value)}
+                    placeholder="Initial Rating (★ Default: 5.0)"
+                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                  />
+                </div>
+              </div>
+
               <div className="md:col-span-2 space-y-1">
                 <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Service Image (Upload File &le;200KB or Paste Image URL)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -300,18 +318,30 @@ export function AdminSliders({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25 }}
-                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto w-full"
+                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto w-full overflow-hidden"
                   >
                     <div>
-                      {/* 100% Full Square Artwork Container with object-contain */}
-                      <div className="w-full aspect-square rounded-xl mb-3 overflow-hidden bg-slate-100 dark:bg-neutral-800/80 flex items-center justify-center p-1.5 border border-slate-200 dark:border-neutral-700/60 shadow-inner">
-                        <img src={currentSrvObj.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-full object-contain rounded-lg" />
+                      {/* Image occupies ENTIRE top box */}
+                      <div className="relative w-full h-52 sm:h-60 overflow-hidden bg-slate-100 dark:bg-neutral-800">
+                        <img src={currentSrvObj.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-full object-cover" />
                       </div>
-                      <span className="text-[10px] font-bold text-redPrimary uppercase">{currentSrvObj.categoryName || 'General'}</span>
-                      <h4 className="font-bold text-base mt-0.5 text-slate-900 dark:text-white">{currentSrvObj.title}</h4>
-                      <p className="text-lg font-black text-redPrimary mt-1">₹{currentSrvObj.discountedPrice || currentSrvObj.originalPrice}</p>
+
+                      <div className="p-4 sm:p-5 space-y-1">
+                        <span className="text-[10px] font-bold text-redPrimary uppercase">{currentSrvObj.categoryName || 'General'}</span>
+
+                        <div className="flex justify-between items-center gap-2">
+                          <h4 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">{currentSrvObj.title}</h4>
+
+                          <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 text-xs font-black shrink-0 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
+                            <Star className="w-3.5 h-3.5 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" /> {parseFloat(currentSrvObj.ratingAverage || 5.0).toFixed(1)}
+                          </div>
+                        </div>
+
+                        <p className="text-lg font-black text-redPrimary mt-1">₹{currentSrvObj.discountedPrice || currentSrvObj.originalPrice}</p>
+                      </div>
                     </div>
-                    <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-neutral-800">
+
+                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-slate-100 dark:border-neutral-800 flex gap-2">
                       <button onClick={() => setEditingService({ ...currentSrvObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
                       <button onClick={() => setDeletingPath(`services/${currentSrvObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                     </div>

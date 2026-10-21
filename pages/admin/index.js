@@ -231,9 +231,11 @@ export default function AdminControlPanelPage() {
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
 
-  // All Service Partners List from Firebase Users
-  const allPartnersList = usersList.filter(u => u.role === 'PARTNER');
-  const partnersCount = allPartnersList.length || 1;
+  // Retrieve ALL Registered Service Partners from Firebase Users safely
+  const allPartnersList = usersList.filter(u => {
+    const roleUpper = (u.role || '').toUpperCase();
+    return roleUpper === 'PARTNER' || roleUpper === 'SERVICE_PARTNER' || u.skillCategory;
+  });
 
   const isAdmin = currentUser && currentUser.role === 'ADMIN';
 
@@ -257,7 +259,7 @@ export default function AdminControlPanelPage() {
       return pSkill && (serviceCategoryName.includes(pSkill) || serviceTitleName.includes(pSkill) || pSkill.includes(serviceCategoryName));
     });
 
-    const freePartners = allPartnersList.filter(p => p.isOnline !== false);
+    const freePartners = allPartnersList.filter(p => p.isOnline === true || p.isOnline === 'true');
 
     if (assignFilterTab === 0) return skillMatched.length > 0 ? skillMatched : allPartnersList;
     if (assignFilterTab === 1) return freePartners;
@@ -272,7 +274,7 @@ export default function AdminControlPanelPage() {
     const serviceTitleName = (assigningBooking.serviceTitle || '').toLowerCase();
     return pSkill && (serviceCategoryName.includes(pSkill) || serviceTitleName.includes(pSkill) || pSkill.includes(serviceCategoryName));
   }).length;
-  const freePartnersCount = allPartnersList.filter(p => p.isOnline !== false).length;
+  const freePartnersCount = allPartnersList.filter(p => p.isOnline === true || p.isOnline === 'true').length;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -344,7 +346,7 @@ export default function AdminControlPanelPage() {
                 { id: 0, label: `Orders (${bookings.length})` },
                 { id: 1, label: 'Analytics 📊' },
                 { id: 2, label: `Payment Details (₹${totalRevenue})` },
-                { id: 3, label: `Partner Fleet (${partnersCount})` },
+                { id: 3, label: `Partner Fleet (${allPartnersList.length})` },
                 { id: 4, label: `Registered Users (${usersList.length || 6})` },
                 { id: 5, label: `Categories (${activeCategories.length})` },
                 { id: 6, label: `Services (${activeServices.length})` },
@@ -413,7 +415,7 @@ export default function AdminControlPanelPage() {
                           <CheckCircle2 className="w-3.5 h-3.5" /> Confirm Order
                         </button>
 
-                        {/* Assign Partner Button (ENABLED ONLY AFTER CONFIRMED!) */}
+                        {/* Assign Partner Button */}
                         <button
                           onClick={() => setAssigningBooking(b)}
                           disabled={b.status === 'PENDING'}
@@ -482,21 +484,30 @@ export default function AdminControlPanelPage() {
             {/* TAB 3: PARTNER FLEET */}
             {activeTab === 3 && (
               <div className="web-card space-y-3">
-                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners</h3>
-                {usersList.filter(u => u.role === 'PARTNER').map(p => (
-                  <div key={p.id} className="p-4 rounded-xl bg-black/20 border border-neutral-800 flex justify-between items-center">
-                    <div>
-                      <strong className="text-base block">{p.fullName}</strong>
-                      <span className="text-xs text-slate-400">Skill: {p.skillCategory} | Phone: {p.phoneNumber}</span>
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${p.isOnline !== false ? 'bg-emerald-600/15 text-emerald-600' : 'bg-slate-500/15 text-slate-400'}`}>
-                        {p.isOnline !== false ? '🟢 ONLINE' : '⚫ OFFLINE'}
-                      </span>
-                      <button onClick={() => handleDeleteItem(`users/${p.id}`)} className="bg-rose-800 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete Partner</button>
-                    </div>
-                  </div>
-                ))}
+                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners ({allPartnersList.length})</h3>
+                {allPartnersList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-6">No service partners registered in Firebase Database yet.</p>
+                ) : (
+                  allPartnersList.map(p => {
+                    const isOnline = p.isOnline === true || p.isOnline === 'true';
+                    return (
+                      <div key={p.id} className="p-4 rounded-xl bg-black/20 border border-neutral-800 flex justify-between items-center">
+                        <div>
+                          <strong className="text-base block">{p.fullName || 'Partner'}</strong>
+                          <span className="text-xs text-slate-400">Skill: {p.skillCategory || 'Specialist'} | Phone: {p.phoneNumber || 'N/A'}</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                            isOnline ? 'bg-emerald-600/20 text-emerald-500 border border-emerald-600/30' : 'bg-slate-700/50 text-slate-400 border border-slate-600/30'
+                          }`}>
+                            {isOnline ? '🟢 ONLINE' : '⚫ OFFLINE'}
+                          </span>
+                          <button onClick={() => handleDeleteItem(`users/${p.id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete Partner</button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
 
@@ -681,7 +692,7 @@ export default function AdminControlPanelPage() {
         )}
       </main>
 
-      {/* ASSIGN PARTNER MODAL (Matching Mobile App Screenshot 100% Pixel-Perfect) */}
+      {/* ASSIGN PARTNER MODAL */}
       {assigningBooking && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#242424] border border-[#3A3A3A] rounded-3xl p-6 sm:p-8 w-full max-w-lg text-white shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
@@ -745,7 +756,7 @@ export default function AdminControlPanelPage() {
                 modalPartners.map((partner) => {
                   const isSkillMatch = (partner.skillCategory || '').toLowerCase().includes((assigningBooking.serviceCategory || '').toLowerCase()) ||
                     (partner.skillCategory || '').toLowerCase().includes((assigningBooking.serviceTitle || '').toLowerCase());
-                  const isFree = partner.isOnline !== false;
+                  const isFree = partner.isOnline === true || partner.isOnline === 'true';
 
                   return (
                     <div key={partner.id} className="p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333] flex justify-between items-center shadow-md">

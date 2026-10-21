@@ -8,7 +8,7 @@ import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, FALLBACK_ICON } from '../lib/defaultData';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign } from 'lucide-react';
@@ -41,6 +41,13 @@ export default function HomePage() {
   const toggleTheme = () => {
     setIsDark(prev => !prev);
   };
+
+  // Seed / Sync 10 Categories and Icon URLs into Firebase Database
+  useEffect(() => {
+    DEFAULT_CATEGORIES.forEach((cat) => {
+      set(ref(rtdb, `categories/${cat.id}`), cat);
+    });
+  }, []);
 
   useEffect(() => {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
@@ -184,12 +191,12 @@ export default function HomePage() {
                     whileHover={{ y: -4, scale: 1.02 }}
                     className="web-card text-center p-4 sm:p-5 cursor-pointer shadow-md flex flex-col justify-center items-center h-full bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl"
                   >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mb-2.5 sm:mb-3 shrink-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mb-2.5 sm:mb-3 shrink-0 p-2">
                       <img
                         src={c.iconUrl || FALLBACK_ICON}
                         alt={c.name}
                         onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                     <strong className="text-xs font-bold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
@@ -274,7 +281,7 @@ export default function HomePage() {
                         <span className="text-xl sm:text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
                         <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
                       </div>
-                      <button onClick={() => handleHireNow(s)} className="btn-primary py-2.5 px-5 text-xs sm:text-sm">
+                      <button onClick={() => handleHireNow(s)} className="btn-primary py-2 sm:py-2.5 px-4 sm:px-5 text-xs sm:text-sm">
                         Hire Now <ArrowRight className="w-4 h-4 inline ml-1" />
                       </button>
                     </div>

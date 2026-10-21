@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Phone, Mail, MapPin, ShieldCheck, Send, CheckCircle2, Heart, ExternalLink } from 'lucide-react';
+import { Phone, Mail, MapPin, ShieldCheck, Send, CheckCircle2, Heart, ExternalLink, ChevronRight } from 'lucide-react';
 
 export default function Footer() {
   const [emailInput, setEmailInput] = useState('');
@@ -21,22 +21,22 @@ export default function Footer() {
       {/* Newsletter Subscription Banner */}
       <div className="border-b border-neutral-800 py-10 bg-neutral-900/50 backdrop-blur-md">
         <div className="web-container flex flex-col md:flex-row justify-between items-center gap-6">
-          <div>
+          <div className="text-center md:text-left">
             <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Stay Connected</span>
-            <h3 className="text-xl font-black text-white mt-0.5">Subscribe to Sikkim Service Alerts</h3>
-            <p className="text-xs text-slate-400">Get instant doorstep discount offers & technician availability updates in Gangtok</p>
+            <h3 className="text-xl sm:text-2xl font-black text-white mt-0.5">Subscribe to Sikkim Service Alerts</h3>
+            <p className="text-xs text-slate-400 mt-1">Get instant doorstep discount offers & technician availability updates in Gangtok</p>
           </div>
 
-          <form onSubmit={handleSubscribe} className="flex w-full md:w-auto gap-2">
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row w-full md:w-auto gap-2">
             <input
               type="email"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
               placeholder="Enter your email address"
-              className="px-4 py-3 rounded-xl bg-neutral-800 border border-neutral-700 text-white text-xs outline-none focus:border-redPrimary min-w-[260px]"
+              className="px-4 py-3 rounded-xl bg-neutral-800 border border-neutral-700 text-white text-xs outline-none focus:border-redPrimary min-w-[240px] sm:min-w-[280px]"
             />
-            <button type="submit" className="btn-primary text-xs py-3 px-5 whitespace-nowrap">
-              {subscribed ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Send className="w-4 h-4" />}
+            <button type="submit" className="btn-primary text-xs py-3 px-6 whitespace-nowrap justify-center">
+              {subscribed ? <CheckCircle2 className="w-4 h-4 text-emerald-400 inline mr-1" /> : <Send className="w-4 h-4 inline mr-1" />}
               {subscribed ? 'Subscribed!' : 'Subscribe'}
             </button>
           </form>
@@ -44,7 +44,9 @@ export default function Footer() {
       </div>
 
       {/* Main Footer Links & Information */}
-      <div className="web-container py-14 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+      <div className="web-container py-12 sm:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
+
+        {/* Brand Information */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h3 className="text-2xl font-black text-white">HiMistri</h3>
@@ -53,46 +55,48 @@ export default function Footer() {
           <p className="text-xs text-slate-400 leading-relaxed">
             HiMistri is a Gangtok-based start-up established in 2022 providing doorstep technical manpower across Sikkim with maximum quality and transparent pricing.
           </p>
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-800/30">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-950/40 p-3 rounded-xl border border-emerald-800/30">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>100% Background Verified Local Craftsmen</span>
           </div>
         </div>
 
+        {/* Quick Navigation */}
         <div>
           <h4 className="text-sm font-black text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Quick Navigation</h4>
           <ul className="space-y-2.5 text-xs font-semibold">
-            <li><Link href="/" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Home Portal</Link></li>
-            <li><Link href="/categories" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Explore 10 Categories</Link></li>
-            <li><Link href="/services" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Doorstep Services Catalog</Link></li>
-            <li><Link href="/tracking" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> Track Order Status</Link></li>
-            <li><Link href="/about" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-angle-right text-[10px] text-redPrimary"></i> About HiMistri</Link></li>
+            <li><Link href="/" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Home Portal</Link></li>
+            <li><Link href="/categories" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Explore Categories</Link></li>
+            <li><Link href="/services" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Doorstep Services Catalog</Link></li>
+            <li><Link href="/tracking" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Track Order Status</Link></li>
+            <li><Link href="/profile" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> My Profile & Address Book</Link></li>
           </ul>
         </div>
 
+        {/* Customer Account & Portal Links */}
         <div>
-          <h4 className="text-sm font-black text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Legal & Policies</h4>
+          <h4 className="text-sm font-black text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Portal Access</h4>
           <ul className="space-y-2.5 text-xs font-semibold">
-            <li><Link href="/privacy" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-shield text-[10px] text-redPrimary"></i> Privacy Policy</Link></li>
-            <li><Link href="/terms" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-file-contract text-[10px] text-redPrimary"></i> Terms & Conditions</Link></li>
-            <li><Link href="/cancellation" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-rotate-left text-[10px] text-redPrimary"></i> Cancellation & Refund</Link></li>
-            <li><Link href="/auth" className="hover:text-redPrimary transition flex items-center gap-1.5"><i class="fa-solid fa-user-check text-[10px] text-redPrimary"></i> Customer Sign In / Register</Link></li>
+            <li><Link href="/auth" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Customer Sign In / Register</Link></li>
+            <li><Link href="/partner" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Service Partner Dashboard</Link></li>
+            <li><Link href="/admin" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Admin Control Panel</Link></li>
           </ul>
         </div>
 
+        {/* Sikkim Head Office Contact Info */}
         <div className="space-y-3">
           <h4 className="text-sm font-black text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Sikkim Head Office</h4>
-          <p className="text-xs flex items-start gap-2.5 text-slate-300">
+          <p className="text-xs flex items-start gap-2.5 text-slate-300 leading-relaxed">
             <MapPin className="w-4 h-4 text-redPrimary shrink-0 mt-0.5" />
             <span>Upper Syari Near ICDS center, Dothapu, Near Deorali-Bazar, Gangtok, East Sikkim 737102</span>
           </p>
           <p className="text-xs flex items-center gap-2.5 text-slate-300">
             <Phone className="w-4 h-4 text-redPrimary shrink-0" />
-            <span>+91 7430887960 (24x7 Helpline)</span>
+            <a href="tel:+917430887960" className="hover:underline">+91 7430887960 (24x7 Helpline)</a>
           </p>
           <p className="text-xs flex items-center gap-2.5 text-slate-300">
             <Mail className="w-4 h-4 text-redPrimary shrink-0" />
-            <span>info@himistri.techcoders.in</span>
+            <a href="mailto:info@himistri.techcoders.in" className="hover:underline">info@himistri.techcoders.in</a>
           </p>
           <a
             href="https://maps.google.com/?q=Upper+Syari+Gangtok"
@@ -107,8 +111,8 @@ export default function Footer() {
 
       {/* Service Towns Footer Strip */}
       <div className="bg-black/60 border-t border-neutral-800 py-3 text-[11px] text-slate-500 text-center">
-        <div className="web-container flex flex-wrap justify-between items-center gap-2">
-          <span>Active Coverage: <strong>Gangtok (Upper Syari, Deorali, Chandmari, Burtuk), Singtam, Pakyong, Rangpo & Namchi</strong></span>
+        <div className="web-container flex flex-col sm:flex-row justify-between items-center gap-2">
+          <span>Active Coverage: <strong className="text-slate-400">Gangtok (Upper Syari, Deorali, Chandmari, Burtuk), Singtam, Pakyong, Rangpo & Namchi</strong></span>
           <span className="flex items-center gap-1">Crafted with <Heart className="w-3 h-3 text-redPrimary fill-redPrimary" /> for Sikkim</span>
         </div>
       </div>

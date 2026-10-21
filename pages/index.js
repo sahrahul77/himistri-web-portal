@@ -42,13 +42,18 @@ export default function HomePage() {
     setIsDark(prev => !prev);
   };
 
-  // Sync / Overwrite Original HiMistri Categories into Firebase Database
+  // Seed default categories ONLY if Firebase /categories is completely empty (Preserves Admin's custom added categories)
   useEffect(() => {
-    const catMap = {};
-    DEFAULT_CATEGORIES.forEach((c) => {
-      catMap[c.id] = c;
-    });
-    set(ref(rtdb, 'categories'), catMap);
+    const categoriesRef = ref(rtdb, 'categories');
+    onValue(categoriesRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        const catMap = {};
+        DEFAULT_CATEGORIES.forEach((c) => {
+          catMap[c.id] = c;
+        });
+        set(categoriesRef, catMap);
+      }
+    }, { onlyOnce: true });
   }, []);
 
   useEffect(() => {
@@ -173,13 +178,13 @@ export default function HomePage() {
         {/* 3. Hero Banner Carousel */}
         <HeroBanner banners={banners} />
 
-        {/* 4. Explore Original Categories Grid */}
+        {/* 4. Explore Categories Grid */}
         {displayCategories.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-4 sm:mb-6">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Original Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Core Technical & Household Manpower Categories in Gangtok</p>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Categories</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Technical & Household Manpower Categories in Gangtok</p>
               </div>
               <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3 sm:px-3.5 py-1.5 rounded-full shrink-0">
                 See All ({categories.length})
@@ -209,7 +214,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok (Full-Box Occupying Image + Rating at the end of Service Name) */}
+        {/* 5. Popular Services in Gangtok */}
         <div>
           <div className="flex justify-between items-baseline mb-4 sm:mb-6">
             <div>

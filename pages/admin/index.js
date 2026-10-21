@@ -9,7 +9,7 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
@@ -103,6 +103,29 @@ export default function AdminControlPanelPage() {
     }
   };
 
+  // FileReader Helper to Convert Local Uploaded Image Files into Data URLs
+  const handleImageFileUpload = (e, callback) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setPopupState({
+        isOpen: true,
+        title: 'Image File Too Large',
+        message: 'Please choose an image file under 2MB for fast database sync.',
+        type: 'error'
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      callback(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Robust Snapshot Parser
   const parseFirebaseSnapshot = (snapshot) => {
     const list = [];
     if (snapshot && snapshot.exists()) {
@@ -979,15 +1002,44 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 5: CATEGORIES MANAGER (With Single-Card Slider) */}
+            {/* TAB 5: CATEGORIES MANAGER (With File Upload & Image Preview) */}
             {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Category</h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} placeholder="Icon Image URL" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+
+                    {/* Category Icon File Upload & URL Picker */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-400 block">Category Icon (Upload Image File or Paste URL)</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageFileUpload(e, setNewCatIcon)}
+                          className="p-2.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1"
+                        />
+                        <input
+                          type="text"
+                          value={newCatIcon}
+                          onChange={(e) => setNewCatIcon(e.target.value)}
+                          placeholder="Or paste Icon Image URL"
+                          className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1 outline-none focus:border-redPrimary"
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Icon Live Preview */}
+                  {newCatIcon && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                      <img src={newCatIcon} className="w-10 h-10 object-contain rounded-lg" alt="Preview" />
+                      <span className="text-xs text-emerald-400 font-bold">Icon Preview Selected</span>
+                    </div>
+                  )}
+
                   <button type="submit" className="btn-primary py-3.5 px-6 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Save Category</button>
                 </form>
 
@@ -1041,20 +1093,51 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 6: SERVICES MANAGER (With Single-Card Slider) */}
+            {/* TAB 6: SERVICES MANAGER (With File Upload & Image Preview) */}
             {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Service (Connected to Category)</h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+
                     <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-bold text-white outline-none focus:border-redPrimary">
                       {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
+
                     <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
                     <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newSrvImage} onChange={(e) => setNewSrvImage(e.target.value)} placeholder="Service Icon Image URL" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white md:col-span-2 outline-none focus:border-redPrimary" />
+
+                    {/* Service Image File Upload & URL Picker */}
+                    <div className="md:col-span-2 space-y-1">
+                      <label className="text-xs font-bold text-slate-400 block">Service Image (Upload File or Paste Image URL)</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageFileUpload(e, setNewSrvImage)}
+                          className="p-2.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1"
+                        />
+                        <input
+                          type="text"
+                          value={newSrvImage}
+                          onChange={(e) => setNewSrvImage(e.target.value)}
+                          placeholder="Or paste Service Icon Image URL"
+                          className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1 outline-none focus:border-redPrimary"
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Service Image Live Preview */}
+                  {newSrvImage && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                      <img src={newSrvImage} className="w-16 h-12 object-cover rounded-lg" alt="Preview" />
+                      <span className="text-xs text-emerald-400 font-bold">Service Image Selected</span>
+                    </div>
+                  )}
+
                   <button type="submit" className="btn-primary w-full py-3.5 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Create & Link Service to Category</button>
                 </form>
 
@@ -1111,16 +1194,45 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 7: BANNERS MANAGER (With Single-Card Slider) */}
+            {/* TAB 7: BANNERS MANAGER (With File Upload & Image Preview) */}
             {activeTab === 7 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddBanner} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Marketing Banner</h3>
+
                   <div className="space-y-3">
                     <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
                     <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newBnrImg} onChange={(e) => setNewBnrImg(e.target.value)} placeholder="Banner Image URL" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
+
+                    {/* Banner Image File Upload & URL Picker */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-400 block">Banner Image (Upload File or Paste URL)</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageFileUpload(e, setNewBnrImg)}
+                          className="p-2.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1"
+                        />
+                        <input
+                          type="text"
+                          value={newBnrImg}
+                          onChange={(e) => setNewBnrImg(e.target.value)}
+                          placeholder="Or paste Banner Image URL"
+                          className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1 outline-none focus:border-redPrimary"
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Banner Image Live Preview */}
+                  {newBnrImg && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                      <img src={newBnrImg} className="w-20 h-12 object-cover rounded-lg" alt="Preview" />
+                      <span className="text-xs text-emerald-400 font-bold">Banner Image Selected</span>
+                    </div>
+                  )}
+
                   <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save Marketing Banner</button>
                 </form>
 
@@ -1549,43 +1661,107 @@ export default function AdminControlPanelPage() {
         </div>
       )}
 
-      {/* EDIT MODAL FOR CATEGORIES */}
+      {/* EDIT MODAL FOR CATEGORIES (With File Upload & Image Preview) */}
       {editingCategory && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
           <form onSubmit={handleSaveCategoryEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
             <button type="button" onClick={() => setEditingCategory(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Category</h3>
-            <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} placeholder="Category Name" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <input type="text" value={editingCategory.iconUrl} onChange={(e) => setEditingCategory({ ...editingCategory, iconUrl: e.target.value })} placeholder="Icon Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Category Name</label>
+              <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} placeholder="Category Name" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Upload New Icon File / URL</label>
+              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingCategory({ ...editingCategory, iconUrl: res }))} className="p-2 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white w-full mb-2" />
+              <input type="text" value={editingCategory.iconUrl} onChange={(e) => setEditingCategory({ ...editingCategory, iconUrl: e.target.value })} placeholder="Or paste Icon Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+
+            {editingCategory.iconUrl && (
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700">
+                <img src={editingCategory.iconUrl} className="w-10 h-10 object-contain rounded-lg" alt="Preview" />
+                <span className="text-xs text-emerald-400 font-bold">New Icon Selected</span>
+              </div>
+            )}
+
             <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Category Updates</button>
           </form>
         </div>
       )}
 
-      {/* EDIT MODAL FOR SERVICES */}
+      {/* EDIT MODAL FOR SERVICES (With File Upload & Image Preview) */}
       {editingService && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveServiceEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+          <form onSubmit={handleSaveServiceEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button type="button" onClick={() => setEditingService(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Service</h3>
-            <input type="text" value={editingService.title} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <input type="number" value={editingService.originalPrice} onChange={(e) => setEditingService({ ...editingService, originalPrice: e.target.value })} placeholder="Original Price" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <input type="number" value={editingService.discountedPrice} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Service Title</label>
+              <input type="text" value={editingService.title} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Original Price (₹)</label>
+                <input type="number" value={editingService.originalPrice} onChange={(e) => setEditingService({ ...editingService, originalPrice: e.target.value })} placeholder="Original Price" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              </div>
+              <div>
+                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Discount Price (₹)</label>
+                <input type="number" value={editingService.discountedPrice} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Upload New Service Image File / URL</label>
+              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingService({ ...editingService, imageUrl: res }))} className="p-2 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white w-full mb-2" />
+              <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+
+            {editingService.imageUrl && (
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700">
+                <img src={editingService.imageUrl} className="w-16 h-12 object-cover rounded-lg" alt="Preview" />
+                <span className="text-xs text-emerald-400 font-bold">New Image Selected</span>
+              </div>
+            )}
+
             <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Service Updates</button>
           </form>
         </div>
       )}
 
-      {/* EDIT MODAL FOR BANNERS */}
+      {/* EDIT MODAL FOR BANNERS (With File Upload & Image Preview) */}
       {editingBanner && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
           <form onSubmit={handleSaveBannerEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
             <button type="button" onClick={() => setEditingBanner(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Marketing Banner</h3>
-            <input type="text" value={editingBanner.title} onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })} placeholder="Title" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <input type="text" value={editingBanner.subtitle} onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <input type="text" value={editingBanner.imageUrl} onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} placeholder="Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Banner Title</label>
+              <input type="text" value={editingBanner.title} onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })} placeholder="Title" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Subtitle</label>
+              <input type="text" value={editingBanner.subtitle} onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Upload New Banner Image File / URL</label>
+              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingBanner({ ...editingBanner, imageUrl: res }))} className="p-2 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white w-full mb-2" />
+              <input type="text" value={editingBanner.imageUrl} onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} placeholder="Or Banner Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+            </div>
+
+            {editingBanner.imageUrl && (
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700">
+                <img src={editingBanner.imageUrl} className="w-20 h-12 object-cover rounded-lg" alt="Preview" />
+                <span className="text-xs text-emerald-400 font-bold">New Banner Image Selected</span>
+              </div>
+            )}
+
             <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Banner Updates</button>
           </form>
         </div>

@@ -27,7 +27,7 @@ export default function TestimonialsSection() {
 
   return (
     <div className="space-y-16 my-16">
-      {/* Testimonials Section - Render ONLY if items exist in Firebase */}
+      {/* Testimonials Section - Render ONLY if items exist in Firebase Database */}
       {testimonials.length > 0 && (
         <div>
           <div className="text-center max-w-xl mx-auto mb-10">
@@ -68,7 +68,7 @@ export default function TestimonialsSection() {
         </div>
       )}
 
-      {/* FAQ Accordion Section - Render ONLY if items exist in Firebase */}
+      {/* FAQ Accordion Section - Render ONLY if items exist in Firebase Database */}
       {faqs.length > 0 && (
         <div className="web-card max-w-3xl mx-auto shadow-2xl">
           <div className="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-neutral-800 pb-4">

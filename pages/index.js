@@ -20,7 +20,7 @@ export default function HomePage() {
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Live Firebase Realtime Database Data (No Mock Data)
+  // Live Firebase Realtime Database Data (Pure Database - Zero Mock Data)
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
   const [banners, setBanners] = useState([]);
@@ -78,13 +78,13 @@ export default function HomePage() {
     return matchesSearch && matchesChip;
   });
 
-  // Display max 6 categories and top 10 popular services on Home from Firebase
+  // Display max 6 categories and top 10 popular services on Home directly from Firebase
   const displayCategories = categories.slice(0, 6);
   const popularServices = filteredServices.slice(0, 10);
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header isDark={isDark} onToggleTheme={toggleTheme} />
+      <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-8 flex-1 space-y-12">
 
@@ -130,7 +130,7 @@ export default function HomePage() {
         {/* 3. Hero Banner Carousel */}
         <HeroBanner banners={banners} />
 
-        {/* 4. Explore Categories Grid (6 Categories) */}
+        {/* 4. Explore Categories Grid (Max 6 Categories from Firebase) */}
         {displayCategories.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-6">
@@ -166,7 +166,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok (10 Services) */}
+        {/* 5. Popular Services in Gangtok (Max 10 Services from Firebase) */}
         {popularServices.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-6">

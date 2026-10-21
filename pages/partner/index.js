@@ -28,6 +28,17 @@ export default function PartnerDashboardPage() {
 
   const { currentUser, logout, isAuthLoaded } = useAuth();
 
+  // Automatic Theme Synchronization Effect
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, [isDark]);
+
   useEffect(() => {
     if (currentUser) {
       setEditName(currentUser.fullName || 'Dhiraj Jaiswal');
@@ -37,14 +48,7 @@ export default function PartnerDashboardPage() {
   }, [currentUser]);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
-    if (!isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
+    setIsDark(prev => !prev);
   };
 
   useEffect(() => {
@@ -127,7 +131,7 @@ export default function PartnerDashboardPage() {
   const currentCompletedJob = completedJobs[completedSliderIdx] || completedJobs[0];
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
+    <div className="flex flex-col min-h-screen bg-slate-100 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       {/* Main Container */}
@@ -136,14 +140,14 @@ export default function PartnerDashboardPage() {
           <div className="web-card text-center py-16 space-y-4 max-w-lg mx-auto bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
             <Lock className="w-16 h-16 text-redPrimary mx-auto" />
             <h2 className="text-2xl font-black text-slate-900 dark:text-white">Partner Access Restricted</h2>
-            <p className="text-xs text-slate-500">Please sign in as a registered HiMistri Service Partner to view your dispatched jobs.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Please sign in as a registered HiMistri Service Partner to view your dispatched jobs.</p>
             <Link href="/auth" className="btn-primary inline-flex mt-2">
               <LogIn className="w-4 h-4" /> Partner Login
             </Link>
           </div>
         ) : (
           <>
-            {/* Top Red Header Bar matching Screenshot 100% */}
+            {/* Top Red Header Bar */}
             <div className="bg-redPrimary text-white px-5 py-4 rounded-2xl shadow-xl flex justify-between items-center">
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-wide">
                 Partner Panel: {partnerNameRef}
@@ -170,8 +174,8 @@ export default function PartnerDashboardPage() {
               </div>
             </div>
 
-            {/* Partner Info Card matching Screenshot 100% */}
-            <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl space-y-5 shadow-2xl">
+            {/* Partner Info Card */}
+            <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl space-y-5 shadow-xl">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3.5">
                   <div className="w-12 h-12 rounded-full bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-md">
@@ -183,9 +187,9 @@ export default function PartnerDashboardPage() {
                   </div>
                 </div>
 
-                {/* Online Toggle Switch matching Screenshot 100% */}
+                {/* Online Toggle Switch */}
                 <div className="flex items-center gap-2">
-                  <span className={`text-[11px] font-black uppercase tracking-wider ${isOnline ? 'text-emerald-500' : 'text-slate-500'}`}>
+                  <span className={`text-[11px] font-black uppercase tracking-wider ${isOnline ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
                     {isOnline ? 'ONLINE' : 'OFFLINE'}
                   </span>
                   <button
@@ -198,7 +202,7 @@ export default function PartnerDashboardPage() {
                 </div>
               </div>
 
-              {/* 3 KPI Box Cards matching Screenshot 100% */}
+              {/* 3 KPI Box Cards */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-slate-50 dark:bg-[#242424] border border-slate-200 dark:border-[#333333] p-3.5 sm:p-4 rounded-xl text-left">
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Net Earnings</span>
@@ -220,7 +224,7 @@ export default function PartnerDashboardPage() {
               </div>
             </div>
 
-            {/* Sub-Menu Tabs matching Screenshot 100% */}
+            {/* Sub-Menu Tabs */}
             <div className="flex border-b border-slate-200 dark:border-[#333333] text-xs sm:text-sm font-bold">
               <button
                 type="button"
@@ -255,7 +259,7 @@ export default function PartnerDashboardPage() {
                     : 'border-b-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Partner Profile ID
+                Partner Profile ID & Edit
               </button>
             </div>
 
@@ -453,7 +457,7 @@ export default function PartnerDashboardPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Mobile Phone Number</label>
+                    <label className="text-xs font-bold text-slate-400 block mb-1">Mobile Phone Number</label>
                     <input
                       type="text"
                       value={editPhone}
@@ -465,7 +469,7 @@ export default function PartnerDashboardPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Skill Category / Specialization</label>
+                    <label className="text-xs font-bold text-slate-400 block mb-1">Skill Category / Specialization</label>
                     <input
                       type="text"
                       value={editSkill}

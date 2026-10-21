@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import PopupModal from '../../components/PopupModal';
+import { AdminSliders } from '../../components/admin/AdminSliders';
+import { AdminModals } from '../../components/admin/AdminModals';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, remove, set, push } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
@@ -92,15 +93,19 @@ export default function AdminControlPanelPage() {
   const [adminPhone, setAdminPhone] = useState('+919563213089');
   const [adminEmail, setAdminEmail] = useState('sahrahul77@gmail.com');
 
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    if (!isDark) {
+  // Automatic Theme Synchronization Effect
+  useEffect(() => {
+    if (isDark) {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark(prev => !prev);
   };
 
   // HTML5 Canvas Image Resizer & Quality Optimizer (Compresses ANY Image File to < 200KB)
@@ -373,6 +378,14 @@ export default function AdminControlPanelPage() {
     }
   };
 
+  const handleDeleteConfirm = () => {
+    if (!deletingPath) return;
+    remove(ref(rtdb, deletingPath)).then(() => {
+      setPopupState({ isOpen: true, title: 'Deleted', message: 'Item deleted successfully.', type: 'info' });
+      setDeletingPath(null);
+    });
+  };
+
   const handleAddCategory = (e) => {
     e.preventDefault();
     if (!newCatName) return alert('Category Name is required.');
@@ -575,7 +588,8 @@ export default function AdminControlPanelPage() {
   }).length;
   const freePartnersCount = allPartnersList.filter(p => p.isOnline === true || p.isOnline === 'true').length;
 
-  const currentOrder = filteredOrders[orderSliderIdx] || filteredOrders[0];
+  const safeOrderIdx = orderSliderIdx % (filteredOrders.length || 1);
+  const currentOrder = filteredOrders[safeOrderIdx] || filteredOrders[0];
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
@@ -716,7 +730,7 @@ export default function AdminControlPanelPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                       <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                        Order <span className="text-redPrimary font-black">{orderSliderIdx + 1}</span> of {filteredOrders.length}
+                        Order <span className="text-redPrimary font-black">{safeOrderIdx + 1}</span> of {filteredOrders.length}
                       </span>
 
                       {filteredOrders.length > 1 && (
@@ -729,7 +743,7 @@ export default function AdminControlPanelPage() {
                             <ChevronLeft className="w-4 h-4" />
                           </button>
                           <span className="text-xs font-black text-slate-700 dark:text-slate-300">
-                            {orderSliderIdx + 1} / {filteredOrders.length}
+                            {safeOrderIdx + 1} / {filteredOrders.length}
                           </span>
                           <button
                             type="button"
@@ -745,7 +759,7 @@ export default function AdminControlPanelPage() {
                     {currentOrder && (
                       <AnimatePresence mode="wait">
                         <motion.div
-                          key={currentOrder.id || orderSliderIdx}
+                          key={currentOrder.id || safeOrderIdx}
                           initial={{ opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
@@ -823,7 +837,7 @@ export default function AdminControlPanelPage() {
                             key={i}
                             onClick={() => setOrderSliderIdx(i)}
                             className={`h-2 rounded-full transition-all ${
-                              orderSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'
+                              safeOrderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'
                             }`}
                           />
                         ))}
@@ -834,7 +848,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 1: ANALYTICS (Always Fully Displayed) */}
+            {/* TAB 1: ANALYTICS */}
             {activeTab === 1 && (
               <div className="space-y-6">
                 <div className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
@@ -885,7 +899,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 2: PAYMENT DETAILS (Always Fully Displayed) */}
+            {/* TAB 2: PAYMENT DETAILS */}
             {activeTab === 2 && (
               <div className="space-y-6">
                 <div className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
@@ -927,7 +941,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 3: PARTNER FLEET (Always Fully Displayed) */}
+            {/* TAB 3: PARTNER FLEET */}
             {activeTab === 3 && (
               <div className="web-card space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners ({allPartnersList.length})</h3>
@@ -957,328 +971,38 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 4: REGISTERED USERS (Always Fully Displayed with Grid List + Slider) */}
-            {activeTab === 4 && (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateSubAdminOpen(true)}
-                    className="btn-primary bg-emerald-600 hover:bg-emerald-700 text-xs py-2 px-4 shadow-md font-black"
-                  >
-                    <UserPlus className="w-4 h-4 inline mr-1" /> + Create Sub-Admin Account ({currentAdmins.length}/3)
-                  </button>
-                </div>
-
-                {usersList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">No registered users found.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {usersList.map((usr) => (
-                      <div key={usr.id} className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 rounded-2xl flex justify-between items-center text-xs shadow-md">
-                        <div>
-                          <strong className="text-sm block text-slate-900 dark:text-white font-extrabold">{usr.fullName || 'User'}</strong>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{usr.email || 'N/A'} • {usr.phoneNumber || 'N/A'}</p>
-                          {usr.password && (
-                            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">🔑 Password: {usr.password}</p>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 items-center shrink-0">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${ (usr.role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary border border-redPrimary/30' : (usr.role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
-                            {usr.role || 'CUSTOMER'}
-                          </span>
-
-                          {(usr.role || '').toUpperCase() === 'ADMIN' && (
-                            <button
-                              type="button"
-                              onClick={() => setEditingAdminUser({ ...usr })}
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold"
-                            >
-                              Edit
-                            </button>
-                          )}
-
-                          <button onClick={() => setDeletingPath(`users/${usr.id}`)} className="bg-rose-800 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold">Delete</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 5: CATEGORIES MANAGER (With Dedicated 200KB Upload Picker Button & Live Thumbnail) */}
-            {activeTab === 5 && (
-              <div className="space-y-6">
-                <form onSubmit={handleAddCategory} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
-                  <h3 className="font-extrabold text-base text-redPrimary">Add New Category</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Category Icon (Upload File &le;200KB or Paste URL)</label>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition shrink-0">
-                          <Upload className="w-4 h-4" /> 📷 Upload Icon File
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageFileUpload(e, setNewCatIcon)}
-                            className="hidden"
-                          />
-                        </label>
-
-                        <input
-                          type="text"
-                          value={newCatIcon}
-                          onChange={(e) => setNewCatIcon(e.target.value)}
-                          placeholder="Or paste Icon Image URL"
-                          className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white flex-1 outline-none focus:border-redPrimary"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {newCatIcon && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
-                      <img src={newCatIcon} className="w-12 h-12 object-contain rounded-lg bg-white p-1" alt="Preview" />
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Icon Selected & Previewed</span>
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn-primary py-3.5 px-6 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Save Category</button>
-                </form>
-
-                {categoriesList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">No categories found.</p>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {categoriesList.map((c) => (
-                      <div key={c.id} className="web-card text-center p-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md flex flex-col items-center justify-between gap-3">
-                        <div>
-                          <img src={c.iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-12 h-12 object-contain mx-auto mb-2" />
-                          <strong className="text-xs sm:text-sm block text-slate-900 dark:text-white font-extrabold">{c.name}</strong>
-                        </div>
-                        <div className="flex gap-2 justify-center w-full pt-2 border-t border-slate-100 dark:border-neutral-800">
-                          <button onClick={() => setEditingCategory({ ...c })} className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2.5 py-1.5 rounded-lg font-bold flex-1">Edit</button>
-                          <button onClick={() => setDeletingPath(`categories/${c.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2.5 py-1.5 rounded-lg font-bold flex-1">Delete</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 6: SERVICES MANAGER (With Dedicated 200KB File Upload Picker Button & Live Thumbnail) */}
-            {activeTab === 6 && (
-              <div className="space-y-6">
-                <form onSubmit={handleAddService} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
-                  <h3 className="font-extrabold text-base text-redPrimary">Add New Service (Connected to Category)</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-
-                    <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary">
-                      {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-
-                    <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-
-                    <div className="md:col-span-2 space-y-1">
-                      <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Service Image (Upload File &le;200KB or Paste Image URL)</label>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition shrink-0">
-                          <Upload className="w-4 h-4" /> 📷 Upload Service Image File
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageFileUpload(e, setNewSrvImage)}
-                            className="hidden"
-                          />
-                        </label>
-
-                        <input
-                          type="text"
-                          value={newSrvImage}
-                          onChange={(e) => setNewSrvImage(e.target.value)}
-                          placeholder="Or paste Service Icon Image URL"
-                          className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white flex-1 outline-none focus:border-redPrimary"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {newSrvImage && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
-                      <img src={newSrvImage} className="w-16 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Service Image Selected & Previewed</span>
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn-primary w-full py-3.5 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Create & Link Service to Category</button>
-                </form>
-
-                {servicesList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">No services found.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {servicesList.map((s) => (
-                      <div key={s.id} className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 rounded-2xl flex flex-col justify-between shadow-md">
-                        <div>
-                          <img src={s.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-36 object-cover rounded-xl mb-2" />
-                          <span className="text-[10px] font-bold text-redPrimary uppercase">{s.categoryName || 'General'}</span>
-                          <h4 className="font-bold text-sm mt-0.5 text-slate-900 dark:text-white">{s.title}</h4>
-                          <p className="text-base font-black text-redPrimary mt-1">₹{s.discountedPrice || s.originalPrice}</p>
-                        </div>
-                        <div className="flex gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-neutral-800">
-                          <button onClick={() => setEditingService({ ...s })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold flex-1">Edit</button>
-                          <button onClick={() => setDeletingPath(`services/${s.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-xl font-bold flex-1">Delete</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 7: BANNERS MANAGER */}
-            {activeTab === 7 && (
-              <div className="space-y-6">
-                <form onSubmit={handleAddBanner} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
-                  <h3 className="font-extrabold text-base text-redPrimary">Add New Marketing Banner</h3>
-
-                  <div className="space-y-3">
-                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Banner Image (Upload File &le;200KB or Paste URL)</label>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition shrink-0">
-                          <Upload className="w-4 h-4" /> 📷 Upload Banner Image File
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageFileUpload(e, setNewBnrImg)}
-                            className="hidden"
-                          />
-                        </label>
-
-                        <input
-                          type="text"
-                          value={newBnrImg}
-                          onChange={(e) => setNewBnrImg(e.target.value)}
-                          placeholder="Or paste Banner Image URL"
-                          className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white flex-1 outline-none focus:border-redPrimary"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {newBnrImg && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
-                      <img src={newBnrImg} className="w-20 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Banner Image Selected & Previewed</span>
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save Marketing Banner</button>
-                </form>
-
-                {bannersList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">No banners found.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {bannersList.map((b) => (
-                      <div key={b.id} className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 rounded-2xl flex flex-col justify-between gap-3 shadow-md">
-                        <img src={b.imageUrl} className="w-full h-36 object-cover rounded-xl" alt="" />
-                        <div>
-                          <strong className="block text-sm font-bold text-slate-900 dark:text-white">{b.title}</strong>
-                          <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">{b.subtitle}</span>
-                        </div>
-                        <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
-                          <button onClick={() => setEditingBanner({ ...b })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold flex-1">Edit</button>
-                          <button onClick={() => setDeletingPath(`banners/${b.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-xl font-bold flex-1">Delete</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 9: CUSTOMER EXPERIENCE */}
-            {activeTab === 9 && (
-              <div className="space-y-6">
-                <form onSubmit={handleAddTestimonial} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
-                  <h3 className="font-extrabold text-base text-redPrimary">Add Customer Experience Review</h3>
-                  <div className="space-y-3">
-                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
-                  </div>
-                  <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save Customer Review</button>
-                </form>
-
-                {testimonialsList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">No customer reviews found.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {testimonialsList.map((t) => (
-                      <div key={t.id} className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 rounded-2xl space-y-2 shadow-md flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-center pb-1 border-b border-slate-100 dark:border-neutral-800">
-                            <strong className="block text-sm font-bold text-slate-900 dark:text-white">{t.name}</strong>
-                            <span className="text-xs text-slate-400">({t.location})</span>
-                          </div>
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 italic mt-2 leading-relaxed">"{t.text}"</p>
-                        </div>
-                        <div className="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-neutral-800">
-                          <button onClick={() => setEditingTestimonial({ ...t })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold flex-1">Edit</button>
-                          <button onClick={() => setDeletingPath(`testimonials/${t.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-xl font-bold flex-1">Delete</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 10: FAQs */}
-            {activeTab === 10 && (
-              <div className="space-y-6">
-                <form onSubmit={handleAddFaq} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
-                  <h3 className="font-extrabold text-base text-redPrimary">Add Frequently Asked Question</h3>
-                  <div className="space-y-3">
-                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
-                  </div>
-                  <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save FAQ</button>
-                </form>
-
-                {faqsList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">No FAQs found.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {faqsList.map((f) => (
-                      <div key={f.id} className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 rounded-2xl space-y-2 shadow-md">
-                        <strong className="block text-sm font-bold text-redPrimary">Q: {f.q}</strong>
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">A: {f.a}</p>
-                        <div className="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-neutral-800">
-                          <button onClick={() => setEditingFaq({ ...f })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Edit</button>
-                          <button onClick={() => setDeletingPath(`faqs/${f.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* RENDER ADMIN SLIDERS FOR TABS 4, 5, 6, 7, 9, 10 */}
+            {(activeTab === 4 || activeTab === 5 || activeTab === 6 || activeTab === 7 || activeTab === 9 || activeTab === 10) && (
+              <AdminSliders
+                activeTab={activeTab}
+                usersList={usersList}
+                categoriesList={categoriesList}
+                servicesList={servicesList}
+                bannersList={bannersList}
+                testimonialsList={testimonialsList}
+                faqsList={faqsList}
+                currentAdmins={currentAdmins}
+                userSliderIdx={userSliderIdx} setUserSliderIdx={setUserSliderIdx}
+                catSliderIdx={catSliderIdx} setCatSliderIdx={setCatSliderIdx}
+                srvSliderIdx={srvSliderIdx} setSrvSliderIdx={setSrvSliderIdx}
+                bnrSliderIdx={bnrSliderIdx} setBnrSliderIdx={setBnrSliderIdx}
+                testSliderIdx={testSliderIdx} setTestSliderIdx={setTestSliderIdx}
+                faqSliderIdx={faqSliderIdx} setFaqSliderIdx={setFaqSliderIdx}
+                setIsCreateSubAdminOpen={setIsCreateSubAdminOpen}
+                setEditingAdminUser={setEditingAdminUser}
+                setDeletingPath={setDeletingPath}
+                setEditingCategory={setEditingCategory}
+                setEditingService={setEditingService}
+                setEditingBanner={setEditingBanner}
+                setEditingTestimonial={setEditingTestimonial}
+                setEditingFaq={setEditingFaq}
+                handleAddCategory={handleAddCategory} newCatName={newCatName} setNewCatName={setNewCatName} newCatIcon={newCatIcon} setNewCatIcon={setNewCatIcon}
+                handleAddService={handleAddService} newSrvTitle={newSrvTitle} setNewSrvTitle={setNewSrvTitle} newSrvCatId={newSrvCatId} setNewSrvCatId={setNewSrvCatId} newSrvPrice={newSrvPrice} setNewSrvPrice={setNewSrvPrice} newSrvDiscount={newSrvDiscount} setNewSrvDiscount={setNewSrvDiscount} newSrvImage={newSrvImage} setNewSrvImage={setNewSrvImage}
+                handleAddBanner={handleAddBanner} newBnrTitle={newBnrTitle} setNewBnrTitle={setNewBnrTitle} newBnrSub={newBnrSub} setNewBnrSub={setNewBnrSub} newBnrImg={newBnrImg} setNewBnrImg={setNewBnrImg}
+                handleAddTestimonial={handleAddTestimonial} newTestName={newTestName} setNewTestName={setNewTestName} newTestLoc={newTestLoc} setNewTestLoc={setNewTestLoc} newTestText={newTestText} setNewTestText={setNewTestText}
+                handleAddFaq={handleAddFaq} newFaqQ={newFaqQ} setNewFaqQ={setNewFaqQ} newFaqA={newFaqA} setNewFaqA={setNewFaqA}
+                handleImageFileUpload={handleImageFileUpload}
+              />
             )}
 
             {/* TAB 8: ADMIN ROLES & CREATION MANAGER */}
@@ -1415,406 +1139,27 @@ export default function AdminControlPanelPage() {
         )}
       </main>
 
-      {/* Dynamic Popup Modal Component */}
-      <PopupModal
-        isOpen={popupState.isOpen}
-        onClose={() => setPopupState({ ...popupState, isOpen: false })}
-        title={popupState.title}
-        message={popupState.message}
-        type={popupState.type}
-        actionText="Continue"
-        onAction={popupState.onAction}
+      {/* RENDER ALL ADMIN MODALS */}
+      <AdminModals
+        popupState={popupState} setPopupState={setPopupState}
+        isCreateSubAdminOpen={isCreateSubAdminOpen} setIsCreateSubAdminOpen={setIsCreateSubAdminOpen} handleAddAdmin={handleAddAdmin}
+        newAdminName={newAdminName} setNewAdminName={setNewAdminName}
+        newAdminEmail={newAdminEmail} setNewAdminEmail={setNewAdminEmail}
+        newAdminPhone={newAdminPhone} setNewAdminPhone={setNewAdminPhone}
+        newAdminPassword={newAdminPassword} setNewAdminPassword={setNewAdminPassword}
+        currentAdmins={currentAdmins}
+        deletingPath={deletingPath} setDeletingPath={setDeletingPath} handleDeleteConfirm={handleDeleteConfirm}
+        editingAdminUser={editingAdminUser} setEditingAdminUser={setEditingAdminUser} handleSaveAdminUserEdit={handleSaveAdminUserEdit}
+        editingCategory={editingCategory} setEditingCategory={setEditingCategory} handleSaveCategoryEdit={handleSaveCategoryEdit}
+        editingService={editingService} setEditingService={setEditingService} handleSaveServiceEdit={handleSaveServiceEdit}
+        editingBanner={editingBanner} setEditingBanner={setEditingBanner} handleSaveBannerEdit={handleSaveBannerEdit}
+        editingTestimonial={editingTestimonial} setEditingTestimonial={setEditingTestimonial} handleSaveTestimonialEdit={handleSaveTestimonialEdit}
+        editingFaq={editingFaq} setEditingFaq={setEditingFaq} handleSaveFaqEdit={handleSaveFaqEdit}
+        assigningBooking={assigningBooking} setAssigningBooking={setAssigningBooking} assignFilterTab={assignFilterTab} setAssignFilterTab={setAssignFilterTab}
+        modalPartners={modalPartners} handleAssignPartnerConfirm={handleAssignPartnerConfirm}
+        skillMatchedCount={skillMatchedCount} freePartnersCount={freePartnersCount} allPartnersList={allPartnersList}
+        handleImageFileUpload={handleImageFileUpload}
       />
-
-      {/* CUSTOM CREATE SUB-ADMIN MODAL */}
-      {isCreateSubAdminOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <form onSubmit={handleAddAdmin} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 sm:p-8 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
-            <button type="button" onClick={() => setIsCreateSubAdminOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary flex items-center gap-2"><UserPlus className="w-5 h-5" /> Create Sub-Admin Account</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Max 3 Admins allowed ({currentAdmins.length}/3 registered).</p>
-
-            <div className="space-y-3 pt-1">
-              <div>
-                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Full Name *</label>
-                <input type="text" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} placeholder="e.g. Passang Bhutia" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Email Address *</label>
-                <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="e.g. subadmin@gmail.com" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Phone Number *</label>
-                <input type="text" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} placeholder="e.g. +91 9563213089" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Sub-Admin Password *</label>
-                <input type="text" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Enter Sub-Admin Password" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold outline-none focus:border-redPrimary" />
-              </div>
-            </div>
-
-            <button type="submit" disabled={currentAdmins.length >= 3} className={`btn-primary w-full py-3.5 text-xs font-black shadow-lg rounded-xl transition ${currentAdmins.length >= 3 ? 'bg-slate-300 dark:bg-neutral-800 text-slate-500 cursor-not-allowed' : 'bg-redPrimary text-white'}`}>
-              Save & Create Sub-Admin
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* CUSTOM DELETE CONFIRMATION MODAL */}
-      {deletingPath && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-3xl p-6 sm:p-8 w-full max-w-sm text-slate-900 dark:text-white shadow-2xl text-center space-y-5 relative">
-            <div className="w-14 h-14 rounded-full bg-rose-600/20 text-rose-500 flex items-center justify-center mx-auto mb-2">
-              <Trash2 className="w-7 h-7" />
-            </div>
-
-            <div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">Are you sure you want to delete?</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">This item will be permanently removed.</p>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeletingPath(null)}
-                className="flex-1 py-3 px-4 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 text-xs font-extrabold text-slate-700 dark:text-slate-300 transition"
-              >
-                No, Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  remove(ref(rtdb, deletingPath)).then(() => {
-                    setPopupState({ isOpen: true, title: 'Deleted', message: 'Item deleted successfully.', type: 'info' });
-                    setDeletingPath(null);
-                  });
-                }}
-                className="flex-1 py-3 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-xs font-extrabold text-white transition shadow-lg"
-              >
-                Yes, Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT MODAL FOR SUB-ADMIN USERS */}
-      {editingAdminUser && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveAdminUserEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
-            <button type="button" onClick={() => setEditingAdminUser(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary">Edit Sub-Admin Account Credentials</h3>
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Full Name</label>
-              <input type="text" value={editingAdminUser.fullName || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, fullName: e.target.value })} placeholder="Full Name" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            </div>
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Email Address</label>
-              <input type="email" value={editingAdminUser.email || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, email: e.target.value })} placeholder="Email Address" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            </div>
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Phone Number</label>
-              <input type="text" value={editingAdminUser.phoneNumber || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, phoneNumber: e.target.value })} placeholder="Phone Number" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            </div>
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Password</label>
-              <input type="text" value={editingAdminUser.password || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, password: e.target.value })} placeholder="Sub-Admin Password" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold" />
-            </div>
-            <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Sub-Admin Updates</button>
-          </form>
-        </div>
-      )}
-
-      {/* EDIT MODAL FOR CATEGORIES */}
-      {editingCategory && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveCategoryEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
-            <button type="button" onClick={() => setEditingCategory(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary">Edit Category</h3>
-
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Category Name</label>
-              <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} placeholder="Category Name" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Icon File (&le;200KB) / URL</label>
-              <div className="flex flex-col gap-2">
-                <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition">
-                  <Upload className="w-4 h-4" /> 📷 Upload New Icon File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageFileUpload(e, (res) => setEditingCategory({ ...editingCategory, iconUrl: res }))}
-                    className="hidden"
-                  />
-                </label>
-                <input type="text" value={editingCategory.iconUrl} onChange={(e) => setEditingCategory({ ...editingCategory, iconUrl: e.target.value })} placeholder="Or paste Icon Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-              </div>
-            </div>
-
-            {editingCategory.iconUrl && (
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700">
-                <img src={editingCategory.iconUrl} className="w-10 h-10 object-contain rounded-lg p-1 bg-white" alt="Preview" />
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">New Icon Selected</span>
-              </div>
-            )}
-
-            <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Category Updates</button>
-          </form>
-        </div>
-      )}
-
-      {/* EDIT MODAL FOR SERVICES */}
-      {editingService && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveServiceEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button type="button" onClick={() => setEditingService(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary">Edit Service</h3>
-
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Title</label>
-              <input type="text" value={editingService.title} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Original Price (₹)</label>
-                <input type="number" value={editingService.originalPrice} onChange={(e) => setEditingService({ ...editingService, originalPrice: e.target.value })} placeholder="Original Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-              </div>
-              <div>
-                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Discount Price (₹)</label>
-                <input type="number" value={editingService.discountedPrice} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Service Image File (&le;200KB) / URL</label>
-              <div className="flex flex-col gap-2">
-                <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition">
-                  <Upload className="w-4 h-4" /> 📷 Upload New Image File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageFileUpload(e, (res) => setEditingService({ ...editingService, imageUrl: res }))}
-                    className="hidden"
-                  />
-                </label>
-                <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or paste Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-              </div>
-            </div>
-
-            {editingService.imageUrl && (
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700">
-                <img src={editingService.imageUrl} className="w-16 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">New Image Selected</span>
-              </div>
-            )}
-
-            <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Service Updates</button>
-          </form>
-        </div>
-      )}
-
-      {/* EDIT MODAL FOR BANNERS */}
-      {editingBanner && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveBannerEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
-            <button type="button" onClick={() => setEditingBanner(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary">Edit Marketing Banner</h3>
-
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Banner Title</label>
-              <input type="text" value={editingBanner.title} onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })} placeholder="Title" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Subtitle</label>
-              <input type="text" value={editingBanner.subtitle} onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Banner Image File (&le;200KB) / URL</label>
-              <div className="flex flex-col gap-2">
-                <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition">
-                  <Upload className="w-4 h-4" /> 📷 Upload New Banner Image File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageFileUpload(e, (res) => setEditingBanner({ ...editingBanner, imageUrl: res }))}
-                    className="hidden"
-                  />
-                </label>
-                <input type="text" value={editingBanner.imageUrl} onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} placeholder="Or Banner Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-              </div>
-            </div>
-
-            {editingBanner.imageUrl && (
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700">
-                <img src={editingBanner.imageUrl} className="w-20 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">New Banner Image Selected</span>
-              </div>
-            )}
-
-            <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Banner Updates</button>
-          </form>
-        </div>
-      )}
-
-      {/* EDIT MODAL FOR TESTIMONIALS */}
-      {editingTestimonial && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveTestimonialEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
-            <button type="button" onClick={() => setEditingTestimonial(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary">Edit Customer Experience Review</h3>
-            <input type="text" value={editingTestimonial.name} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, name: e.target.value })} placeholder="Name" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            <input type="text" value={editingTestimonial.location} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, location: e.target.value })} placeholder="Location" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            <textarea value={editingTestimonial.text} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, text: e.target.value })} placeholder="Text" rows={3} className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white"></textarea>
-            <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Review Updates</button>
-          </form>
-        </div>
-      )}
-
-      {/* EDIT MODAL FOR FAQS */}
-      {editingFaq && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveFaqEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
-            <button type="button" onClick={() => setEditingFaq(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-lg font-bold text-redPrimary">Edit FAQ</h3>
-            <input type="text" value={editingFaq.q} onChange={(e) => setEditingFaq({ ...editingFaq, q: e.target.value })} placeholder="Question" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
-            <textarea value={editingFaq.a} onChange={(e) => setEditingFaq({ ...editingFaq, a: e.target.value })} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white"></textarea>
-            <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save FAQ Updates</button>
-          </form>
-        </div>
-      )}
-
-      {/* ASSIGN PARTNER MODAL */}
-      {assigningBooking && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-[#3A3A3A] rounded-3xl p-6 sm:p-8 w-full max-w-lg text-slate-900 dark:text-white shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
-
-            <button onClick={() => setAssigningBooking(null)} className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white">
-              <X className="w-5 h-5" />
-            </button>
-
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-snug">
-                Assign Partner for {assigningBooking.serviceTitle}
-              </h2>
-              <p className="text-xs font-bold text-redPrimary mt-1">
-                Service Category: {assigningBooking.serviceCategory || 'Services'}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-semibold">
-                Select a verified partner to dispatch for order ref: <span className="text-slate-900 dark:text-white font-bold">{assigningBooking.bookingRef || assigningBooking.id}</span>
-              </p>
-            </div>
-
-            {/* 3 Filter Tabs inside Modal */}
-            <div className="flex border-b border-slate-200 dark:border-neutral-700 text-xs font-extrabold">
-              <button
-                type="button"
-                onClick={() => setAssignFilterTab(0)}
-                className={`flex-1 py-2.5 text-center border-b-2 transition ${
-                  assignFilterTab === 0 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-500 dark:text-slate-400'
-                }`}
-              >
-                Skill Matched ({skillMatchedCount})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setAssignFilterTab(1)}
-                className={`flex-1 py-2.5 text-center border-b-2 transition ${
-                  assignFilterTab === 1 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-500 dark:text-slate-400'
-                }`}
-              >
-                🟢 Free ({freePartnersCount})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setAssignFilterTab(2)}
-                className={`flex-1 py-2.5 text-center border-b-2 transition ${
-                  assignFilterTab === 2 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-500 dark:text-slate-400'
-                }`}
-              >
-                👥 All Fleet ({allPartnersList.length})
-              </button>
-            </div>
-
-            {/* Partners List */}
-            <div className="space-y-3 pt-1">
-              {modalPartners.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-xs font-bold">
-                  No partners found matching this filter.
-                </div>
-              ) : (
-                modalPartners.map((partner) => {
-                  const isSkillMatch = (partner.skillCategory || '').toLowerCase().includes((assigningBooking.serviceCategory || '').toLowerCase()) ||
-                    (partner.skillCategory || '').toLowerCase().includes((assigningBooking.serviceTitle || '').toLowerCase());
-                  const isFree = partner.isOnline === true || partner.isOnline === 'true';
-
-                  return (
-                    <div key={partner.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] flex justify-between items-center shadow-md">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                          <User className="w-5 h-5" />
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <strong className="text-sm font-black text-slate-900 dark:text-white">{partner.fullName}</strong>
-                            {isSkillMatch && (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-600/30">
-                                ★ Skill Match
-                              </span>
-                            )}
-                            {isFree && !isSkillMatch && (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-600/30">
-                                🟢 FREE
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-xs text-redPrimary font-bold">
-                            Skill: {partner.skillCategory || 'Craftsman Specialist'}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Phone: {partner.phoneNumber || '+91 9564111224'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleAssignPartnerConfirm(assigningBooking.id, partner)}
-                        className="btn-primary py-2 px-4 text-xs font-extrabold rounded-full bg-redPrimary hover:bg-redDark text-white shadow-md shrink-0"
-                      >
-                        Assign
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Bottom Modal Actions */}
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setAssigningBooking(null)}
-                className="text-xs font-bold text-redPrimary hover:underline px-4 py-2"
-              >
-                Close
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>

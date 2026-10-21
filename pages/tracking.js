@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { ref, onValue, update } from 'firebase/database';
+import { ref, onValue, update, push, get } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle, Send } from 'lucide-react';
 
 export default function TrackingPage() {
   const [isDark, setIsDark] = useState(true);
@@ -15,6 +15,12 @@ export default function TrackingPage() {
 
   // Selected Order for Live Detailed Tracking Modal
   const [detailedOrder, setDetailedOrder] = useState(null);
+
+  // Selected Order for Star Rating Modal
+  const [ratingBooking, setRatingBooking] = useState(null);
+  const [starCount, setStarCount] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -29,11 +35,8 @@ export default function TrackingPage() {
     }
   };
 
-  // Live timer tick every 5 seconds to update 1-minute cancellation window
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNowTime(Date.now());
-    }, 5000);
+    const timer = setInterval(() => setNowTime(Date.now()), 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -61,13 +64,58 @@ export default function TrackingPage() {
     }
   };
 
-  // Helper: Check if order was created within last 60 seconds (1 minute)
   const isWithinOneMinute = (createdAtStr) => {
     if (!createdAtStr) return true;
     const createdTime = new Date(createdAtStr).getTime();
     if (isNaN(createdTime)) return true;
     const diffInSeconds = (nowTime - createdTime) / 1000;
     return diffInSeconds <= 60;
+  };
+
+  // Submit Star Rating & Review
+  const handleSubmitRating = async (e) => {
+    e.preventDefault();
+    if (!ratingBooking) return;
+    setIsSubmittingReview(true);
+
+    try {
+      // 1. Update Booking with userRating & userReview in Firebase
+      await update(ref(rtdb, `bookings/${ratingBooking.id}`), {
+        userRating: starCount,
+        userReview: reviewText
+      });
+
+      // 2. Recalculate Service's Rating Average & update in Firebase /services/$serviceId
+      if (ratingBooking.serviceId) {
+        const serviceRef = ref(rtdb, `services/${ratingBooking.serviceId}`);
+        const serviceSnap = await get(serviceRef);
+        if (serviceSnap.exists()) {
+          const srvData = serviceSnap.val();
+          const currentRating = srvData.ratingAverage || 4.8;
+          const newAvgRating = parseFloat(((currentRating + starCount) / 2).toFixed(1));
+          await update(serviceRef, { ratingAverage: newAvgRating });
+        }
+      }
+
+      // 3. Save as a new Testimonial in Firebase /testimonials so it shows on Homepage Customer Experience
+      const testRef = push(ref(rtdb, 'testimonials'));
+      await set(testRef, {
+        id: testRef.key,
+        name: currentUser?.fullName || 'Passang Bhutia',
+        location: 'Gangtok, Sikkim',
+        text: reviewText || `Provided ${starCount}-star rating for ${ratingBooking.serviceTitle}.`,
+        rating: starCount,
+        service: ratingBooking.serviceTitle || 'Verified Service'
+      });
+
+      setIsSubmittingReview(false);
+      alert(`Thank you! Your ${starCount}★ rating and review for ${ratingBooking.serviceTitle} have been published!`);
+      setRatingBooking(null);
+      setReviewText('');
+    } catch (err) {
+      setIsSubmittingReview(false);
+      alert('Failed to submit rating: ' + err.message);
+    }
   };
 
   // Filter bookings for the logged-in customer
@@ -85,7 +133,6 @@ export default function TrackingPage() {
 
   const displayedList = activeTab === 0 ? activeBookings : activeTab === 1 ? completedBookings : cancelledBookings;
 
-  // Compute Active Timeline Step (1 to 6)
   const getTimelineStep = (status) => {
     switch (status) {
       case 'PENDING': return 1;
@@ -227,12 +274,24 @@ export default function TrackingPage() {
                     {/* Action Buttons Row */}
                     <div className="space-y-2 pt-1">
                       <div className="grid grid-cols-2 gap-3">
-                        <button
-                          onClick={() => setDetailedOrder(b)}
-                          className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
-                        >
-                          <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
-                        </button>
+
+                        {/* If COMPLETED -> Show RATE NOW button instead of Track Live Order! */}
+                        {b.status === 'COMPLETED' ? (
+                          <button
+                            onClick={() => setRatingBooking(b)}
+                            className="py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            {b.userRating ? `Rated: ${b.userRating}.0 ★` : 'Rate Now'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setDetailedOrder(b)}
+                            className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
+                          >
+                            <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
+                          </button>
+                        )}
 
                         <a
                           href="https://wa.me/917430887960"
@@ -244,7 +303,7 @@ export default function TrackingPage() {
                         </a>
                       </div>
 
-                      {/* 1-Minute Dynamic Cancel Button Logic */}
+                      {/* 1-Minute Dynamic Cancel Button Logic for PENDING Orders */}
                       {b.status === 'PENDING' && (
                         <div>
                           {isWithinOneMinute(b.createdAt) ? (
@@ -273,12 +332,58 @@ export default function TrackingPage() {
         )}
       </main>
 
+      {/* Star Rating & Review Modal */}
+      {ratingBooking && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl p-6 w-full max-w-md text-white shadow-2xl relative space-y-4">
+            <button onClick={() => setRatingBooking(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-200">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 rounded-full bg-amber-400/20 text-amber-400 flex items-center justify-center mx-auto mb-2">
+                <Star className="w-7 h-7 fill-amber-400" />
+              </div>
+              <h3 className="text-xl font-extrabold text-white">Rate Your Service</h3>
+              <p className="text-xs text-redPrimary font-bold">{ratingBooking.serviceTitle} • {ratingBooking.bookingRef || ratingBooking.id}</p>
+            </div>
+
+            <div className="flex justify-center gap-2 my-6 text-amber-400">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setStarCount(star)}
+                  className="hover:scale-125 transition-transform p-1"
+                >
+                  <Star className={`w-9 h-9 ${star <= starCount ? 'fill-amber-400 text-amber-400' : 'text-slate-700'}`} />
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              placeholder="Write feedback for your mistri and service experience..."
+              rows={3}
+              className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
+            />
+
+            <button
+              onClick={handleSubmitRating}
+              disabled={isSubmittingReview}
+              className="btn-primary w-full py-3.5 text-sm font-bold shadow-xl bg-redPrimary text-white rounded-xl"
+            >
+              <Send className="w-4 h-4 mr-1 inline" /> {isSubmittingReview ? 'Submitting Rating...' : 'Submit Rating & Review'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Live Order Tracking Detail Modal */}
       {detailedOrder && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl w-full max-w-lg text-white shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
-
-            {/* Modal Top Red Bar */}
             <div className="bg-redPrimary px-6 py-4 flex items-center justify-between shadow-md">
               <div className="flex items-center gap-2">
                 <button onClick={() => setDetailedOrder(null)} className="p-1 hover:bg-white/20 rounded-full">
@@ -292,8 +397,6 @@ export default function TrackingPage() {
             </div>
 
             <div className="p-6 space-y-5 overflow-y-auto flex-1">
-
-              {/* Summary Card */}
               <div className="p-4 rounded-xl bg-[#242424] border border-[#333333] space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-redPrimary">Order Ref: {detailedOrder.bookingRef || detailedOrder.id}</span>
@@ -303,7 +406,6 @@ export default function TrackingPage() {
                 <p className="text-xs text-slate-400 font-semibold">Total Amount: ₹{detailedOrder.totalAmount} ({detailedOrder.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Service (COD)' : 'Online'})</p>
               </div>
 
-              {/* Real-time Tracking Update Box */}
               <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-800/40 space-y-1">
                 <div className="flex items-center gap-2 text-emerald-500 font-bold text-xs">
                   <Bike className="w-4 h-4" /> Real-Time Tracking Update
@@ -311,10 +413,8 @@ export default function TrackingPage() {
                 <p className="text-xs font-bold text-emerald-400 pl-6">{detailedOrder.trackingStatus || 'Order Placed by Customer'}</p>
               </div>
 
-              {/* Order Status Timeline (6 Stages) */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-sm font-extrabold text-white">Order Status Timeline</h4>
-
                 <div className="space-y-4 pl-2">
                   {[
                     { step: 1, label: '1. Order Placed' },
@@ -345,7 +445,6 @@ export default function TrackingPage() {
                 </div>
               </div>
 
-              {/* Service Address Card */}
               <div className="p-4 rounded-xl bg-[#242424] border border-[#333333] space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
                   <MapPin className="w-4 h-4 text-redPrimary" /> Service Address
@@ -353,7 +452,6 @@ export default function TrackingPage() {
                 <p className="text-xs text-slate-400 pl-6">{detailedOrder.address}</p>
               </div>
 
-              {/* Red Return to Home Button */}
               <button
                 onClick={() => { setDetailedOrder(null); window.location.href = '/'; }}
                 className="btn-primary w-full py-3.5 text-sm font-black bg-redPrimary text-white rounded-xl shadow-lg flex items-center justify-center gap-2"

@@ -486,15 +486,17 @@ export default function AdminControlPanelPage() {
   const handleSaveServiceEdit = (e) => {
     e.preventDefault();
     if (!editingService) return;
+    const matchedCat = categoriesList.find(c => c.id === editingService.categoryId);
     update(ref(rtdb, `services/${editingService.id}`), {
       title: editingService.title,
       originalPrice: parseFloat(editingService.originalPrice) || 1000,
       discountedPrice: parseFloat(editingService.discountedPrice) || 800,
       ratingAverage: parseFloat(editingService.ratingAverage) || 5.0,
       imageUrl: editingService.imageUrl,
-      categoryName: editingService.categoryName
+      categoryId: editingService.categoryId || 'cat_services',
+      categoryName: matchedCat ? matchedCat.name : (editingService.categoryName || 'General')
     }).then(() => {
-      setPopupState({ isOpen: true, title: 'Service Updated', message: 'Service details and rating saved successfully!', type: 'success' });
+      setPopupState({ isOpen: true, title: 'Service Updated', message: 'Service details and category connection saved successfully!', type: 'success' });
       setEditingService(null);
     });
   };
@@ -1166,6 +1168,7 @@ export default function AdminControlPanelPage() {
         assigningBooking={assigningBooking} setAssigningBooking={setAssigningBooking} assignFilterTab={assignFilterTab} setAssignFilterTab={setAssignFilterTab}
         modalPartners={modalPartners} handleAssignPartnerConfirm={handleAssignPartnerConfirm}
         skillMatchedCount={skillMatchedCount} freePartnersCount={freePartnersCount} allPartnersList={allPartnersList}
+        categoriesList={categoriesList}
         handleImageFileUpload={handleImageFileUpload}
       />
 

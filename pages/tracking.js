@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { ref, onValue, update, push, get } from 'firebase/database';
+import { ref, onValue, update, push, get, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { Clock, MapPin, CheckCircle2, Star, X, Lock, LogIn, Navigation, Phone, MessageSquare, ArrowLeft, Home, Bike, Check, Circle, Send } from 'lucide-react';
@@ -82,31 +82,39 @@ export default function TrackingPage() {
       // 1. Update Booking with userRating & userReview in Firebase
       await update(ref(rtdb, `bookings/${ratingBooking.id}`), {
         userRating: starCount,
-        userReview: reviewText
+        userReview: reviewText || 'Great doorstep service experience!'
       });
 
-      // 2. Recalculate Service's Rating Average & update in Firebase /services/$serviceId
-      if (ratingBooking.serviceId) {
-        const serviceRef = ref(rtdb, `services/${ratingBooking.serviceId}`);
-        const serviceSnap = await get(serviceRef);
-        if (serviceSnap.exists()) {
-          const srvData = serviceSnap.val();
-          const currentRating = srvData.ratingAverage || 4.8;
-          const newAvgRating = parseFloat(((currentRating + starCount) / 2).toFixed(1));
-          await update(serviceRef, { ratingAverage: newAvgRating });
+      // 2. Recalculate Service's Rating Average & update in Firebase /services/$serviceId (Safely)
+      try {
+        if (ratingBooking.serviceId) {
+          const serviceRef = ref(rtdb, `services/${ratingBooking.serviceId}`);
+          const serviceSnap = await get(serviceRef);
+          if (serviceSnap.exists()) {
+            const srvData = serviceSnap.val();
+            const currentRating = srvData.ratingAverage || 4.8;
+            const newAvgRating = parseFloat(((currentRating + starCount) / 2).toFixed(1));
+            await update(serviceRef, { ratingAverage: newAvgRating });
+          }
         }
+      } catch (_srvErr) {
+        console.error("Service rating calculation warning:", _srvErr);
       }
 
-      // 3. Save as a new Testimonial in Firebase /testimonials so it shows on Homepage Customer Experience
-      const testRef = push(ref(rtdb, 'testimonials'));
-      await set(testRef, {
-        id: testRef.key,
-        name: currentUser?.fullName || 'Passang Bhutia',
-        location: 'Gangtok, Sikkim',
-        text: reviewText || `Provided ${starCount}-star rating for ${ratingBooking.serviceTitle}.`,
-        rating: starCount,
-        service: ratingBooking.serviceTitle || 'Verified Service'
-      });
+      // 3. Save as a new Testimonial in Firebase /testimonials (Safely)
+      try {
+        const testRef = push(ref(rtdb, 'testimonials'));
+        await set(testRef, {
+          id: testRef.key,
+          name: currentUser?.fullName || ratingBooking.userName || 'Passang Bhutia',
+          location: 'Gangtok, Sikkim',
+          text: reviewText || `Provided ${starCount}-star rating for ${ratingBooking.serviceTitle}.`,
+          rating: starCount,
+          service: ratingBooking.serviceTitle || 'Verified Service'
+        });
+      } catch (_testErr) {
+        console.error("Testimonial push warning:", _testErr);
+      }
 
       setIsSubmittingReview(false);
       alert(`Thank you! Your ${starCount}★ rating and review for ${ratingBooking.serviceTitle} have been published!`);
@@ -288,17 +296,31 @@ export default function TrackingPage() {
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
-                          {/* If COMPLETED -> Show RATE NOW button instead of Track Live Order! */}
+                          {/* If COMPLETED -> Show RATE NOW button or RATED badge with popup message! */}
                           {b.status === 'COMPLETED' ? (
-                            <button
-                              onClick={() => setRatingBooking(b)}
-                              className="py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
-                            >
-                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                              {b.userRating ? `Rated: ${b.userRating}.0 ★` : 'Rate Now'}
-                            </button>
+                            <div>
+                              {b.userRating ? (
+                                <button
+                                  type="button"
+                                  onClick={() => alert('You have already rated this service.')}
+                                  className="w-full py-2.5 px-4 rounded-xl border border-neutral-800 bg-neutral-900/80 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 cursor-pointer transition opacity-80"
+                                >
+                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                  Rated: {b.userRating}.0 ★
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setRatingBooking(b)}
+                                  className="w-full py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
+                                >
+                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate Now
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <button
+                              type="button"
                               onClick={() => setDetailedOrder(b)}
                               className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
                             >

@@ -212,7 +212,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
         ) : (
           <>
             <h3 className="text-xl font-bold mb-1">Checkout & Booking</h3>
-            <p className="text-xs text-slate-400 mb-6">Select duration basis dropdowns, schedule date & address</p>
+            <p className="text-xs text-slate-400 mb-6">Select duration basis, schedule date & doorstep address</p>
 
             <form onSubmit={handleCheckoutSubmit} className="space-y-6">
               {/* Service Summary & Quantity */}
@@ -234,7 +234,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
               {/* DUAL DROPDOWNS: BOOKING DURATION PLAN & UNITS */}
               <div className="p-4 rounded-xl bg-[#242424] border border-[#333333] space-y-4">
                 <h4 className="text-xs font-black text-redPrimary uppercase tracking-wider flex items-center gap-1.5">
-                  <Timer className="w-4 h-4" /> Select Booking Duration Basis (Dropdowns)
+                  <Timer className="w-4 h-4" /> Select Booking Duration Basis
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -303,18 +303,22 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
                 </div>
               </div>
 
-              {/* Structured Address Form */}
+              {/* Structured Address Form matching Blueprint 100% */}
               <div className="space-y-3">
                 <label className="text-xs font-bold text-slate-400 flex items-center gap-1.5"><MapPin className="w-4 h-4 text-redPrimary" /> Delivery Address Details</label>
-                <select value={selectedSavedAddr} onChange={handleSavedAddressChange} className="w-full p-3 rounded-lg border border-[#333333] bg-[#0F0F0F] text-white text-sm font-bold shadow-sm outline-none focus:border-redPrimary">
-                  <option value="new">+ Add New Address in Sikkim</option>
-                  {savedAddressesList.map((a) => (
-                    <option key={a.id} value={a.id}>{a.title} - {a.fullAddress}</option>
-                  ))}
-                </select>
+
+                {savedAddressesList.length > 0 && (
+                  <select value={selectedSavedAddr} onChange={handleSavedAddressChange} className="w-full p-3 rounded-lg border border-[#333333] bg-[#0F0F0F] text-white text-sm font-bold shadow-sm outline-none focus:border-redPrimary">
+                    <option value="new">+ Add New Address in Sikkim</option>
+                    {savedAddressesList.map((a) => (
+                      <option key={a.id} value={a.id}>{a.title} - {a.fullAddress}</option>
+                    ))}
+                  </select>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#242424] p-4 rounded-xl border border-[#333333]">
-                  <div className="sm:col-span-2">
+                  {/* Address Type Tag Selector */}
+                  <div className="sm:col-span-2 mb-1">
                     <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Type of Address *</label>
                     <div className="flex gap-2">
                       {['Home', 'Work', 'Office', 'Other'].map((tag) => (
@@ -334,31 +338,37 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
                     </div>
                   </div>
 
+                  {/* Row 1 Left: House No. / Tower / Block */}
                   <div>
                     <label className="text-[11px] font-extrabold text-slate-400 block mb-1">House No. / Tower / Block</label>
-                    <input type="text" value={houseNo} onChange={(e) => setHouseNo(e.target.value)} placeholder="e.g. Flat 4B" className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-xs font-medium focus:border-redPrimary outline-none shadow-sm w-full" />
+                    <input type="text" value={houseNo} onChange={(e) => setHouseNo(e.target.value)} placeholder="e.g. Flat 4B / Block C" className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-xs font-medium focus:border-redPrimary outline-none shadow-sm w-full" />
                   </div>
 
+                  {/* Row 1 Right: Address (Building, Street, Area) * */}
                   <div>
                     <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
-                    <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder="e.g. Upper Syari *" required className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-xs font-medium focus:border-redPrimary outline-none shadow-sm w-full" />
+                    <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder="e.g. Upper Syari, Deorali-Bazar *" required className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-xs font-medium focus:border-redPrimary outline-none shadow-sm w-full" />
                   </div>
 
+                  {/* Row 2 Left: Locality / Town */}
                   <div>
                     <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Locality / Town</label>
                     <input type="text" value={locality} onChange={(e) => setLocality(e.target.value)} placeholder="e.g. Near ICDS Center" className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-xs font-medium focus:border-redPrimary outline-none shadow-sm w-full" />
                   </div>
 
+                  {/* Row 2 Right: City / District */}
                   <div>
                     <label className="text-[11px] font-extrabold text-slate-400 block mb-1">City / District</label>
                     <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Gangtok" className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-xs font-medium focus:border-redPrimary outline-none shadow-sm w-full" />
                   </div>
 
+                  {/* Row 3 Left: State (Default Fixed) */}
                   <div>
-                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">State (Fixed)</label>
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">State (Default Fixed)</label>
                     <input type="text" value={state} disabled className="p-3.5 rounded-lg border border-[#333333] bg-[#111111] text-slate-400 text-xs font-bold cursor-not-allowed w-full" />
                   </div>
 
+                  {/* Row 3 Right: Pincode (Default: 737101) */}
                   <div>
                     <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Pincode (Default: 737101)</label>
                     <input type="text" value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="737101" className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-xs font-medium focus:border-redPrimary outline-none shadow-sm w-full" />

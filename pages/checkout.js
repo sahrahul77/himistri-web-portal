@@ -366,7 +366,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Complete Structured Address Details matching Profile 100% */}
+                {/* Complete Structured Address Details matching Screenshot Blueprint 100% */}
                 <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
                   <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
                     <MapPin className="w-5 h-5" /> Doorstep Service Address in Gangtok
@@ -385,7 +385,7 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-neutral-900 p-4 rounded-2xl border border-slate-200 dark:border-neutral-800">
 
                     {/* Address Type Tag Selector */}
-                    <div className="sm:col-span-2">
+                    <div className="sm:col-span-2 mb-1">
                       <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Type of Address *</label>
                       <div className="flex gap-2">
                         {['Home', 'Work', 'Office', 'Other'].map((t) => (
@@ -403,7 +403,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {/* House No / Tower / Block */}
+                    {/* Row 1 Left: House No. / Tower / Block */}
                     <div>
                       <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">House No. / Tower / Block</label>
                       <input
@@ -411,11 +411,11 @@ export default function CheckoutPage() {
                         value={houseNo}
                         onChange={(e) => setHouseNo(e.target.value)}
                         placeholder="e.g. Flat 4B / Block C"
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                       />
                     </div>
 
-                    {/* Address (Building, Street, Area) */}
+                    {/* Row 1 Right: Address (Building, Street, Area) * */}
                     <div>
                       <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
                       <input
@@ -424,11 +424,11 @@ export default function CheckoutPage() {
                         onChange={(e) => setStreetAddress(e.target.value)}
                         placeholder="e.g. Upper Syari, Deorali-Bazar *"
                         required
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                       />
                     </div>
 
-                    {/* Locality / Town */}
+                    {/* Row 2 Left: Locality / Town */}
                     <div>
                       <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Locality / Town</label>
                       <input
@@ -436,11 +436,11 @@ export default function CheckoutPage() {
                         value={locality}
                         onChange={(e) => setLocality(e.target.value)}
                         placeholder="e.g. Near ICDS Center"
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                       />
                     </div>
 
-                    {/* City / District */}
+                    {/* Row 2 Right: City / District */}
                     <div>
                       <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">City / District</label>
                       <input
@@ -448,22 +448,22 @@ export default function CheckoutPage() {
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder="Gangtok"
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                       />
                     </div>
 
-                    {/* State (Default Fixed = Sikkim) */}
+                    {/* Row 3 Left: State (Default Fixed) */}
                     <div>
                       <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">State (Default Fixed)</label>
                       <input
                         type="text"
                         value="Sikkim"
                         disabled
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-200 dark:bg-neutral-950 text-slate-500 text-xs font-bold cursor-not-allowed"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-200 dark:bg-neutral-950 text-slate-500 text-xs font-bold cursor-not-allowed"
                       />
                     </div>
 
-                    {/* Pincode (Default = 737101) */}
+                    {/* Row 3 Right: Pincode (Default: 737101) */}
                     <div>
                       <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Pincode (Default: 737101)</label>
                       <input
@@ -471,7 +471,7 @@ export default function CheckoutPage() {
                         value={pincode}
                         onChange={(e) => setPincode(e.target.value)}
                         placeholder="737101"
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                       />
                     </div>
 

@@ -8,7 +8,7 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
@@ -23,6 +23,10 @@ export default function AdminControlPanelPage() {
   const [bannersList, setBannersList] = useState([]);
   const [testimonialsList, setTestimonialsList] = useState([]);
   const [faqsList, setFaqsList] = useState([]);
+
+  // Selected Booking for Assign Partner Modal
+  const [assigningBooking, setAssigningBooking] = useState(null);
+  const [assignFilterTab, setAssignFilterTab] = useState(0); // 0=Skill Matched, 1=Free, 2=All Fleet
 
   const { currentUser, logout, isAuthLoaded } = useAuth();
 
@@ -126,14 +130,18 @@ export default function AdminControlPanelPage() {
     update(ref(rtdb, `bookings/${id}`), { status: newStatus, trackingStatus: trackingText });
   };
 
-  const handleAssignPartner = (id, partnerName, partnerPhone, partnerSkill) => {
-    update(ref(rtdb, `bookings/${id}`), {
+  const handleAssignPartnerConfirm = (bookingId, partnerObj) => {
+    update(ref(rtdb, `bookings/${bookingId}`), {
       status: 'ASSIGNED',
-      assignedPartnerName: partnerName,
-      assignedPartnerPhone: partnerPhone,
-      assignedPartnerSkill: partnerSkill,
-      trackingStatus: `Mistri ${partnerName} assigned to order`
-    }).then(() => alert(`Order assigned to ${partnerName}!`));
+      assignedPartnerId: partnerObj.id,
+      assignedPartnerName: partnerObj.fullName,
+      assignedPartnerPhone: partnerObj.phoneNumber,
+      assignedPartnerSkill: partnerObj.skillCategory || 'Specialist',
+      trackingStatus: `Mistri ${partnerObj.fullName} assigned to order`
+    }).then(() => {
+      alert(`Partner ${partnerObj.fullName} assigned to order!`);
+      setAssigningBooking(null);
+    });
   };
 
   const handleDeleteItem = (path) => {
@@ -222,7 +230,10 @@ export default function AdminControlPanelPage() {
   const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
-  const partnersCount = usersList.filter(u => u.role === 'PARTNER').length || 1;
+
+  // All Service Partners List from Firebase Users
+  const allPartnersList = usersList.filter(u => u.role === 'PARTNER');
+  const partnersCount = allPartnersList.length || 1;
 
   const isAdmin = currentUser && currentUser.role === 'ADMIN';
 
@@ -234,6 +245,34 @@ export default function AdminControlPanelPage() {
     const matchesStatus = orderStatusFilter === 'ALL' || b.status === orderStatusFilter;
     return matchesQuery && matchesStatus;
   });
+
+  // Assign Partner Filtering Logic inside Modal
+  const getModalPartners = () => {
+    if (!assigningBooking) return [];
+    const serviceCategoryName = (assigningBooking.serviceCategory || '').toLowerCase();
+    const serviceTitleName = (assigningBooking.serviceTitle || '').toLowerCase();
+
+    const skillMatched = allPartnersList.filter(p => {
+      const pSkill = (p.skillCategory || '').toLowerCase();
+      return pSkill && (serviceCategoryName.includes(pSkill) || serviceTitleName.includes(pSkill) || pSkill.includes(serviceCategoryName));
+    });
+
+    const freePartners = allPartnersList.filter(p => p.isOnline !== false);
+
+    if (assignFilterTab === 0) return skillMatched.length > 0 ? skillMatched : allPartnersList;
+    if (assignFilterTab === 1) return freePartners;
+    return allPartnersList;
+  };
+
+  const modalPartners = getModalPartners();
+  const skillMatchedCount = allPartnersList.filter(p => {
+    if (!assigningBooking) return false;
+    const pSkill = (p.skillCategory || '').toLowerCase();
+    const serviceCategoryName = (assigningBooking.serviceCategory || '').toLowerCase();
+    const serviceTitleName = (assigningBooking.serviceTitle || '').toLowerCase();
+    return pSkill && (serviceCategoryName.includes(pSkill) || serviceTitleName.includes(pSkill) || pSkill.includes(serviceCategoryName));
+  }).length;
+  const freePartnersCount = allPartnersList.filter(p => p.isOnline !== false).length;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -373,14 +412,21 @@ export default function AdminControlPanelPage() {
                         <button onClick={() => handleUpdateStatus(b.id, 'CONFIRMED', 'Confirmed by Admin')} className="btn-primary text-xs py-2 px-4">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Confirm Order
                         </button>
+
+                        {/* Assign Partner Button (ENABLED ONLY AFTER CONFIRMED!) */}
                         <button
-                          onClick={() => handleAssignPartner(b.id, 'Piku', '+919564111224', 'Home Tutor')}
+                          onClick={() => setAssigningBooking(b)}
                           disabled={b.status === 'PENDING'}
-                          className={`btn-orange text-xs py-2 px-4 ${b.status === 'PENDING' ? 'btn-disabled' : ''}`}
+                          className={`text-xs py-2 px-4 rounded-xl font-bold transition shadow-sm ${
+                            b.status === 'PENDING'
+                              ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                              : 'bg-orangeSecondary hover:bg-orange-600 text-white cursor-pointer'
+                          }`}
                         >
                           <UserPlus className="w-3.5 h-3.5 inline mr-1" />
-                          {b.status === 'PENDING' ? 'Assign Partner (Confirm First)' : 'Assign Partner Piku'}
+                          {b.status === 'PENDING' ? 'Assign Partner (Confirm First)' : 'Assign Partner'}
                         </button>
+
                         <button onClick={() => handleDeleteItem(`bookings/${b.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2 rounded-lg font-bold">
                           <Trash2 className="w-3.5 h-3.5 inline" /> Delete
                         </button>
@@ -444,7 +490,9 @@ export default function AdminControlPanelPage() {
                       <span className="text-xs text-slate-400">Skill: {p.skillCategory} | Phone: {p.phoneNumber}</span>
                     </div>
                     <div className="flex gap-2 items-center">
-                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600/15 text-emerald-600">🟢 ACTIVE</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${p.isOnline !== false ? 'bg-emerald-600/15 text-emerald-600' : 'bg-slate-500/15 text-slate-400'}`}>
+                        {p.isOnline !== false ? '🟢 ONLINE' : '⚫ OFFLINE'}
+                      </span>
                       <button onClick={() => handleDeleteItem(`users/${p.id}`)} className="bg-rose-800 text-white text-xs px-2.5 py-1 rounded-lg font-bold">Delete Partner</button>
                     </div>
                   </div>
@@ -632,6 +680,131 @@ export default function AdminControlPanelPage() {
           </>
         )}
       </main>
+
+      {/* ASSIGN PARTNER MODAL (Matching Mobile App Screenshot 100% Pixel-Perfect) */}
+      {assigningBooking && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#242424] border border-[#3A3A3A] rounded-3xl p-6 sm:p-8 w-full max-w-lg text-white shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
+
+            <button onClick={() => setAssigningBooking(null)} className="absolute top-5 right-5 text-slate-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white leading-snug">
+                Assign Partner for {assigningBooking.serviceTitle}
+              </h2>
+              <p className="text-xs font-bold text-redPrimary mt-1">
+                Service Category: {assigningBooking.serviceCategory || 'Services'}
+              </p>
+              <p className="text-xs text-slate-400 mt-3 font-semibold">
+                Select a verified partner to dispatch for order ref: <span className="text-white font-bold">{assigningBooking.bookingRef || assigningBooking.id}</span>
+              </p>
+            </div>
+
+            {/* 3 Filter Tabs inside Modal */}
+            <div className="flex border-b border-neutral-700 text-xs font-extrabold">
+              <button
+                type="button"
+                onClick={() => setAssignFilterTab(0)}
+                className={`flex-1 py-2.5 text-center border-b-2 transition ${
+                  assignFilterTab === 0 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-400'
+                }`}
+              >
+                Skill Matched ({skillMatchedCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAssignFilterTab(1)}
+                className={`flex-1 py-2.5 text-center border-b-2 transition ${
+                  assignFilterTab === 1 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-400'
+                }`}
+              >
+                🟢 Free ({freePartnersCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAssignFilterTab(2)}
+                className={`flex-1 py-2.5 text-center border-b-2 transition ${
+                  assignFilterTab === 2 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-400'
+                }`}
+              >
+                👥 All Fleet ({allPartnersList.length})
+              </button>
+            </div>
+
+            {/* Partners List */}
+            <div className="space-y-3 pt-1">
+              {modalPartners.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-xs font-bold">
+                  No partners found matching this filter.
+                </div>
+              ) : (
+                modalPartners.map((partner) => {
+                  const isSkillMatch = (partner.skillCategory || '').toLowerCase().includes((assigningBooking.serviceCategory || '').toLowerCase()) ||
+                    (partner.skillCategory || '').toLowerCase().includes((assigningBooking.serviceTitle || '').toLowerCase());
+                  const isFree = partner.isOnline !== false;
+
+                  return (
+                    <div key={partner.id} className="p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333] flex justify-between items-center shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                          <User className="w-5 h-5" />
+                        </div>
+
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <strong className="text-sm font-black text-white">{partner.fullName}</strong>
+                            {isSkillMatch && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-400 border border-emerald-600/30">
+                                ★ Skill Match
+                              </span>
+                            )}
+                            {isFree && !isSkillMatch && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-400 border border-emerald-600/30">
+                                🟢 FREE
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-redPrimary font-bold">
+                            Skill: {partner.skillCategory || 'Craftsman Specialist'}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Phone: {partner.phoneNumber || '+91 9564111224'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAssignPartnerConfirm(assigningBooking.id, partner)}
+                        className="btn-primary py-2 px-4 text-xs font-extrabold rounded-full bg-redPrimary hover:bg-redDark text-white shadow-md shrink-0"
+                      >
+                        Assign
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Bottom Modal Actions */}
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setAssigningBooking(null)}
+                className="text-xs font-bold text-redPrimary hover:underline px-4 py-2"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

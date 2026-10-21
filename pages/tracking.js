@@ -45,13 +45,36 @@ export default function TrackingPage() {
   useEffect(() => {
     const bookingsRef = ref(rtdb, 'bookings');
     const unsubscribe = onValue(bookingsRef, (snapshot) => {
-      const list = [];
+      const rawList = [];
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
+          rawList.push({ dbKey: child.key, id: child.key, ...child.val() });
         });
       }
-      setBookings(list);
+
+      // Deduplicate bookings by bookingRef / id so NO order is EVER duplicated!
+      const uniqueMap = new Map();
+      const statusPriority = { 'COMPLETED': 5, 'IN_PROGRESS': 4, 'ON_THE_WAY': 3, 'ASSIGNED': 2, 'CONFIRMED': 1, 'PENDING': 0, 'CANCELLED': 0, 'REJECTED': 0 };
+
+      rawList.forEach((b) => {
+        const key = b.bookingRef || b.id;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, b);
+        } else {
+          const existing = uniqueMap.get(key);
+          const pExisting = statusPriority[existing.status] || 0;
+          const pCurrent = statusPriority[b.status] || 0;
+          if (pCurrent >= pExisting) {
+            uniqueMap.set(key, b);
+          }
+        }
+      });
+
+      const deduplicatedList = Array.from(uniqueMap.values());
+      // Sort Descending by CreatedAt (Latest order at top!)
+      deduplicatedList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      setBookings(deduplicatedList);
     });
 
     return () => unsubscribe();
@@ -98,7 +121,8 @@ export default function TrackingPage() {
     setIsSubmittingReview(true);
 
     try {
-      await update(ref(rtdb, `bookings/${ratingBooking.id}`), {
+      const bookingKey = ratingBooking.dbKey || ratingBooking.id;
+      await update(ref(rtdb, `bookings/${bookingKey}`), {
         userRating: starCount,
         userReview: reviewText || 'Great doorstep service experience!'
       });
@@ -283,7 +307,7 @@ export default function TrackingPage() {
                 <AnimatePresence mode="wait">
                   {currentBooking && (
                     <motion.div
-                      key={currentBooking.id || cardIndex}
+                      key={currentBooking.bookingRef || currentBooking.id || cardIndex}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
@@ -406,7 +430,7 @@ export default function TrackingPage() {
                           <div>
                             {isWithinOneMinute(currentBooking.createdAt) ? (
                               <button
-                                onClick={() => handleCancelBooking(currentBooking.id)}
+                                onClick={() => handleCancelBooking(currentBooking.dbKey || currentBooking.id)}
                                 className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
                               >
                                 Cancel Order (Free within 1 min)

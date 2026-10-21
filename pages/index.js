@@ -8,7 +8,7 @@ import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, FALLBACK_ICON } from '../lib/defaultData';
-import { ref, onValue, set } from 'firebase/database';
+import { ref, onValue, set, remove } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign } from 'lucide-react';
@@ -42,18 +42,27 @@ export default function HomePage() {
     setIsDark(prev => !prev);
   };
 
-  // Seed default categories ONLY if Firebase /categories is completely empty (Preserves Admin's custom added categories)
+  // Permanently purge any category from Firebase Database where "Manpower" is NOT in the name
   useEffect(() => {
     const categoriesRef = ref(rtdb, 'categories');
     onValue(categoriesRef, (snapshot) => {
-      if (!snapshot.exists()) {
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          const cat = child.val();
+          const catName = (cat?.name || '').trim();
+          if (!catName.toLowerCase().includes('manpower')) {
+            remove(ref(rtdb, `categories/${child.key}`));
+          }
+        });
+      } else {
+        // Seed original Manpower categories if database is empty
         const catMap = {};
         DEFAULT_CATEGORIES.forEach((c) => {
           catMap[c.id] = c;
         });
         set(categoriesRef, catMap);
       }
-    }, { onlyOnce: true });
+    });
   }, []);
 
   useEffect(() => {
@@ -62,7 +71,11 @@ export default function HomePage() {
       if (snapshot.exists()) {
         const val = snapshot.val();
         if (typeof val === 'object' && val !== null) {
-          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+          Object.keys(val).forEach((k) => {
+            if (val[k] && (val[k].name || '').toLowerCase().includes('manpower')) {
+              list.push({ id: k, ...val[k] });
+            }
+          });
         }
       }
       if (list.length > 0) setCategories(list);
@@ -178,13 +191,13 @@ export default function HomePage() {
         {/* 3. Hero Banner Carousel */}
         <HeroBanner banners={banners} />
 
-        {/* 4. Explore Categories Grid */}
+        {/* 4. Explore Original Categories Grid */}
         {displayCategories.length > 0 && (
           <div>
             <div className="flex justify-between items-baseline mb-4 sm:mb-6">
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Technical & Household Manpower Categories in Gangtok</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manpower Categories in Gangtok</p>
               </div>
               <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3 sm:px-3.5 py-1.5 rounded-full shrink-0">
                 See All ({categories.length})

@@ -342,7 +342,23 @@ export function AdminSliders({
                     </div>
 
                     <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-slate-100 dark:border-neutral-800 flex gap-2">
-                      <button onClick={() => setEditingService({ ...currentSrvObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                      <button
+                        onClick={() => {
+                          const matchedCat = (categoriesList || []).find(c =>
+                            c.id === currentSrvObj.categoryId ||
+                            (c.name || '').toLowerCase() === (currentSrvObj.categoryName || '').toLowerCase()
+                          ) || (categoriesList || [])[0] || { id: 'cat_services', name: 'Services Manpower' };
+
+                          setEditingService({
+                            ...currentSrvObj,
+                            categoryId: matchedCat.id,
+                            categoryName: matchedCat.name
+                          });
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1"
+                      >
+                        Edit
+                      </button>
                       <button onClick={() => setDeletingPath(`services/${currentSrvObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                     </div>
                   </motion.div>

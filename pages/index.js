@@ -8,7 +8,7 @@ import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, FALLBACK_ICON } from '../lib/defaultData';
-import { ref, onValue, set, remove } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign } from 'lucide-react';
@@ -42,27 +42,13 @@ export default function HomePage() {
     setIsDark(prev => !prev);
   };
 
-  // Permanently purge any category from Firebase Database where "Manpower" is NOT in the name
+  // Sync / Set the exact 10 Himistri Categories in Firebase Realtime Database
   useEffect(() => {
-    const categoriesRef = ref(rtdb, 'categories');
-    onValue(categoriesRef, (snapshot) => {
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          const cat = child.val();
-          const catName = (cat?.name || '').trim();
-          if (!catName.toLowerCase().includes('manpower')) {
-            remove(ref(rtdb, `categories/${child.key}`));
-          }
-        });
-      } else {
-        // Seed original Manpower categories if database is empty
-        const catMap = {};
-        DEFAULT_CATEGORIES.forEach((c) => {
-          catMap[c.id] = c;
-        });
-        set(categoriesRef, catMap);
-      }
+    const catMap = {};
+    DEFAULT_CATEGORIES.forEach((c) => {
+      catMap[c.id] = c;
     });
+    set(ref(rtdb, 'categories'), catMap);
   }, []);
 
   useEffect(() => {
@@ -72,9 +58,7 @@ export default function HomePage() {
         const val = snapshot.val();
         if (typeof val === 'object' && val !== null) {
           Object.keys(val).forEach((k) => {
-            if (val[k] && (val[k].name || '').toLowerCase().includes('manpower')) {
-              list.push({ id: k, ...val[k] });
-            }
+            if (val[k]) list.push({ id: k, ...val[k] });
           });
         }
       }
@@ -196,15 +180,15 @@ export default function HomePage() {
           <div>
             <div className="flex justify-between items-baseline mb-4 sm:mb-6">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manpower Categories in Gangtok</p>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Himistri Categories</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">10 Technical & Household Manpower Categories in Gangtok</p>
               </div>
               <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3 sm:px-3.5 py-1.5 rounded-full shrink-0">
                 See All ({categories.length})
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
               {displayCategories.map((c) => (
                 <Link href={`/categories?id=${c.id}`} key={c.id}>
                   <motion.div

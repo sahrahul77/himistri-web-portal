@@ -103,16 +103,16 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // FileReader Helper to Convert Local Uploaded Image Files into Data URLs
+  // FileReader Helper: Converts local image files (Max 200KB) into Data URLs
   const handleImageFileUpload = (e, callback) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 200 * 1024) {
       setPopupState({
         isOpen: true,
-        title: 'Image File Too Large',
-        message: 'Please choose an image file under 2MB for fast database sync.',
+        title: 'File Size Exceeds 200KB Limit',
+        message: 'Please choose an image file under 200KB for fast icon loading and optimal performance.',
         type: 'error'
       });
       return;
@@ -121,6 +121,12 @@ export default function AdminControlPanelPage() {
     const reader = new FileReader();
     reader.onloadend = () => {
       callback(reader.result);
+      setPopupState({
+        isOpen: true,
+        title: 'Image Uploaded',
+        message: 'Icon image file uploaded and converted successfully!',
+        type: 'success'
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -540,14 +546,14 @@ export default function AdminControlPanelPage() {
   const currentOrder = filteredOrders[orderSliderIdx] || filteredOrders[0];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-6 sm:py-10 flex-1 space-y-6 max-w-7xl mx-auto px-4 sm:px-6 w-full">
         {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isAdmin ? (
-          <div className="web-card text-center py-16 max-w-lg mx-auto space-y-4">
+          <div className="web-card text-center py-16 max-w-lg mx-auto space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
             <Lock className="w-16 h-16 text-redPrimary mx-auto" />
-            <h2 className="text-2xl font-black">Admin Access Restricted</h2>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Admin Access Restricted</h2>
             <p className="text-xs text-slate-500">Sign in with Admin credentials (e.g. sahrahul77@gmail.com) to access the Lead Admin Control Panel.</p>
             <Link href="/auth" className="btn-primary inline-flex">
               <LogIn className="w-4 h-4" /> Sign In as Admin
@@ -556,13 +562,13 @@ export default function AdminControlPanelPage() {
         ) : (
           <>
             {/* Top Admin Header Banner */}
-            <div className="web-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-redPrimary/20 via-neutral-900 to-transparent border border-redPrimary/30 p-5 rounded-2xl sm:rounded-3xl shadow-2xl">
+            <div className="web-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-redPrimary/20 via-slate-100 dark:via-neutral-900 to-transparent border border-redPrimary/30 p-5 rounded-2xl sm:rounded-3xl shadow-xl">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-redPrimary/20 text-redPrimary shrink-0">
                   <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-black">{adminName}</h1>
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{adminName}</h1>
                   <p className="text-xs text-redPrimary font-extrabold">Lead Platform Administrator • HiMistri Gangtok</p>
                 </div>
               </div>
@@ -584,39 +590,39 @@ export default function AdminControlPanelPage() {
 
             {/* Executive Analytics KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333]">
-                <div className="p-3.5 rounded-2xl bg-emerald-600/15 text-emerald-500 shrink-0">
+              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md">
+                <div className="p-3.5 rounded-2xl bg-emerald-600/15 text-emerald-600 shrink-0">
                   <DollarSign className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 font-bold block uppercase tracking-wider">Total Platform Revenue</span>
-                  <p className="text-xl sm:text-2xl font-black text-emerald-500">₹{totalRevenue}</p>
+                  <span className="text-[11px] text-slate-500 font-bold block uppercase tracking-wider">Total Platform Revenue</span>
+                  <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-500">₹{totalRevenue}</p>
                 </div>
               </div>
 
-              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333]">
+              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md">
                 <div className="p-3.5 rounded-2xl bg-redPrimary/15 text-redPrimary shrink-0">
                   <Package className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 font-bold block uppercase tracking-wider">Active Customer Orders</span>
+                  <span className="text-[11px] text-slate-500 font-bold block uppercase tracking-wider">Active Customer Orders</span>
                   <p className="text-xl sm:text-2xl font-black text-redPrimary">{activeOrdersCount}</p>
                 </div>
               </div>
 
-              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333]">
-                <div className="p-3.5 rounded-2xl bg-blue-500/15 text-blue-400 shrink-0">
+              <div className="web-card flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md">
+                <div className="p-3.5 rounded-2xl bg-blue-500/15 text-blue-500 shrink-0">
                   <Users className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 font-bold block uppercase tracking-wider">Total Users & Fleet</span>
-                  <p className="text-xl sm:text-2xl font-black text-white">{usersList.length}</p>
+                  <span className="text-[11px] text-slate-500 font-bold block uppercase tracking-wider">Total Users & Fleet</span>
+                  <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{usersList.length}</p>
                 </div>
               </div>
             </div>
 
             {/* Responsive Admin Navigation Tabs */}
-            <div className="flex gap-2 overflow-x-auto border-b border-neutral-800 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
+            <div className="flex gap-2 overflow-x-auto border-b border-slate-200 dark:border-neutral-800 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
               {[
                 { id: 0, label: `Orders (${bookings.length})` },
                 { id: 1, label: 'Analytics 📊' },
@@ -634,7 +640,7 @@ export default function AdminControlPanelPage() {
                   key={t.id}
                   onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setUserSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); }}
                   className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition shrink-0 ${
-                    activeTab === t.id ? 'bg-redPrimary text-white shadow-lg scale-105' : 'bg-[#1A1A1A] text-slate-400 border border-[#333333] hover:text-white'
+                    activeTab === t.id ? 'bg-redPrimary text-white shadow-lg scale-105' : 'bg-white dark:bg-[#1A1A1A] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-[#333333] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {t.label}
@@ -653,7 +659,7 @@ export default function AdminControlPanelPage() {
                       value={orderQuery}
                       onChange={(e) => { setOrderQuery(e.target.value); setOrderSliderIdx(0); }}
                       placeholder="Search orders by Ref ID, Service, Phone, Address..."
-                      className="w-full pl-10 p-3 rounded-xl border border-[#333333] bg-[#1A1A1A] text-xs font-medium text-white outline-none focus:border-redPrimary"
+                      className="w-full pl-10 p-3 rounded-xl border border-slate-200 dark:border-[#333333] bg-white dark:bg-[#1A1A1A] text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                     />
                   </div>
 
@@ -663,7 +669,7 @@ export default function AdminControlPanelPage() {
                         key={st}
                         onClick={() => { setOrderStatusFilter(st); setOrderSliderIdx(0); }}
                         className={`px-3 py-2 rounded-xl text-[10px] sm:text-[11px] font-black border transition shrink-0 ${
-                          orderStatusFilter === st ? 'bg-redPrimary text-white border-redPrimary shadow-md' : 'bg-[#1A1A1A] border-[#333333] text-slate-400'
+                          orderStatusFilter === st ? 'bg-redPrimary text-white border-redPrimary shadow-md' : 'bg-white dark:bg-[#1A1A1A] border-slate-200 dark:border-[#333333] text-slate-600 dark:text-slate-400'
                         }`}
                       >
                         {st === 'IN_PROGRESS' ? 'ARRIVED / WORK STARTED' : st}
@@ -677,7 +683,7 @@ export default function AdminControlPanelPage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                         Order <span className="text-redPrimary font-black">{orderSliderIdx + 1}</span> of {filteredOrders.length}
                       </span>
 
@@ -686,17 +692,17 @@ export default function AdminControlPanelPage() {
                           <button
                             type="button"
                             onClick={() => setOrderSliderIdx((prev) => (prev - 1 + filteredOrders.length) % filteredOrders.length)}
-                            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-redPrimary text-white transition"
+                            className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white transition"
                           >
                             <ChevronLeft className="w-4 h-4" />
                           </button>
-                          <span className="text-xs font-black text-slate-300">
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">
                             {orderSliderIdx + 1} / {filteredOrders.length}
                           </span>
                           <button
                             type="button"
                             onClick={() => setOrderSliderIdx((prev) => (prev + 1) % filteredOrders.length)}
-                            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-redPrimary text-white transition"
+                            className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white transition"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
@@ -712,40 +718,40 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card space-y-3 shadow-2xl relative bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl"
+                          className="web-card space-y-3 shadow-xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl"
                         >
-                          <div className="flex justify-between items-center pb-2 border-b border-neutral-800">
-                            <span className="font-extrabold text-sm text-white">Ref ID: {currentOrder.bookingRef || currentOrder.id}</span>
+                          <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-neutral-800">
+                            <span className="font-extrabold text-sm text-slate-900 dark:text-white">Ref ID: {currentOrder.bookingRef || currentOrder.id}</span>
                             <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-orangeSecondary/15 text-orangeSecondary">{currentOrder.status || 'PENDING'}</span>
                           </div>
 
-                          <h3 className="font-bold text-base sm:text-lg text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
-                          <p className="text-xs text-slate-400">Customer: <strong className="text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
-                          <p className="text-xs text-slate-400">Address: <strong className="text-white">{currentOrder.address || 'Gangtok'}</strong></p>
+                          <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">Customer: <strong className="text-slate-900 dark:text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">Address: <strong className="text-slate-900 dark:text-white">{currentOrder.address || 'Gangtok'}</strong></p>
 
-                          <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
+                          <div className="p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
                             <Bike className="w-4 h-4 text-orangeSecondary shrink-0" />
                             <span>Live Status: {currentOrder.trackingStatus || 'Order Placed by Customer'}</span>
                           </div>
 
                           {currentOrder.assignedPartnerName && (
-                            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
+                            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-600 dark:text-blue-400">
                               <div>
                                 <strong>Assigned Mistri: {currentOrder.assignedPartnerName}</strong> ({currentOrder.assignedPartnerSkill || 'Specialist'})
                               </div>
                               {currentOrder.assignedPartnerPhone && (
-                                <a href={`tel:${currentOrder.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
+                                <a href={`tel:${currentOrder.assignedPartnerPhone}`} className="text-emerald-600 dark:text-emerald-500 font-bold underline">Call Mistri</a>
                               )}
                             </div>
                           )}
 
-                          <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 border-t border-neutral-800">
+                          <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
                             <button
                               onClick={() => handleUpdateStatus(currentOrder.id, 'CONFIRMED', 'Confirmed by Admin')}
                               disabled={currentOrder.status !== 'PENDING'}
                               className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm w-full sm:w-auto ${
                                 currentOrder.status !== 'PENDING'
-                                  ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                                  ? 'bg-slate-200 dark:bg-neutral-800 text-slate-500 border border-slate-300 dark:border-neutral-700 cursor-not-allowed opacity-50'
                                   : 'btn-primary bg-redPrimary hover:bg-redDark text-white cursor-pointer'
                               }`}
                             >
@@ -758,7 +764,7 @@ export default function AdminControlPanelPage() {
                               disabled={currentOrder.status !== 'CONFIRMED'}
                               className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm w-full sm:w-auto ${
                                 currentOrder.status !== 'CONFIRMED'
-                                  ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                                  ? 'bg-slate-200 dark:bg-neutral-800 text-slate-500 border border-slate-300 dark:border-neutral-700 cursor-not-allowed opacity-50'
                                   : 'bg-orangeSecondary hover:bg-orange-600 text-white cursor-pointer'
                               }`}
                             >
@@ -785,7 +791,7 @@ export default function AdminControlPanelPage() {
                             key={i}
                             onClick={() => setOrderSliderIdx(i)}
                             className={`h-2 rounded-full transition-all ${
-                              orderSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'
+                              orderSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'
                             }`}
                           />
                         ))}
@@ -796,237 +802,35 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 1: ANALYTICS */}
-            {activeTab === 1 && (
-              <div className="space-y-6">
-                <div className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
-                  <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary">
-                    <TrendingUp className="w-5 h-5" /> Executive Realtime Sales & Operations Analytics
-                  </h3>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
-                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
-                      <span className="text-xs text-slate-500 block font-bold">Gross GMV</span>
-                      <strong className="text-lg sm:text-xl text-emerald-500 font-black">₹{totalRevenue * 1.25}</strong>
-                    </div>
-                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
-                      <span className="text-xs text-slate-500 block font-bold">Platform Revenue (20%)</span>
-                      <strong className="text-lg sm:text-xl text-emerald-500 font-black">₹{totalRevenue * 0.20}</strong>
-                    </div>
-                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
-                      <span className="text-xs text-slate-500 block font-bold">Fulfillment Speed</span>
-                      <strong className="text-lg sm:text-xl text-blue-400 font-black">24 Mins</strong>
-                    </div>
-                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800">
-                      <span className="text-xs text-slate-500 block font-bold">Order Success Rate</span>
-                      <strong className="text-lg sm:text-xl text-emerald-500 font-black">98.5%</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
-                  <h4 className="font-bold text-sm text-slate-300">Live Order Status Funnel</h4>
-                  <div className="space-y-2">
-                    {['PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'IN_PROGRESS', 'COMPLETED'].map((st) => {
-                      const count = bookings.filter(b => b.status === st).length;
-                      const percentage = bookings.length > 0 ? Math.round((count / bookings.length) * 100) : 0;
-                      return (
-                        <div key={st} className="space-y-1">
-                          <div className="flex justify-between text-xs font-bold">
-                            <span className="text-slate-400">{st === 'IN_PROGRESS' ? 'ARRIVED / WORK STARTED' : st}</span>
-                            <span className="text-white">{count} orders ({percentage}%)</span>
-                          </div>
-                          <div className="w-full h-2 rounded-full bg-neutral-800 overflow-hidden">
-                            <div className="h-full bg-redPrimary transition-all duration-500" style={{ width: `${Math.max(5, percentage)}%` }}></div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: PAYMENT DETAILS */}
-            {activeTab === 2 && (
-              <div className="space-y-6">
-                <div className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
-                  <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary">
-                    <CreditCard className="w-5 h-5" /> Financial Revenue & Payment Method Distribution
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800 text-center">
-                      <span className="text-xs text-slate-500 block font-bold mb-1">Cash on Service (COD)</span>
-                      <strong className="text-lg text-emerald-500 font-black">85% Volume</strong>
-                      <p className="text-[10px] text-slate-400 mt-1">Collected directly by partner mistris</p>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800 text-center">
-                      <span className="text-xs text-slate-500 block font-bold mb-1">Online UPI / QR Code</span>
-                      <strong className="text-lg text-blue-400 font-black">10% Volume</strong>
-                      <p className="text-[10px] text-slate-400 mt-1">Instant Google Pay & PhonePe</p>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-black/30 border border-neutral-800 text-center">
-                      <span className="text-xs text-slate-500 block font-bold mb-1">Razorpay Gateway Cards</span>
-                      <strong className="text-lg text-amber-400 font-black">5% Volume</strong>
-                      <p className="text-[10px] text-slate-400 mt-1">Netbanking, Credit & Debit Cards</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
-                  <h4 className="font-bold text-sm text-slate-300">Partner Settlement Payout Ledger</h4>
-                  <div className="p-4 rounded-xl bg-neutral-900 border border-neutral-800 flex justify-between items-center text-xs">
-                    <div>
-                      <strong className="text-white block text-sm">80% Partner Net Share Payout</strong>
-                      <span className="text-slate-400">Total payable to verified craftsmen for completed jobs</span>
-                    </div>
-                    <span className="text-lg font-black text-emerald-500">₹{totalRevenue * 0.80}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: PARTNER FLEET */}
-            {activeTab === 3 && (
-              <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
-                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><HardHat className="w-5 h-5" /> Registered Service Partners ({allPartnersList.length})</h3>
-                {allPartnersList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6">No service partners registered yet.</p>
-                ) : (
-                  allPartnersList.map(p => {
-                    const isOnline = p.isOnline === true || p.isOnline === 'true';
-                    return (
-                      <div key={p.id} className="p-4 rounded-xl bg-black/30 border border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div>
-                          <strong className="text-base block text-white font-extrabold">{p.fullName || 'Partner'}</strong>
-                          <span className="text-xs text-slate-400">Skill: {p.skillCategory || 'Specialist'} | Phone: {p.phoneNumber || 'N/A'}</span>
-                        </div>
-                        <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">
-                          <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
-                            isOnline ? 'bg-emerald-600/20 text-emerald-500 border border-emerald-600/30' : 'bg-slate-700/50 text-slate-400 border border-slate-600/30'
-                          }`}>
-                            {isOnline ? '🟢 ONLINE' : '⚫ OFFLINE'}
-                          </span>
-                          <button onClick={() => setDeletingPath(`users/${p.id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete Partner</button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
-
-            {/* TAB 4: REGISTERED USERS (With Direct Edit Sub-Admin Credentials Button & Slider) */}
-            {activeTab === 4 && (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateSubAdminOpen(true)}
-                    className="btn-primary bg-emerald-600 hover:bg-emerald-700 text-xs py-2 px-4 shadow-md font-black"
-                  >
-                    <UserPlus className="w-4 h-4 inline mr-1" /> + Create Sub-Admin Account ({currentAdmins.length}/3)
-                  </button>
-                </div>
-
-                {usersList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6">No registered users found.</p>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
-                        User Account <span className="text-redPrimary font-black">{userSliderIdx + 1}</span> of {usersList.length}
-                      </span>
-                      {usersList.length > 1 && (
-                        <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setUserSliderIdx((prev) => (prev - 1 + usersList.length) % usersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
-                          <span className="text-xs font-black text-slate-300">{userSliderIdx + 1} / {usersList.length}</span>
-                          <button type="button" onClick={() => setUserSliderIdx((prev) => (prev + 1) % usersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
-                        </div>
-                      )}
-                    </div>
-
-                    {usersList[userSliderIdx] && (
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={usersList[userSliderIdx].id || userSliderIdx}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs shadow-xl max-w-lg mx-auto gap-4"
-                        >
-                          <div>
-                            <strong className="text-base block text-white font-extrabold">{usersList[userSliderIdx].fullName || 'User'}</strong>
-                            <p className="text-xs text-slate-400 mt-1">{usersList[userSliderIdx].email || 'N/A'} • {usersList[userSliderIdx].phoneNumber || 'N/A'}</p>
-                            {usersList[userSliderIdx].password && (
-                              <p className="text-[11px] text-amber-400 font-bold mt-1">🔑 Password: {usersList[userSliderIdx].password}</p>
-                            )}
-                          </div>
-
-                          <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">
-                            <span className={`px-3 py-1 rounded-full text-xs font-black ${ (usersList[userSliderIdx].role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary border border-redPrimary/30' : (usersList[userSliderIdx].role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
-                              {usersList[userSliderIdx].role || 'CUSTOMER'}
-                            </span>
-
-                            {(usersList[userSliderIdx].role || '').toUpperCase() === 'ADMIN' && (
-                              <button
-                                type="button"
-                                onClick={() => setEditingAdminUser({ ...usersList[userSliderIdx] })}
-                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold"
-                              >
-                                Edit Credentials
-                              </button>
-                            )}
-
-                            <button onClick={() => setDeletingPath(`users/${usersList[userSliderIdx].id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete</button>
-                          </div>
-                        </motion.div>
-                      </AnimatePresence>
-                    )}
-
-                    {usersList.length > 1 && (
-                      <div className="flex justify-center gap-2 pt-2">
-                        {usersList.map((_, i) => (
-                          <button key={i} type="button" onClick={() => setUserSliderIdx(i)} className={`h-2 rounded-full transition-all ${userSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 5: CATEGORIES MANAGER (With File Upload & Image Preview) */}
+            {/* TAB 5: CATEGORIES MANAGER (With Dedicated 200KB File Upload Picker Button & Live Thumbnail) */}
             {activeTab === 5 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddCategory} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
+                <form onSubmit={handleAddCategory} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Category</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category Name (e.g. Mason)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
 
-                    {/* Category Icon File Upload & URL Picker */}
+                    {/* Category Icon File Upload Picker Button */}
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-400 block">Category Icon (Upload Image File or Paste URL)</label>
+                      <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Category Icon (Upload File &le;200KB or Paste URL)</label>
                       <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageFileUpload(e, setNewCatIcon)}
-                          className="p-2.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1"
-                        />
+                        <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition shrink-0">
+                          <Upload className="w-4 h-4" /> 📷 Upload Icon File
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageFileUpload(e, setNewCatIcon)}
+                            className="hidden"
+                          />
+                        </label>
+
                         <input
                           type="text"
                           value={newCatIcon}
                           onChange={(e) => setNewCatIcon(e.target.value)}
                           placeholder="Or paste Icon Image URL"
-                          className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1 outline-none focus:border-redPrimary"
+                          className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white flex-1 outline-none focus:border-redPrimary"
                         />
                       </div>
                     </div>
@@ -1034,9 +838,9 @@ export default function AdminControlPanelPage() {
 
                   {/* Icon Live Preview */}
                   {newCatIcon && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
-                      <img src={newCatIcon} className="w-10 h-10 object-contain rounded-lg" alt="Preview" />
-                      <span className="text-xs text-emerald-400 font-bold">Icon Preview Selected</span>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
+                      <img src={newCatIcon} className="w-12 h-12 object-contain rounded-lg bg-white p-1" alt="Preview" />
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Icon Selected & Previewed</span>
                     </div>
                   )}
 
@@ -1048,14 +852,14 @@ export default function AdminControlPanelPage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                         Category <span className="text-redPrimary font-black">{catSliderIdx + 1}</span> of {categoriesList.length}
                       </span>
                       {categoriesList.length > 1 && (
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setCatSliderIdx((prev) => (prev - 1 + categoriesList.length) % categoriesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
-                          <span className="text-xs font-black text-slate-300">{catSliderIdx + 1} / {categoriesList.length}</span>
-                          <button type="button" onClick={() => setCatSliderIdx((prev) => (prev + 1) % categoriesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setCatSliderIdx((prev) => (prev - 1 + categoriesList.length) % categoriesList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">{catSliderIdx + 1} / {categoriesList.length}</span>
+                          <button type="button" onClick={() => setCatSliderIdx((prev) => (prev + 1) % categoriesList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
                         </div>
                       )}
                     </div>
@@ -1068,10 +872,10 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card text-center p-6 sm:p-8 bg-[#1A1A1A] border border-[#333333] rounded-2xl shadow-xl flex flex-col items-center gap-4 relative max-w-md mx-auto w-full"
+                          className="web-card text-center p-6 sm:p-8 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-xl flex flex-col items-center gap-4 relative max-w-md mx-auto w-full"
                         >
                           <img src={categoriesList[catSliderIdx].iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-16 h-16 object-contain" />
-                          <strong className="text-lg block text-white font-extrabold">{categoriesList[catSliderIdx].name}</strong>
+                          <strong className="text-lg block text-slate-900 dark:text-white font-extrabold">{categoriesList[catSliderIdx].name}</strong>
 
                           <div className="flex gap-2 justify-center pt-2 w-full">
                             <button onClick={() => setEditingCategory({ ...categoriesList[catSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Edit</button>
@@ -1084,7 +888,7 @@ export default function AdminControlPanelPage() {
                     {categoriesList.length > 1 && (
                       <div className="flex justify-center gap-2 pt-2">
                         {categoriesList.map((_, i) => (
-                          <button key={i} type="button" onClick={() => setCatSliderIdx(i)} className={`h-2 rounded-full transition-all ${catSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                          <button key={i} type="button" onClick={() => setCatSliderIdx(i)} className={`h-2 rounded-full transition-all ${catSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'}`} />
                         ))}
                       </div>
                     )}
@@ -1093,38 +897,42 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 6: SERVICES MANAGER (With File Upload & Image Preview) */}
+            {/* TAB 6: SERVICES MANAGER (With Dedicated 200KB File Upload Picker Button & Live Thumbnail) */}
             {activeTab === 6 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddService} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
+                <form onSubmit={handleAddService} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Service (Connected to Category)</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
 
-                    <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-bold text-white outline-none focus:border-redPrimary">
+                    <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary">
                       {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
 
-                    <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
-                    <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm text-white outline-none focus:border-redPrimary" />
+                    <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
 
                     {/* Service Image File Upload & URL Picker */}
                     <div className="md:col-span-2 space-y-1">
-                      <label className="text-xs font-bold text-slate-400 block">Service Image (Upload File or Paste Image URL)</label>
+                      <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Service Image (Upload File &le;200KB or Paste Image URL)</label>
                       <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageFileUpload(e, setNewSrvImage)}
-                          className="p-2.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1"
-                        />
+                        <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition shrink-0">
+                          <Upload className="w-4 h-4" /> 📷 Upload Service Image File
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageFileUpload(e, setNewSrvImage)}
+                            className="hidden"
+                          />
+                        </label>
+
                         <input
                           type="text"
                           value={newSrvImage}
                           onChange={(e) => setNewSrvImage(e.target.value)}
                           placeholder="Or paste Service Icon Image URL"
-                          className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1 outline-none focus:border-redPrimary"
+                          className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white flex-1 outline-none focus:border-redPrimary"
                         />
                       </div>
                     </div>
@@ -1132,9 +940,9 @@ export default function AdminControlPanelPage() {
 
                   {/* Service Image Live Preview */}
                   {newSrvImage && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
-                      <img src={newSrvImage} className="w-16 h-12 object-cover rounded-lg" alt="Preview" />
-                      <span className="text-xs text-emerald-400 font-bold">Service Image Selected</span>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
+                      <img src={newSrvImage} className="w-16 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Service Image Selected & Previewed</span>
                     </div>
                   )}
 
@@ -1146,14 +954,14 @@ export default function AdminControlPanelPage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                         Service <span className="text-redPrimary font-black">{srvSliderIdx + 1}</span> of {servicesList.length}
                       </span>
                       {servicesList.length > 1 && (
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setSrvSliderIdx((prev) => (prev - 1 + servicesList.length) % servicesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
-                          <span className="text-xs font-black text-slate-300">{srvSliderIdx + 1} / {servicesList.length}</span>
-                          <button type="button" onClick={() => setSrvSliderIdx((prev) => (prev + 1) % servicesList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setSrvSliderIdx((prev) => (prev - 1 + servicesList.length) % servicesList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">{srvSliderIdx + 1} / {servicesList.length}</span>
+                          <button type="button" onClick={() => setSrvSliderIdx((prev) => (prev + 1) % servicesList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
                         </div>
                       )}
                     </div>
@@ -1166,15 +974,15 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto w-full"
+                          className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto w-full"
                         >
                           <div>
                             <img src={servicesList[srvSliderIdx].imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-44 object-cover rounded-xl mb-3" />
                             <span className="text-[10px] font-bold text-redPrimary uppercase">{servicesList[srvSliderIdx].categoryName || 'General'}</span>
-                            <h4 className="font-bold text-base mt-0.5 text-white">{servicesList[srvSliderIdx].title}</h4>
+                            <h4 className="font-bold text-base mt-0.5 text-slate-900 dark:text-white">{servicesList[srvSliderIdx].title}</h4>
                             <p className="text-lg font-black text-redPrimary mt-1">₹{servicesList[srvSliderIdx].discountedPrice || servicesList[srvSliderIdx].originalPrice}</p>
                           </div>
-                          <div className="flex gap-2 mt-4 pt-3 border-t border-neutral-800">
+                          <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-neutral-800">
                             <button onClick={() => setEditingService({ ...servicesList[srvSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
                             <button onClick={() => setDeletingPath(`services/${servicesList[srvSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
@@ -1185,7 +993,7 @@ export default function AdminControlPanelPage() {
                     {servicesList.length > 1 && (
                       <div className="flex justify-center gap-2 pt-2">
                         {servicesList.map((_, i) => (
-                          <button key={i} type="button" onClick={() => setSrvSliderIdx(i)} className={`h-2 rounded-full transition-all ${srvSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                          <button key={i} type="button" onClick={() => setSrvSliderIdx(i)} className={`h-2 rounded-full transition-all ${srvSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'}`} />
                         ))}
                       </div>
                     )}
@@ -1194,32 +1002,36 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 7: BANNERS MANAGER (With File Upload & Image Preview) */}
+            {/* TAB 7: BANNERS MANAGER (With Dedicated 200KB File Upload Picker Button & Live Thumbnail) */}
             {activeTab === 7 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddBanner} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
+                <form onSubmit={handleAddBanner} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
                   <h3 className="font-extrabold text-base text-redPrimary">Add New Marketing Banner</h3>
 
                   <div className="space-y-3">
-                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newBnrTitle} onChange={(e) => setNewBnrTitle(e.target.value)} placeholder="Headline Title" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newBnrSub} onChange={(e) => setNewBnrSub(e.target.value)} placeholder="Subtitle" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
 
                     {/* Banner Image File Upload & URL Picker */}
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-400 block">Banner Image (Upload File or Paste URL)</label>
+                      <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Banner Image (Upload File &le;200KB or Paste URL)</label>
                       <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageFileUpload(e, setNewBnrImg)}
-                          className="p-2.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1"
-                        />
+                        <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition shrink-0">
+                          <Upload className="w-4 h-4" /> 📷 Upload Banner Image File
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageFileUpload(e, setNewBnrImg)}
+                            className="hidden"
+                          />
+                        </label>
+
                         <input
                           type="text"
                           value={newBnrImg}
                           onChange={(e) => setNewBnrImg(e.target.value)}
                           placeholder="Or paste Banner Image URL"
-                          className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white flex-1 outline-none focus:border-redPrimary"
+                          className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white flex-1 outline-none focus:border-redPrimary"
                         />
                       </div>
                     </div>
@@ -1227,9 +1039,9 @@ export default function AdminControlPanelPage() {
 
                   {/* Banner Image Live Preview */}
                   {newBnrImg && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
-                      <img src={newBnrImg} className="w-20 h-12 object-cover rounded-lg" alt="Preview" />
-                      <span className="text-xs text-emerald-400 font-bold">Banner Image Selected</span>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
+                      <img src={newBnrImg} className="w-20 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Banner Image Selected & Previewed</span>
                     </div>
                   )}
 
@@ -1241,14 +1053,14 @@ export default function AdminControlPanelPage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                         Banner <span className="text-redPrimary font-black">{bnrSliderIdx + 1}</span> of {bannersList.length}
                       </span>
                       {bannersList.length > 1 && (
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setBnrSliderIdx((prev) => (prev - 1 + bannersList.length) % bannersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
-                          <span className="text-xs font-black text-slate-300">{bnrSliderIdx + 1} / {bannersList.length}</span>
-                          <button type="button" onClick={() => setBnrSliderIdx((prev) => (prev + 1) % bannersList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setBnrSliderIdx((prev) => (prev - 1 + bannersList.length) % bannersList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">{bnrSliderIdx + 1} / {bannersList.length}</span>
+                          <button type="button" onClick={() => setBnrSliderIdx((prev) => (prev + 1) % bannersList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
                         </div>
                       )}
                     </div>
@@ -1261,14 +1073,14 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-2xl relative max-w-lg mx-auto w-full"
+                          className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-2xl relative max-w-lg mx-auto w-full"
                         >
                           <img src={bannersList[bnrSliderIdx].imageUrl} className="w-full h-40 sm:h-48 object-cover rounded-xl" alt="" />
                           <div>
-                            <strong className="block text-base sm:text-lg font-bold text-white">{bannersList[bnrSliderIdx].title}</strong>
-                            <span className="text-xs text-slate-400 mt-0.5 block">{bannersList[bnrSliderIdx].subtitle}</span>
+                            <strong className="block text-base sm:text-lg font-bold text-slate-900 dark:text-white">{bannersList[bnrSliderIdx].title}</strong>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">{bannersList[bnrSliderIdx].subtitle}</span>
                           </div>
-                          <div className="flex gap-2 pt-2 border-t border-neutral-800">
+                          <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
                             <button onClick={() => setEditingBanner({ ...bannersList[bnrSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
                             <button onClick={() => setDeletingPath(`banners/${bannersList[bnrSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
@@ -1279,7 +1091,7 @@ export default function AdminControlPanelPage() {
                     {bannersList.length > 1 && (
                       <div className="flex justify-center gap-2 pt-2">
                         {bannersList.map((_, i) => (
-                          <button key={i} type="button" onClick={() => setBnrSliderIdx(i)} className={`h-2 rounded-full transition-all ${bnrSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                          <button key={i} type="button" onClick={() => setBnrSliderIdx(i)} className={`h-2 rounded-full transition-all ${bnrSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'}`} />
                         ))}
                       </div>
                     )}
@@ -1288,15 +1100,15 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 9: CUSTOMER EXPERIENCE (With Single-Card Slider) */}
+            {/* TAB 9: CUSTOMER EXPERIENCE */}
             {activeTab === 9 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddTestimonial} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
+                <form onSubmit={handleAddTestimonial} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add Customer Experience Review</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
-                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary"></textarea>
+                    <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
                   </div>
                   <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save Customer Review</button>
                 </form>
@@ -1306,14 +1118,14 @@ export default function AdminControlPanelPage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                         Review <span className="text-redPrimary font-black">{testSliderIdx + 1}</span> of {testimonialsList.length}
                       </span>
                       {testimonialsList.length > 1 && (
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setTestSliderIdx((prev) => (prev - 1 + testimonialsList.length) % testimonialsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
-                          <span className="text-xs font-black text-slate-300">{testSliderIdx + 1} / {testimonialsList.length}</span>
-                          <button type="button" onClick={() => setTestSliderIdx((prev) => (prev + 1) % testimonialsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setTestSliderIdx((prev) => (prev - 1 + testimonialsList.length) % testimonialsList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">{testSliderIdx + 1} / {testimonialsList.length}</span>
+                          <button type="button" onClick={() => setTestSliderIdx((prev) => (prev + 1) % testimonialsList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
                         </div>
                       )}
                     </div>
@@ -1326,14 +1138,14 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
+                          className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
                         >
-                          <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
-                            <strong className="block text-base font-bold text-white">{testimonialsList[testSliderIdx].name}</strong>
+                          <div className="flex justify-between items-center border-b border-slate-100 dark:border-neutral-800 pb-2">
+                            <strong className="block text-base font-bold text-slate-900 dark:text-white">{testimonialsList[testSliderIdx].name}</strong>
                             <span className="text-xs text-slate-400">({testimonialsList[testSliderIdx].location})</span>
                           </div>
-                          <p className="text-xs sm:text-sm text-slate-300 italic leading-relaxed">"{testimonialsList[testSliderIdx].text}"</p>
-                          <div className="flex gap-2 justify-end pt-2 border-t border-neutral-800">
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 italic leading-relaxed">"{testimonialsList[testSliderIdx].text}"</p>
+                          <div className="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-neutral-800">
                             <button onClick={() => setEditingTestimonial({ ...testimonialsList[testSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
                             <button onClick={() => setDeletingPath(`testimonials/${testimonialsList[testSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
@@ -1344,7 +1156,7 @@ export default function AdminControlPanelPage() {
                     {testimonialsList.length > 1 && (
                       <div className="flex justify-center gap-2 pt-2">
                         {testimonialsList.map((_, i) => (
-                          <button key={i} type="button" onClick={() => setTestSliderIdx(i)} className={`h-2 rounded-full transition-all ${testSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                          <button key={i} type="button" onClick={() => setTestSliderIdx(i)} className={`h-2 rounded-full transition-all ${testSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'}`} />
                         ))}
                       </div>
                     )}
@@ -1353,14 +1165,14 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 10: FAQs (With Single-Card Slider) */}
+            {/* TAB 10: FAQs */}
             {activeTab === 10 && (
               <div className="space-y-6">
-                <form onSubmit={handleAddFaq} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
+                <form onSubmit={handleAddFaq} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl">
                   <h3 className="font-extrabold text-base text-redPrimary">Add Frequently Asked Question</h3>
                   <div className="space-y-3">
-                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary" />
-                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-xs text-white outline-none focus:border-redPrimary"></textarea>
+                    <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
                   </div>
                   <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save FAQ</button>
                 </form>
@@ -1370,14 +1182,14 @@ export default function AdminControlPanelPage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-xs font-bold text-slate-400">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                         FAQ <span className="text-redPrimary font-black">{faqSliderIdx + 1}</span> of {faqsList.length}
                       </span>
                       {faqsList.length > 1 && (
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setFaqSliderIdx((prev) => (prev - 1 + faqsList.length) % faqsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
-                          <span className="text-xs font-black text-slate-300">{faqSliderIdx + 1} / {faqsList.length}</span>
-                          <button type="button" onClick={() => setFaqSliderIdx((prev) => (prev + 1) % faqsList.length)} className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setFaqSliderIdx((prev) => (prev - 1 + faqsList.length) % faqsList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">{faqSliderIdx + 1} / {faqsList.length}</span>
+                          <button type="button" onClick={() => setFaqSliderIdx((prev) => (prev + 1) % faqsList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
                         </div>
                       )}
                     </div>
@@ -1390,11 +1202,11 @@ export default function AdminControlPanelPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.25 }}
-                          className="web-card bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
+                          className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
                         >
                           <strong className="block text-base font-bold text-redPrimary">Q: {faqsList[faqSliderIdx].q}</strong>
-                          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">A: {faqsList[faqSliderIdx].a}</p>
-                          <div className="flex gap-2 justify-end pt-2 border-t border-neutral-800">
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">A: {faqsList[faqSliderIdx].a}</p>
+                          <div className="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-neutral-800">
                             <button onClick={() => setEditingFaq({ ...faqsList[faqSliderIdx] })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
                             <button onClick={() => setDeletingPath(`faqs/${faqsList[faqSliderIdx].id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                           </div>
@@ -1405,7 +1217,7 @@ export default function AdminControlPanelPage() {
                     {faqsList.length > 1 && (
                       <div className="flex justify-center gap-2 pt-2">
                         {faqsList.map((_, i) => (
-                          <button key={i} type="button" onClick={() => setFaqSliderIdx(i)} className={`h-2 rounded-full transition-all ${faqSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'}`} />
+                          <button key={i} type="button" onClick={() => setFaqSliderIdx(i)} className={`h-2 rounded-full transition-all ${faqSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'}`} />
                         ))}
                       </div>
                     )}
@@ -1414,51 +1226,51 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 8: ADMIN ROLES & CREATION MANAGER (Max 3 Admins) */}
+            {/* TAB 8: ADMIN ROLES & CREATION MANAGER */}
             {activeTab === 8 && (
               <div className="space-y-6">
-                <div className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-neutral-800 pb-3">
+                <div className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-neutral-800 pb-3">
                     <div>
                       <h3 className="font-extrabold text-base text-redPrimary">Manage Platform Administrators</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">Main Lead Admin can grant administrator authority to maximum 3 accounts.</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Main Lead Admin can grant administrator authority to maximum 3 accounts.</p>
                     </div>
                     <span className="px-3 py-1 rounded-full text-xs font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30 shrink-0">
                       Admins: {currentAdmins.length} / 3 Max
                     </span>
                   </div>
 
-                  {/* Create New Admin Account Form with Password */}
+                  {/* Create New Admin Account Form */}
                   <form onSubmit={handleAddAdmin} className="space-y-4 pt-2">
-                    <h4 className="text-sm font-bold text-white">Create New Sub-Admin Account</h4>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Create New Sub-Admin Account</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input
                         type="text"
                         value={newAdminName}
                         onChange={(e) => setNewAdminName(e.target.value)}
                         placeholder="Admin Full Name *"
-                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
+                        className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-slate-900 dark:text-white text-xs outline-none focus:border-redPrimary"
                       />
                       <input
                         type="email"
                         value={newAdminEmail}
                         onChange={(e) => setNewAdminEmail(e.target.value)}
                         placeholder="Admin Email Address *"
-                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
+                        className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-slate-900 dark:text-white text-xs outline-none focus:border-redPrimary"
                       />
                       <input
                         type="text"
                         value={newAdminPhone}
                         onChange={(e) => setNewAdminPhone(e.target.value)}
                         placeholder="Admin Phone Number *"
-                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
+                        className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-slate-900 dark:text-white text-xs outline-none focus:border-redPrimary"
                       />
                       <input
                         type="password"
                         value={newAdminPassword}
                         onChange={(e) => setNewAdminPassword(e.target.value)}
                         placeholder="Sub-Admin Password *"
-                        className="p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-white text-xs outline-none focus:border-redPrimary"
+                        className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-slate-900 dark:text-white text-xs outline-none focus:border-redPrimary"
                       />
                     </div>
 
@@ -1466,7 +1278,7 @@ export default function AdminControlPanelPage() {
                       type="submit"
                       disabled={currentAdmins.length >= 3}
                       className={`btn-primary w-full py-3.5 text-xs font-black shadow-lg rounded-xl transition ${
-                        currentAdmins.length >= 3 ? 'bg-neutral-800 text-slate-500 cursor-not-allowed opacity-50' : 'bg-redPrimary text-white'
+                        currentAdmins.length >= 3 ? 'bg-slate-300 dark:bg-neutral-800 text-slate-500 cursor-not-allowed opacity-50' : 'bg-redPrimary text-white'
                       }`}
                     >
                       <UserPlus className="w-4 h-4 inline mr-1" />
@@ -1476,18 +1288,18 @@ export default function AdminControlPanelPage() {
                 </div>
 
                 {/* Current Active Admins List */}
-                <div className="web-card space-y-3 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
-                  <h4 className="font-bold text-sm text-slate-300">Active Administrator Accounts ({currentAdmins.length})</h4>
+                <div className="web-card space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
+                  <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300">Active Administrator Accounts ({currentAdmins.length})</h4>
                   <div className="space-y-2">
                     {currentAdmins.map((adm) => (
-                      <div key={adm.id} className="p-4 rounded-xl bg-black/30 border border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-3">
+                      <div key={adm.id} className="p-4 rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-3">
                         <div className="flex items-center gap-3">
                           <ShieldCheck className="w-5 h-5 text-redPrimary shrink-0" />
                           <div>
-                            <strong className="text-white block text-sm">{adm.fullName || 'Admin Account'}</strong>
-                            <span className="text-slate-400">{adm.email || 'N/A'} • {adm.phoneNumber || 'N/A'}</span>
+                            <strong className="text-slate-900 dark:text-white block text-sm">{adm.fullName || 'Admin Account'}</strong>
+                            <span className="text-slate-500 dark:text-slate-400">{adm.email || 'N/A'} • {adm.phoneNumber || 'N/A'}</span>
                             {adm.password && (
-                              <p className="text-[11px] text-amber-400 font-bold mt-0.5">🔑 Password: {adm.password}</p>
+                              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">🔑 Password: {adm.password}</p>
                             )}
                           </div>
                         </div>
@@ -1522,20 +1334,20 @@ export default function AdminControlPanelPage() {
                 </div>
 
                 {/* Edit Main Profile Credentials */}
-                <form onSubmit={handleSaveAdminProfile} className="web-card space-y-4 bg-[#1A1A1A] border border-[#333333] p-5 sm:p-6 rounded-2xl">
+                <form onSubmit={handleSaveAdminProfile} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
                   <h3 className="font-extrabold text-base text-redPrimary">Edit Lead Admin Profile Credentials</h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1">Admin Name</label>
-                      <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-semibold text-white outline-none focus:border-redPrimary" />
+                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Admin Name</label>
+                      <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1">Phone</label>
-                      <input type="text" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-semibold text-white outline-none focus:border-redPrimary" />
+                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Phone</label>
+                      <input type="text" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1">Email</label>
-                      <input type="text" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full p-3.5 rounded-xl border border-neutral-700 bg-neutral-900 text-sm font-semibold text-white outline-none focus:border-redPrimary" />
+                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Email</label>
+                      <input type="text" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
                     </div>
                   </div>
                   <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold">
@@ -1562,34 +1374,34 @@ export default function AdminControlPanelPage() {
       {/* CUSTOM CREATE SUB-ADMIN MODAL */}
       {isCreateSubAdminOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <form onSubmit={handleAddAdmin} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 sm:p-8 w-full max-w-md text-white space-y-4 relative shadow-2xl">
-            <button type="button" onClick={() => setIsCreateSubAdminOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+          <form onSubmit={handleAddAdmin} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 sm:p-8 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
+            <button type="button" onClick={() => setIsCreateSubAdminOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary flex items-center gap-2"><UserPlus className="w-5 h-5" /> Create Sub-Admin Account</h3>
-            <p className="text-xs text-slate-400">Max 3 Admins allowed ({currentAdmins.length}/3 registered).</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Max 3 Admins allowed ({currentAdmins.length}/3 registered).</p>
 
             <div className="space-y-3 pt-1">
               <div>
-                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Full Name *</label>
-                <input type="text" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} placeholder="e.g. Passang Bhutia" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white outline-none focus:border-redPrimary" />
+                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Full Name *</label>
+                <input type="text" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} placeholder="e.g. Passang Bhutia" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Email Address *</label>
-                <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="e.g. subadmin@gmail.com" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white outline-none focus:border-redPrimary" />
+                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Email Address *</label>
+                <input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="e.g. subadmin@gmail.com" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Phone Number *</label>
-                <input type="text" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} placeholder="e.g. +91 9563213089" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white outline-none focus:border-redPrimary" />
+                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Phone Number *</label>
+                <input type="text" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} placeholder="e.g. +91 9563213089" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Sub-Admin Password *</label>
-                <input type="text" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Enter Sub-Admin Password" required className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white font-bold outline-none focus:border-redPrimary" />
+                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Sub-Admin Password *</label>
+                <input type="text" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Enter Sub-Admin Password" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold outline-none focus:border-redPrimary" />
               </div>
             </div>
 
-            <button type="submit" disabled={currentAdmins.length >= 3} className={`btn-primary w-full py-3.5 text-xs font-black shadow-lg rounded-xl transition ${currentAdmins.length >= 3 ? 'bg-neutral-800 text-slate-500 cursor-not-allowed' : 'bg-redPrimary text-white'}`}>
+            <button type="submit" disabled={currentAdmins.length >= 3} className={`btn-primary w-full py-3.5 text-xs font-black shadow-lg rounded-xl transition ${currentAdmins.length >= 3 ? 'bg-slate-300 dark:bg-neutral-800 text-slate-500 cursor-not-allowed' : 'bg-redPrimary text-white'}`}>
               Save & Create Sub-Admin
             </button>
           </form>
@@ -1599,21 +1411,21 @@ export default function AdminControlPanelPage() {
       {/* CUSTOM DELETE CONFIRMATION MODAL */}
       {deletingPath && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#242424] border border-neutral-700 rounded-3xl p-6 sm:p-8 w-full max-w-sm text-white shadow-2xl text-center space-y-5 relative">
+          <div className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-3xl p-6 sm:p-8 w-full max-w-sm text-slate-900 dark:text-white shadow-2xl text-center space-y-5 relative">
             <div className="w-14 h-14 rounded-full bg-rose-600/20 text-rose-500 flex items-center justify-center mx-auto mb-2">
               <Trash2 className="w-7 h-7" />
             </div>
 
             <div>
-              <h3 className="text-xl font-black text-white">Are you sure you want to delete?</h3>
-              <p className="text-xs text-slate-400 mt-1">This item will be permanently removed.</p>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">Are you sure you want to delete?</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">This item will be permanently removed.</p>
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setDeletingPath(null)}
-                className="flex-1 py-3 px-4 rounded-xl border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-xs font-extrabold text-slate-300 transition"
+                className="flex-1 py-3 px-4 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 text-xs font-extrabold text-slate-700 dark:text-slate-300 transition"
               >
                 No, Cancel
               </button>
@@ -1637,52 +1449,52 @@ export default function AdminControlPanelPage() {
       {/* EDIT MODAL FOR SUB-ADMIN USERS */}
       {editingAdminUser && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveAdminUserEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+          <form onSubmit={handleSaveAdminUserEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
             <button type="button" onClick={() => setEditingAdminUser(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Sub-Admin Account Credentials</h3>
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Full Name</label>
-              <input type="text" value={editingAdminUser.fullName || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, fullName: e.target.value })} placeholder="Full Name" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Full Name</label>
+              <input type="text" value={editingAdminUser.fullName || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, fullName: e.target.value })} placeholder="Full Name" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Email Address</label>
-              <input type="email" value={editingAdminUser.email || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, email: e.target.value })} placeholder="Email Address" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Email Address</label>
+              <input type="email" value={editingAdminUser.email || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, email: e.target.value })} placeholder="Email Address" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Phone Number</label>
-              <input type="text" value={editingAdminUser.phoneNumber || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, phoneNumber: e.target.value })} placeholder="Phone Number" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Phone Number</label>
+              <input type="text" value={editingAdminUser.phoneNumber || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, phoneNumber: e.target.value })} placeholder="Phone Number" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Password</label>
-              <input type="text" value={editingAdminUser.password || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, password: e.target.value })} placeholder="Sub-Admin Password" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white font-bold" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Password</label>
+              <input type="text" value={editingAdminUser.password || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, password: e.target.value })} placeholder="Sub-Admin Password" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold" />
             </div>
             <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Sub-Admin Updates</button>
           </form>
         </div>
       )}
 
-      {/* EDIT MODAL FOR CATEGORIES (With File Upload & Image Preview) */}
+      {/* EDIT MODAL FOR CATEGORIES */}
       {editingCategory && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveCategoryEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+          <form onSubmit={handleSaveCategoryEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
             <button type="button" onClick={() => setEditingCategory(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Category</h3>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Category Name</label>
-              <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} placeholder="Category Name" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Category Name</label>
+              <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} placeholder="Category Name" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Upload New Icon File / URL</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingCategory({ ...editingCategory, iconUrl: res }))} className="p-2 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white w-full mb-2" />
-              <input type="text" value={editingCategory.iconUrl} onChange={(e) => setEditingCategory({ ...editingCategory, iconUrl: e.target.value })} placeholder="Or paste Icon Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Icon File (&le;200KB) / URL</label>
+              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingCategory({ ...editingCategory, iconUrl: res }))} className="p-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white w-full mb-2" />
+              <input type="text" value={editingCategory.iconUrl} onChange={(e) => setEditingCategory({ ...editingCategory, iconUrl: e.target.value })} placeholder="Or paste Icon Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
 
             {editingCategory.iconUrl && (
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700">
-                <img src={editingCategory.iconUrl} className="w-10 h-10 object-contain rounded-lg" alt="Preview" />
-                <span className="text-xs text-emerald-400 font-bold">New Icon Selected</span>
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700">
+                <img src={editingCategory.iconUrl} className="w-10 h-10 object-contain rounded-lg p-1 bg-white" alt="Preview" />
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">New Icon Selected</span>
               </div>
             )}
 
@@ -1691,39 +1503,39 @@ export default function AdminControlPanelPage() {
         </div>
       )}
 
-      {/* EDIT MODAL FOR SERVICES (With File Upload & Image Preview) */}
+      {/* EDIT MODAL FOR SERVICES */}
       {editingService && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveServiceEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+          <form onSubmit={handleSaveServiceEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button type="button" onClick={() => setEditingService(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Service</h3>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Service Title</label>
-              <input type="text" value={editingService.title} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Title</label>
+              <input type="text" value={editingService.title} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Original Price (₹)</label>
-                <input type="number" value={editingService.originalPrice} onChange={(e) => setEditingService({ ...editingService, originalPrice: e.target.value })} placeholder="Original Price" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Original Price (₹)</label>
+                <input type="number" value={editingService.originalPrice} onChange={(e) => setEditingService({ ...editingService, originalPrice: e.target.value })} placeholder="Original Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
               </div>
               <div>
-                <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Discount Price (₹)</label>
-                <input type="number" value={editingService.discountedPrice} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+                <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Discount Price (₹)</label>
+                <input type="number" value={editingService.discountedPrice} onChange={(e) => setEditingService({ ...editingService, discountedPrice: e.target.value })} placeholder="Discount Price" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Upload New Service Image File / URL</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingService({ ...editingService, imageUrl: res }))} className="p-2 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white w-full mb-2" />
-              <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Service Image File (&le;200KB) / URL</label>
+              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingService({ ...editingService, imageUrl: res }))} className="p-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white w-full mb-2" />
+              <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
 
             {editingService.imageUrl && (
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700">
-                <img src={editingService.imageUrl} className="w-16 h-12 object-cover rounded-lg" alt="Preview" />
-                <span className="text-xs text-emerald-400 font-bold">New Image Selected</span>
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700">
+                <img src={editingService.imageUrl} className="w-16 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">New Image Selected</span>
               </div>
             )}
 
@@ -1732,33 +1544,33 @@ export default function AdminControlPanelPage() {
         </div>
       )}
 
-      {/* EDIT MODAL FOR BANNERS (With File Upload & Image Preview) */}
+      {/* EDIT MODAL FOR BANNERS */}
       {editingBanner && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveBannerEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+          <form onSubmit={handleSaveBannerEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
             <button type="button" onClick={() => setEditingBanner(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Marketing Banner</h3>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Banner Title</label>
-              <input type="text" value={editingBanner.title} onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })} placeholder="Title" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Banner Title</label>
+              <input type="text" value={editingBanner.title} onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })} placeholder="Title" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Subtitle</label>
-              <input type="text" value={editingBanner.subtitle} onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Subtitle</label>
+              <input type="text" value={editingBanner.subtitle} onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })} placeholder="Subtitle" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
 
             <div>
-              <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Upload New Banner Image File / URL</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingBanner({ ...editingBanner, imageUrl: res }))} className="p-2 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white w-full mb-2" />
-              <input type="text" value={editingBanner.imageUrl} onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} placeholder="Or Banner Image URL" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Banner Image File (&le;200KB) / URL</label>
+              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingBanner({ ...editingBanner, imageUrl: res }))} className="p-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white w-full mb-2" />
+              <input type="text" value={editingBanner.imageUrl} onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} placeholder="Or Banner Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
             </div>
 
             {editingBanner.imageUrl && (
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700">
-                <img src={editingBanner.imageUrl} className="w-20 h-12 object-cover rounded-lg" alt="Preview" />
-                <span className="text-xs text-emerald-400 font-bold">New Banner Image Selected</span>
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700">
+                <img src={editingBanner.imageUrl} className="w-20 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">New Banner Image Selected</span>
               </div>
             )}
 
@@ -1770,12 +1582,12 @@ export default function AdminControlPanelPage() {
       {/* EDIT MODAL FOR TESTIMONIALS */}
       {editingTestimonial && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveTestimonialEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+          <form onSubmit={handleSaveTestimonialEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
             <button type="button" onClick={() => setEditingTestimonial(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit Customer Experience Review</h3>
-            <input type="text" value={editingTestimonial.name} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, name: e.target.value })} placeholder="Name" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <input type="text" value={editingTestimonial.location} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, location: e.target.value })} placeholder="Location" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <textarea value={editingTestimonial.text} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, text: e.target.value })} placeholder="Text" rows={3} className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white"></textarea>
+            <input type="text" value={editingTestimonial.name} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, name: e.target.value })} placeholder="Name" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+            <input type="text" value={editingTestimonial.location} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, location: e.target.value })} placeholder="Location" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+            <textarea value={editingTestimonial.text} onChange={(e) => setEditingTestimonial({ ...editingTestimonial, text: e.target.value })} placeholder="Text" rows={3} className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white"></textarea>
             <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Review Updates</button>
           </form>
         </div>
@@ -1784,11 +1596,11 @@ export default function AdminControlPanelPage() {
       {/* EDIT MODAL FOR FAQS */}
       {editingFaq && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveFaqEdit} className="bg-[#242424] border border-neutral-700 rounded-2xl p-6 w-full max-w-md text-white space-y-4 relative shadow-2xl">
+          <form onSubmit={handleSaveFaqEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl">
             <button type="button" onClick={() => setEditingFaq(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary">Edit FAQ</h3>
-            <input type="text" value={editingFaq.q} onChange={(e) => setEditingFaq({ ...editingFaq, q: e.target.value })} placeholder="Question" className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white" />
-            <textarea value={editingFaq.a} onChange={(e) => setEditingFaq({ ...editingFaq, a: e.target.value })} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-neutral-700 bg-neutral-800 text-xs text-white"></textarea>
+            <input type="text" value={editingFaq.q} onChange={(e) => setEditingFaq({ ...editingFaq, q: e.target.value })} placeholder="Question" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+            <textarea value={editingFaq.a} onChange={(e) => setEditingFaq({ ...editingFaq, a: e.target.value })} placeholder="Answer" rows={3} className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white"></textarea>
             <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save FAQ Updates</button>
           </form>
         </div>
@@ -1797,31 +1609,31 @@ export default function AdminControlPanelPage() {
       {/* ASSIGN PARTNER MODAL */}
       {assigningBooking && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#242424] border border-[#3A3A3A] rounded-3xl p-6 sm:p-8 w-full max-w-lg text-white shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-[#3A3A3A] rounded-3xl p-6 sm:p-8 w-full max-w-lg text-slate-900 dark:text-white shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
 
-            <button onClick={() => setAssigningBooking(null)} className="absolute top-5 right-5 text-slate-400 hover:text-white">
+            <button onClick={() => setAssigningBooking(null)} className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white">
               <X className="w-5 h-5" />
             </button>
 
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white leading-snug">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-snug">
                 Assign Partner for {assigningBooking.serviceTitle}
               </h2>
               <p className="text-xs font-bold text-redPrimary mt-1">
                 Service Category: {assigningBooking.serviceCategory || 'Services'}
               </p>
-              <p className="text-xs text-slate-400 mt-3 font-semibold">
-                Select a verified partner to dispatch for order ref: <span className="text-white font-bold">{assigningBooking.bookingRef || assigningBooking.id}</span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-semibold">
+                Select a verified partner to dispatch for order ref: <span className="text-slate-900 dark:text-white font-bold">{assigningBooking.bookingRef || assigningBooking.id}</span>
               </p>
             </div>
 
             {/* 3 Filter Tabs inside Modal */}
-            <div className="flex border-b border-neutral-700 text-xs font-extrabold">
+            <div className="flex border-b border-slate-200 dark:border-neutral-700 text-xs font-extrabold">
               <button
                 type="button"
                 onClick={() => setAssignFilterTab(0)}
                 className={`flex-1 py-2.5 text-center border-b-2 transition ${
-                  assignFilterTab === 0 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-400'
+                  assignFilterTab === 0 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-500 dark:text-slate-400'
                 }`}
               >
                 Skill Matched ({skillMatchedCount})
@@ -1831,7 +1643,7 @@ export default function AdminControlPanelPage() {
                 type="button"
                 onClick={() => setAssignFilterTab(1)}
                 className={`flex-1 py-2.5 text-center border-b-2 transition ${
-                  assignFilterTab === 1 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-400'
+                  assignFilterTab === 1 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-500 dark:text-slate-400'
                 }`}
               >
                 🟢 Free ({freePartnersCount})
@@ -1841,7 +1653,7 @@ export default function AdminControlPanelPage() {
                 type="button"
                 onClick={() => setAssignFilterTab(2)}
                 className={`flex-1 py-2.5 text-center border-b-2 transition ${
-                  assignFilterTab === 2 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-400'
+                  assignFilterTab === 2 ? 'border-b-redPrimary text-redPrimary' : 'border-b-transparent text-slate-500 dark:text-slate-400'
                 }`}
               >
                 👥 All Fleet ({allPartnersList.length})
@@ -1861,7 +1673,7 @@ export default function AdminControlPanelPage() {
                   const isFree = partner.isOnline === true || partner.isOnline === 'true';
 
                   return (
-                    <div key={partner.id} className="p-4 rounded-2xl bg-[#1A1A1A] border border-[#333333] flex justify-between items-center shadow-md">
+                    <div key={partner.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] flex justify-between items-center shadow-md">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                           <User className="w-5 h-5" />
@@ -1869,14 +1681,14 @@ export default function AdminControlPanelPage() {
 
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <strong className="text-sm font-black text-white">{partner.fullName}</strong>
+                            <strong className="text-sm font-black text-slate-900 dark:text-white">{partner.fullName}</strong>
                             {isSkillMatch && (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-400 border border-emerald-600/30">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-600/30">
                                 ★ Skill Match
                               </span>
                             )}
                             {isFree && !isSkillMatch && (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-400 border border-emerald-600/30">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-600/30">
                                 🟢 FREE
                               </span>
                             )}
@@ -1885,7 +1697,7 @@ export default function AdminControlPanelPage() {
                           <p className="text-xs text-redPrimary font-bold">
                             Skill: {partner.skillCategory || 'Craftsman Specialist'}
                           </p>
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             Phone: {partner.phoneNumber || '+91 9564111224'}
                           </p>
                         </div>

@@ -26,16 +26,16 @@ export default function HeroBanner({ banners }) {
 
   return (
     <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-neutral-800 shadow-2xl h-[320px] sm:h-[420px] md:h-[460px] flex items-center bg-black">
-      {/* High-Definition Background Image Slide with Dynamic Soft Gradient */}
+      {/* 4K Ultra-Sharp HD Background Image Slide */}
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
-          initial={{ opacity: 0, scale: 1.04 }}
+          initial={{ opacity: 0, scale: 1.03 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.6 }}
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.2) 100%), url('${slide.imageUrl}')` }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat filter-none"
+          style={{ backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.15) 100%), url('${slide.imageUrl}')` }}
         />
       </AnimatePresence>
 
@@ -56,7 +56,7 @@ export default function HeroBanner({ banners }) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white drop-shadow-lg uppercase"
+          className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white drop-shadow-md uppercase"
         >
           {slide.title}
         </motion.h1>
@@ -66,7 +66,7 @@ export default function HeroBanner({ banners }) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-xs sm:text-base text-slate-200 font-semibold leading-relaxed max-w-xl drop-shadow-sm"
+          className="text-xs sm:text-base text-slate-100 font-semibold leading-relaxed max-w-xl drop-shadow-sm"
         >
           {slide.subtitle}
         </motion.p>
@@ -81,7 +81,7 @@ export default function HeroBanner({ banners }) {
           <Link href="/services" className="btn-primary py-3 sm:py-3.5 px-6 text-xs sm:text-sm shadow-xl justify-center text-center">
             Book Doorstep Service <ArrowRight className="w-4 h-4 inline ml-1" />
           </Link>
-          <Link href="/categories" className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-md px-5 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-extrabold border border-white/25 transition text-center">
+          <Link href="/categories" className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-md px-5 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-extrabold border border-white/30 transition text-center">
             Explore Categories
           </Link>
         </motion.div>

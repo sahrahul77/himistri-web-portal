@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { DEFAULT_CATEGORIES, DEFAULT_SERVICES } from '../../lib/defaultData';
 import { ref, onValue, update, remove, set, push } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
@@ -39,7 +38,7 @@ export default function AdminControlPanelPage() {
   const [newCatIcon, setNewCatIcon] = useState('');
 
   const [newSrvTitle, setNewSrvTitle] = useState('');
-  const [newSrvCatId, setNewSrvCatId] = useState('cat_plumber');
+  const [newSrvCatId, setNewSrvCatId] = useState('');
   const [newSrvPrice, setNewSrvPrice] = useState('');
   const [newSrvDiscount, setNewSrvDiscount] = useState('');
   const [newSrvImage, setNewSrvImage] = useState('');
@@ -70,48 +69,70 @@ export default function AdminControlPanelPage() {
     }
   };
 
+  // Robust Snapshot Parser to retrieve ALL entries from Firebase Database
+  const parseFirebaseSnapshot = (snapshot) => {
+    const list = [];
+    if (snapshot && snapshot.exists()) {
+      const val = snapshot.val();
+      if (Array.isArray(val)) {
+        val.forEach((item, index) => {
+          if (item) list.push({ id: item.id || index.toString(), ...item });
+        });
+      } else if (typeof val === 'object' && val !== null) {
+        Object.keys(val).forEach((key) => {
+          if (val[key]) {
+            list.push({ id: key, ...val[key] });
+          }
+        });
+      }
+    }
+    return list;
+  };
+
   useEffect(() => {
+    // 1. Listen to Bookings
     const unsubBookings = onValue(ref(rtdb, 'bookings'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      // Sort Descending by CreatedAt (Latest order at top!)
+      const list = parseFirebaseSnapshot(snapshot);
       list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setBookings(list);
     });
 
+    // 2. Listen to All Users (5 Users)
     const unsubUsers = onValue(ref(rtdb, 'users'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      const list = parseFirebaseSnapshot(snapshot);
       setUsersList(list);
     });
 
+    // 3. Listen to All Categories (11 Categories)
     const unsubCategories = onValue(ref(rtdb, 'categories'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setCategoriesList(list.length > 0 ? list : DEFAULT_CATEGORIES);
+      const list = parseFirebaseSnapshot(snapshot);
+      setCategoriesList(list);
+      if (list.length > 0 && !newSrvCatId) {
+        setNewSrvCatId(list[0].id);
+      }
     });
 
+    // 4. Listen to All Services (34 Services)
     const unsubServices = onValue(ref(rtdb, 'services'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
-      setServicesList(list.length > 0 ? list : DEFAULT_SERVICES);
+      const list = parseFirebaseSnapshot(snapshot);
+      setServicesList(list);
     });
 
+    // 5. Listen to Banners
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      const list = parseFirebaseSnapshot(snapshot);
       setBannersList(list);
     });
 
+    // 6. Listen to Testimonials
     const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      const list = parseFirebaseSnapshot(snapshot);
       setTestimonialsList(list);
     });
 
+    // 7. Listen to FAQs
     const unsubFaqs = onValue(ref(rtdb, 'faqs'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) snapshot.forEach((child) => list.push({ id: child.key, ...child.val() }));
+      const list = parseFirebaseSnapshot(snapshot);
       setFaqsList(list);
     });
 
@@ -164,8 +185,7 @@ export default function AdminControlPanelPage() {
     if (!newSrvTitle) return alert('Service Title is required.');
     const newRef = push(ref(rtdb, 'services'));
     const srvId = newRef.key;
-    const activeCats = categoriesList.length > 0 ? categoriesList : DEFAULT_CATEGORIES;
-    const catObj = activeCats.find(c => c.id === newSrvCatId) || activeCats[0];
+    const catObj = categoriesList.find(c => c.id === newSrvCatId) || categoriesList[0] || { id: 'cat_gen', name: 'General' };
 
     set(newRef, {
       id: srvId,
@@ -231,16 +251,13 @@ export default function AdminControlPanelPage() {
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
 
-  // Retrieve ALL Registered Service Partners from Firebase Users safely
+  // Retrieve ALL Registered Service Partners from Firebase Users
   const allPartnersList = usersList.filter(u => {
     const roleUpper = (u.role || '').toUpperCase();
     return roleUpper === 'PARTNER' || roleUpper === 'SERVICE_PARTNER' || u.skillCategory;
   });
 
   const isAdmin = currentUser && currentUser.role === 'ADMIN';
-
-  const activeCategories = categoriesList.length > 0 ? categoriesList : DEFAULT_CATEGORIES;
-  const activeServices = servicesList.length > 0 ? servicesList : DEFAULT_SERVICES;
 
   const filteredOrders = bookings.filter(b => {
     const matchesQuery = !orderQuery || (b.bookingRef || '').toLowerCase().includes(orderQuery.toLowerCase()) || (b.serviceTitle || '').toLowerCase().includes(orderQuery.toLowerCase()) || (b.address || '').toLowerCase().includes(orderQuery.toLowerCase());
@@ -335,7 +352,7 @@ export default function AdminControlPanelPage() {
                 </div>
                 <div>
                   <span className="text-xs text-slate-500 font-bold">Total Users & Fleet</span>
-                  <p className="text-2xl font-black">{usersList.length || 6}</p>
+                  <p className="text-2xl font-black">{usersList.length}</p>
                 </div>
               </div>
             </div>
@@ -347,9 +364,9 @@ export default function AdminControlPanelPage() {
                 { id: 1, label: 'Analytics 📊' },
                 { id: 2, label: `Payment Details (₹${totalRevenue})` },
                 { id: 3, label: `Partner Fleet (${allPartnersList.length})` },
-                { id: 4, label: `Registered Users (${usersList.length || 6})` },
-                { id: 5, label: `Categories (${activeCategories.length})` },
-                { id: 6, label: `Services (${activeServices.length})` },
+                { id: 4, label: `Registered Users (${usersList.length})` },
+                { id: 5, label: `Categories (${categoriesList.length})` },
+                { id: 6, label: `Services (${servicesList.length})` },
                 { id: 7, label: `Banners (${bannersList.length})` },
                 { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
                 { id: 10, label: `FAQs (${faqsList.length})` },
@@ -411,8 +428,18 @@ export default function AdminControlPanelPage() {
                       <p className="text-xs text-slate-500">Address: {b.address || 'Gangtok'}</p>
 
                       <div className="flex flex-wrap gap-2 pt-2">
-                        <button onClick={() => handleUpdateStatus(b.id, 'CONFIRMED', 'Confirmed by Admin')} className="btn-primary text-xs py-2 px-4">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Confirm Order
+                        {/* Confirm Order Button - Disabled once clicked/confirmed! */}
+                        <button
+                          onClick={() => handleUpdateStatus(b.id, 'CONFIRMED', 'Confirmed by Admin')}
+                          disabled={b.status !== 'PENDING'}
+                          className={`text-xs py-2 px-4 rounded-xl font-bold transition shadow-sm ${
+                            b.status !== 'PENDING'
+                              ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                              : 'btn-primary bg-redPrimary hover:bg-redDark text-white cursor-pointer'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />
+                          {b.status === 'PENDING' ? 'Confirm Order' : '✓ Confirmed'}
                         </button>
 
                         {/* Assign Partner Button */}
@@ -497,7 +524,7 @@ export default function AdminControlPanelPage() {
                           <span className="text-xs text-slate-400">Skill: {p.skillCategory || 'Specialist'} | Phone: {p.phoneNumber || 'N/A'}</span>
                         </div>
                         <div className="flex gap-2 items-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                          <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
                             isOnline ? 'bg-emerald-600/20 text-emerald-500 border border-emerald-600/30' : 'bg-slate-700/50 text-slate-400 border border-slate-600/30'
                           }`}>
                             {isOnline ? '🟢 ONLINE' : '⚫ OFFLINE'}
@@ -511,17 +538,17 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 4: REGISTERED USERS */}
+            {/* TAB 4: REGISTERED USERS (All 5 Users) */}
             {activeTab === 4 && (
               <div className="web-card space-y-3">
-                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts</h3>
+                <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
                 <div className="space-y-2">
                   {usersList.map((u) => (
                     <div key={u.id} className="p-3 rounded-lg bg-black/20 border border-neutral-800 flex justify-between items-center text-xs">
-                      <div><strong>{u.fullName}</strong> ({u.email}) - {u.phoneNumber}</div>
+                      <div><strong>{u.fullName || 'User'}</strong> ({u.email || 'N/A'}) - {u.phoneNumber || 'N/A'}</div>
                       <div className="flex gap-2 items-center">
-                        <span className={`px-2 py-0.5 rounded font-bold ${u.role === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : u.role === 'PARTNER' ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
-                          {u.role}
+                        <span className={`px-2 py-0.5 rounded font-bold ${ (u.role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary' : (u.role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
+                          {u.role || 'CUSTOMER'}
                         </span>
                         <button onClick={() => handleDeleteItem(`users/${u.id}`)} className="bg-rose-800 text-white text-[10px] px-2 py-0.5 rounded font-bold">Delete</button>
                       </div>
@@ -531,7 +558,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 5: CATEGORIES MANAGER */}
+            {/* TAB 5: CATEGORIES MANAGER (All 11 Categories) */}
             {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4">
@@ -544,9 +571,9 @@ export default function AdminControlPanelPage() {
                 </form>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {activeCategories.map((c) => (
+                  {categoriesList.map((c) => (
                     <div key={c.id} className="web-card text-center p-4 relative group">
-                      <img src={c.iconUrl} alt={c.name} className="w-10 h-10 object-contain mx-auto mb-2" />
+                      <img src={c.iconUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={c.name} className="w-10 h-10 object-contain mx-auto mb-2" />
                       <strong className="text-xs block mb-2">{c.name}</strong>
                       <button onClick={() => handleDeleteItem(`categories/${c.id}`)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-[10px] px-2 py-1 rounded font-bold">Delete</button>
                     </div>
@@ -555,7 +582,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 6: SERVICES MANAGER */}
+            {/* TAB 6: SERVICES MANAGER (All 34 Services) */}
             {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4">
@@ -563,7 +590,7 @@ export default function AdminControlPanelPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" value={newSrvTitle} onChange={(e) => setNewSrvTitle(e.target.value)} placeholder="Service Title (e.g. Pipe Leak Repair)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <select value={newSrvCatId} onChange={(e) => setNewSrvCatId(e.target.value)} className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm font-bold">
-                      {activeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                     <input type="number" value={newSrvPrice} onChange={(e) => setNewSrvPrice(e.target.value)} placeholder="Original Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
                     <input type="number" value={newSrvDiscount} onChange={(e) => setNewSrvDiscount(e.target.value)} placeholder="Discount Price (₹)" className="p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm" />
@@ -573,13 +600,13 @@ export default function AdminControlPanelPage() {
                 </form>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {activeServices.map((s) => (
+                  {servicesList.map((s) => (
                     <div key={s.id} className="web-card flex flex-col justify-between">
                       <div>
-                        <img src={s.imageUrl} alt={s.title} className="w-full h-32 object-cover rounded-lg mb-2" />
-                        <span className="text-[10px] font-bold text-redPrimary uppercase">{s.categoryName}</span>
+                        <img src={s.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt={s.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                        <span className="text-[10px] font-bold text-redPrimary uppercase">{s.categoryName || 'General'}</span>
                         <h4 className="font-bold text-sm mt-0.5">{s.title}</h4>
-                        <p className="text-sm font-black text-redPrimary mt-1">₹{s.discountedPrice}</p>
+                        <p className="text-sm font-black text-redPrimary mt-1">₹{s.discountedPrice || s.originalPrice}</p>
                       </div>
                       <button onClick={() => handleDeleteItem(`services/${s.id}`)} className="bg-rose-800/80 hover:bg-rose-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold mt-3 w-full">Delete Service</button>
                     </div>

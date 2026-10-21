@@ -29,6 +29,13 @@ export function AdminModals({
   // Fallback to DEFAULT_CATEGORIES if categoriesList is empty or loading
   const activeCategoriesList = (categoriesList && categoriesList.length > 0) ? categoriesList : DEFAULT_CATEGORIES;
 
+  // Pre-calculate matched category ID for editing service
+  const matchedCategoryId = editingService ? (
+    editingService.categoryId ||
+    (activeCategoriesList.find(c => (c.name || '').toLowerCase() === (editingService.categoryName || '').toLowerCase())?.id) ||
+    ''
+  ) : '';
+
   return (
     <>
       <PopupModal
@@ -229,7 +236,7 @@ export function AdminModals({
             <div>
               <label className="text-[11px] font-extrabold text-redPrimary block mb-1">Category Connection *</label>
               <select
-                value={editingService.categoryId || ''}
+                value={matchedCategoryId}
                 onChange={(e) => {
                   const selectedCat = activeCategoriesList.find(c => c.id === e.target.value || c.name === e.target.value);
                   setEditingService({

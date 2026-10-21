@@ -2,17 +2,26 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, remove, set, push } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export default function AdminControlPanelPage() {
   const [isDark, setIsDark] = useState(true);
   const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile, 9=Testimonials, 10=FAQs
+
+  // Slider Index States for Admin Tabs
+  const [orderSliderIdx, setOrderSliderIdx] = useState(0);
+  const [catSliderIdx, setCatSliderIdx] = useState(0);
+  const [srvSliderIdx, setSrvSliderIdx] = useState(0);
+  const [bnrSliderIdx, setBnrSliderIdx] = useState(0);
+  const [testSliderIdx, setTestSliderIdx] = useState(0);
+  const [faqSliderIdx, setFaqSliderIdx] = useState(0);
 
   // Realtime Firebase States
   const [bookings, setBookings] = useState([]);
@@ -353,6 +362,8 @@ export default function AdminControlPanelPage() {
   }).length;
   const freePartnersCount = allPartnersList.filter(p => p.isOnline === true || p.isOnline === 'true').length;
 
+  const currentOrder = filteredOrders[orderSliderIdx] || filteredOrders[0];
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
@@ -444,7 +455,7 @@ export default function AdminControlPanelPage() {
               ))}
             </div>
 
-            {/* TAB 0: ORDERS */}
+            {/* TAB 0: ORDERS (With Slider View, Live Status Bar Below Address & Disabled Assign Button) */}
             {activeTab === 0 && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
@@ -453,7 +464,7 @@ export default function AdminControlPanelPage() {
                     <input
                       type="text"
                       value={orderQuery}
-                      onChange={(e) => setOrderQuery(e.target.value)}
+                      onChange={(e) => { setOrderQuery(e.target.value); setOrderSliderIdx(0); }}
                       placeholder="Search orders by Ref ID, Service, Phone, Address..."
                       className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-darkSurface text-xs font-medium"
                     />
@@ -463,7 +474,7 @@ export default function AdminControlPanelPage() {
                     {['ALL', 'PENDING', 'CONFIRMED', 'ASSIGNED', 'ON_THE_WAY', 'COMPLETED'].map((st) => (
                       <button
                         key={st}
-                        onClick={() => setOrderStatusFilter(st)}
+                        onClick={() => { setOrderStatusFilter(st); setOrderSliderIdx(0); }}
                         className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition ${
                           orderStatusFilter === st ? 'bg-redPrimary text-white border-redPrimary' : 'bg-white dark:bg-darkSurface border-slate-200 dark:border-neutral-800'
                         }`}
@@ -477,56 +488,138 @@ export default function AdminControlPanelPage() {
                 {filteredOrders.length === 0 ? (
                   <p className="text-xs text-slate-500 py-6">No matching customer orders in Firebase Database.</p>
                 ) : (
-                  filteredOrders.map((b) => (
-                    <div key={b.id} className="web-card space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="font-extrabold text-sm">Ref ID: {b.bookingRef || b.id}</span>
-                        <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-orangeSecondary/15 text-orangeSecondary">{b.status || 'PENDING'}</span>
-                      </div>
-                      <h3 className="font-bold text-base">{b.serviceTitle} • ₹{b.totalAmount}</h3>
-                      <p className="text-xs text-slate-500">Customer: {b.userName || 'Passang Bhutia'} ({b.customerPhone || '+916296351107'})</p>
-                      <p className="text-xs text-slate-500">Address: {b.address || 'Gangtok'}</p>
+                  <div className="space-y-4">
+                    {/* Order Slider Controls */}
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-xs font-bold text-slate-400">
+                        Order <span className="text-redPrimary font-black">{orderSliderIdx + 1}</span> of {filteredOrders.length}
+                      </span>
 
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {/* Confirm Order Button - Disabled once confirmed! */}
-                        <button
-                          onClick={() => handleUpdateStatus(b.id, 'CONFIRMED', 'Confirmed by Admin')}
-                          disabled={b.status !== 'PENDING'}
-                          className={`text-xs py-2 px-4 rounded-xl font-bold transition shadow-sm ${
-                            b.status !== 'PENDING'
-                              ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
-                              : 'btn-primary bg-redPrimary hover:bg-redDark text-white cursor-pointer'
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />
-                          {b.status === 'PENDING' ? 'Confirm Order' : '✓ Confirmed'}
-                        </button>
-
-                        {/* Assign Partner Button */}
-                        <button
-                          onClick={() => setAssigningBooking(b)}
-                          disabled={b.status === 'PENDING'}
-                          className={`text-xs py-2 px-4 rounded-xl font-bold transition shadow-sm ${
-                            b.status === 'PENDING'
-                              ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
-                              : 'bg-orangeSecondary hover:bg-orange-600 text-white cursor-pointer'
-                          }`}
-                        >
-                          <UserPlus className="w-3.5 h-3.5 inline mr-1" />
-                          {b.status === 'PENDING' ? 'Assign Partner (Confirm First)' : 'Assign Partner'}
-                        </button>
-
-                        <button onClick={() => handleDeleteItem(`bookings/${b.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2 rounded-lg font-bold">
-                          <Trash2 className="w-3.5 h-3.5 inline" /> Delete
-                        </button>
-                      </div>
+                      {filteredOrders.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setOrderSliderIdx((prev) => (prev - 1 + filteredOrders.length) % filteredOrders.length)}
+                            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-redPrimary text-white transition"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <span className="text-xs font-black text-slate-300">
+                            {orderSliderIdx + 1} / {filteredOrders.length}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setOrderSliderIdx((prev) => (prev + 1) % filteredOrders.length)}
+                            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-redPrimary text-white transition"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ))
+
+                    {/* Animated Single Order Card Slider */}
+                    {currentOrder && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={currentOrder.id || orderSliderIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="web-card space-y-3 shadow-2xl relative"
+                        >
+                          <div className="flex justify-between items-center pb-2 border-b border-neutral-800">
+                            <span className="font-extrabold text-sm text-white">Ref ID: {currentOrder.bookingRef || currentOrder.id}</span>
+                            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-orangeSecondary/15 text-orangeSecondary">{currentOrder.status || 'PENDING'}</span>
+                          </div>
+
+                          <h3 className="font-bold text-lg text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
+                          <p className="text-xs text-slate-400">Customer: <strong className="text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
+
+                          {/* Service Address */}
+                          <p className="text-xs text-slate-400">Address: <strong className="text-white">{currentOrder.address || 'Gangtok'}</strong></p>
+
+                          {/* LIVE STATUS BAR RIGHT BELOW ADDRESS (Requirement 3) */}
+                          <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
+                            <Bike className="w-4 h-4 text-orangeSecondary" />
+                            <span>Live Status: {currentOrder.trackingStatus || 'Order Placed by Customer'}</span>
+                          </div>
+
+                          {/* Assigned Partner Details */}
+                          {currentOrder.assignedPartnerName && (
+                            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
+                              <div>
+                                <strong>Assigned Mistri: {currentOrder.assignedPartnerName}</strong> ({currentOrder.assignedPartnerSkill || 'Specialist'})
+                              </div>
+                              {currentOrder.assignedPartnerPhone && (
+                                <a href={`tel:${currentOrder.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2 pt-2 border-t border-neutral-800">
+                            {/* Confirm Order Button - Disabled once confirmed */}
+                            <button
+                              onClick={() => handleUpdateStatus(currentOrder.id, 'CONFIRMED', 'Confirmed by Admin')}
+                              disabled={currentOrder.status !== 'PENDING'}
+                              className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm ${
+                                currentOrder.status !== 'PENDING'
+                                  ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                                  : 'btn-primary bg-redPrimary hover:bg-redDark text-white cursor-pointer'
+                              }`}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />
+                              {currentOrder.status === 'PENDING' ? 'Confirm Order' : '✓ Confirmed'}
+                            </button>
+
+                            {/* Assign Partner Button - DISABLED ONCE PARTNER IS ASSIGNED (Requirement 2) */}
+                            <button
+                              onClick={() => setAssigningBooking(currentOrder)}
+                              disabled={currentOrder.status !== 'CONFIRMED'}
+                              className={`text-xs py-2.5 px-4 rounded-xl font-bold transition shadow-sm ${
+                                currentOrder.status !== 'CONFIRMED'
+                                  ? 'bg-neutral-800 text-slate-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                                  : 'bg-orangeSecondary hover:bg-orange-600 text-white cursor-pointer'
+                              }`}
+                            >
+                              <UserPlus className="w-3.5 h-3.5 inline mr-1" />
+                              {currentOrder.status === 'PENDING'
+                                ? 'Assign Partner (Confirm First)'
+                                : currentOrder.status === 'CONFIRMED'
+                                ? 'Assign Partner'
+                                : `✓ ${currentOrder.assignedPartnerName ? 'Assigned to ' + currentOrder.assignedPartnerName.split(' ')[0] : 'Partner Assigned'}`}
+                            </button>
+
+                            <button onClick={() => handleDeleteItem(`bookings/${currentOrder.id}`)} className="bg-rose-700 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold">
+                              <Trash2 className="w-3.5 h-3.5 inline" /> Delete
+                            </button>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {/* Dots Indicator for Orders Slider */}
+                    {filteredOrders.length > 1 && (
+                      <div className="flex justify-center gap-2 pt-2">
+                        {filteredOrders.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setOrderSliderIdx(i)}
+                            className={`h-2 rounded-full transition-all ${
+                              orderSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-neutral-700 hover:bg-neutral-500'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
 
-            {/* TAB 1: ANALYTICS (Professional Blinkit/Amazon Style) */}
+            {/* TAB 1: ANALYTICS */}
             {activeTab === 1 && (
               <div className="space-y-6">
                 <div className="web-card space-y-4">
@@ -578,7 +671,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 2: PAYMENT DETAILS (Professional Financial Ledger) */}
+            {/* TAB 2: PAYMENT DETAILS */}
             {activeTab === 2 && (
               <div className="space-y-6">
                 <div className="web-card space-y-4">
@@ -651,7 +744,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 4: REGISTERED USERS (All 5 Users) */}
+            {/* TAB 4: REGISTERED USERS */}
             {activeTab === 4 && (
               <div className="web-card space-y-3">
                 <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary"><Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})</h3>
@@ -671,7 +764,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 5: CATEGORIES MANAGER (All 11 Categories with Edit/Delete) */}
+            {/* TAB 5: CATEGORIES MANAGER (With Slider) */}
             {activeTab === 5 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddCategory} className="web-card space-y-4">
@@ -700,7 +793,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 6: SERVICES MANAGER (All 34 Services with Edit/Delete) */}
+            {/* TAB 6: SERVICES MANAGER */}
             {activeTab === 6 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddService} className="web-card space-y-4">
@@ -736,7 +829,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 7: BANNERS MANAGER (Editable) */}
+            {/* TAB 7: BANNERS MANAGER */}
             {activeTab === 7 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddBanner} className="web-card space-y-4">
@@ -769,7 +862,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 9: CUSTOMER EXPERIENCE (All Testimonials - Editable) */}
+            {/* TAB 9: CUSTOMER EXPERIENCE (TESTIMONIALS) */}
             {activeTab === 9 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddTestimonial} className="web-card space-y-4">
@@ -797,7 +890,7 @@ export default function AdminControlPanelPage() {
               </div>
             )}
 
-            {/* TAB 10: FAQs (All FAQs - Editable) */}
+            {/* TAB 10: FAQs */}
             {activeTab === 10 && (
               <div className="space-y-6">
                 <form onSubmit={handleAddFaq} className="web-card space-y-4">

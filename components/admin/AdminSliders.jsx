@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Plus, Users, UserPlus, Upload } from 'lucide-react';
-import { MaskedPassword } from './MaskedPassword';
 
 export function AdminSliders({
   activeTab,
@@ -104,9 +103,6 @@ export function AdminSliders({
                     <div>
                       <strong className="text-base block text-slate-900 dark:text-white font-extrabold">{currentUserObj.fullName || 'User'}</strong>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{currentUserObj.email || 'N/A'} • {currentUserObj.phoneNumber || 'N/A'}</p>
-
-                      {/* Masked Hashed Password Component */}
-                      <MaskedPassword password={currentUserObj.password} />
                     </div>
 
                     <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">

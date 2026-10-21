@@ -273,35 +273,49 @@ export default function TrackingPage() {
 
                     {/* Action Buttons Row */}
                     <div className="space-y-2 pt-1">
-                      <div className="grid grid-cols-2 gap-3">
 
-                        {/* If COMPLETED -> Show RATE NOW button instead of Track Live Order! */}
-                        {b.status === 'COMPLETED' ? (
-                          <button
-                            onClick={() => setRatingBooking(b)}
-                            className="py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
+                      {/* If CANCELLED or REJECTED: Show ONLY full-width Support button! */}
+                      {b.status === 'CANCELLED' || b.status === 'REJECTED' ? (
+                        <div className="w-full">
+                          <a
+                            href="https://wa.me/917430887960"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition shadow-sm"
                           >
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            {b.userRating ? `Rated: ${b.userRating}.0 ★` : 'Rate Now'}
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => setDetailedOrder(b)}
-                            className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
-                          >
-                            <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
-                          </button>
-                        )}
+                            <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* If COMPLETED -> Show RATE NOW button instead of Track Live Order! */}
+                          {b.status === 'COMPLETED' ? (
+                            <button
+                              onClick={() => setRatingBooking(b)}
+                              className="py-2.5 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                              {b.userRating ? `Rated: ${b.userRating}.0 ★` : 'Rate Now'}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setDetailedOrder(b)}
+                              className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 transition"
+                            >
+                              <Navigation className="w-3.5 h-3.5 text-redPrimary" /> Track Live Order
+                            </button>
+                          )}
 
-                        <a
-                          href="https://wa.me/917430887960"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
-                        </a>
-                      </div>
+                          <a
+                            href="https://wa.me/917430887960"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="py-2.5 px-4 rounded-xl border border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-bold text-redPrimary flex items-center justify-center gap-2 text-center transition"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                          </a>
+                        </div>
+                      )}
 
                       {/* 1-Minute Dynamic Cancel Button Logic for PENDING Orders */}
                       {b.status === 'PENDING' && (

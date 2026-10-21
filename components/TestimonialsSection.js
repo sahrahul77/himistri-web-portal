@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
-import { Star, Quote, ChevronDown, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Quote, ChevronDown, HelpCircle, ChevronLeft, ChevronRight, MessageSquareQuote } from 'lucide-react';
 
 export default function TestimonialsSection() {
   const [openFaq, setOpenFaq] = useState(null);
@@ -52,14 +52,16 @@ export default function TestimonialsSection() {
 
   return (
     <div className="space-y-16 my-16">
-      {/* Testimonials Section */}
+      {/* Testimonials / Customer & Service Feedback Section */}
       {testimonials.length > 0 && (
         <div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
             <div>
-              <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Customer Experience ({testimonials.length})</span>
-              <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-900 dark:text-white">Loved by 10,000+ Sikkim Residents</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Real ratings and feedback from customers in Gangtok, Deorali & Singtam</p>
+              <span className="text-xs font-black uppercase text-redPrimary tracking-wider flex items-center gap-1.5">
+                <MessageSquareQuote className="w-4 h-4 text-redPrimary" /> Customer Feedback & Service Reviews ({testimonials.length})
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-900 dark:text-white">Customer Feedback & Service Reviews</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Real ratings and service feedback submitted by customers in Gangtok, Deorali & Singtam</p>
             </div>
 
             {/* Next / Prev Slider Buttons (Visible when 4 or more testimonials exist) */}
@@ -69,7 +71,7 @@ export default function TestimonialsSection() {
                   type="button"
                   onClick={() => setTestSliderIdx((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
                   className="p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 hover:border-redPrimary text-slate-800 dark:text-white transition shadow-sm"
-                  title="Previous Review"
+                  title="Previous Feedback"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -82,7 +84,7 @@ export default function TestimonialsSection() {
                   type="button"
                   onClick={() => setTestSliderIdx((prev) => (prev + 1) % testimonials.length)}
                   className="p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 hover:border-redPrimary text-slate-800 dark:text-white transition shadow-sm"
-                  title="Next Review"
+                  title="Next Feedback"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -113,7 +115,9 @@ export default function TestimonialsSection() {
                           <Star key={i} className="w-4 h-4 fill-amber-400" />
                         ))}
                       </div>
-                      <Quote className="w-6 h-6 text-redPrimary/20" />
+                      <span className="text-[10px] font-extrabold uppercase bg-redPrimary/10 text-redPrimary px-2.5 py-1 rounded-md">
+                        Customer Feedback
+                      </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">"{t.text}"</p>
                   </div>
@@ -123,7 +127,9 @@ export default function TestimonialsSection() {
                       <strong className="block font-bold text-slate-900 dark:text-white">{t.name}</strong>
                       <span className="text-[11px] text-slate-500">{t.location}</span>
                     </div>
-                    <span className="px-3 py-1.5 rounded-full bg-redPrimary/10 text-redPrimary font-bold text-[10px] tracking-wide">{t.service || 'Verified Customer'}</span>
+                    <span className="px-3 py-1.5 rounded-full bg-emerald-600/10 text-emerald-600 font-extrabold text-[10px] tracking-wide">
+                      Service: {t.service || 'Verified Service'}
+                    </span>
                   </div>
                 </motion.div>
               ))}
@@ -150,7 +156,7 @@ export default function TestimonialsSection() {
 
       {/* FAQ Accordion Section */}
       {faqs.length > 0 && (
-        <div className="web-card max-w-3xl mx-auto shadow-2xl">
+        <div className="web-card max-w-3xl mx-auto shadow-2xl bg-white dark:bg-neutral-900">
           <div className="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-neutral-800 pb-4">
             <HelpCircle className="w-7 h-7 text-redPrimary" />
             <div>

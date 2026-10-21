@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, UserPlus, Trash2, Save, Upload, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, UserPlus, Trash2, Save, Upload, User, Eye, EyeOff } from 'lucide-react';
 import PopupModal from '../PopupModal';
 
 export function AdminModals({
@@ -22,6 +22,9 @@ export function AdminModals({
   skillMatchedCount, freePartnersCount, allPartnersList = [],
   handleImageFileUpload
 }) {
+  const [showCreatePwd, setShowCreatePwd] = useState(false);
+  const [showEditPwd, setShowEditPwd] = useState(false);
+
   return (
     <>
       <PopupModal
@@ -60,7 +63,24 @@ export function AdminModals({
 
               <div>
                 <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Sub-Admin Password *</label>
-                <input type="text" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Enter Sub-Admin Password" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold outline-none focus:border-redPrimary" />
+                <div className="relative">
+                  <input
+                    type={showCreatePwd ? "text" : "password"}
+                    value={newAdminPassword}
+                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                    placeholder="Enter Sub-Admin Password"
+                    required
+                    className="w-full p-3 pr-10 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold outline-none focus:border-redPrimary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCreatePwd(!showCreatePwd)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-200"
+                    title={showCreatePwd ? "Hide Password" : "Show Password"}
+                  >
+                    {showCreatePwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -71,7 +91,7 @@ export function AdminModals({
         </div>
       )}
 
-      {/* DELETE CONFIRMATION MODAL */}
+      {/* CUSTOM DELETE CONFIRMATION MODAL */}
       {deletingPath && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-3xl p-6 sm:p-8 w-full max-w-sm text-slate-900 dark:text-white shadow-2xl text-center space-y-5 relative">
@@ -124,7 +144,23 @@ export function AdminModals({
             </div>
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Password</label>
-              <input type="text" value={editingAdminUser.password || ''} onChange={(e) => setEditingAdminUser({ ...editingAdminUser, password: e.target.value })} placeholder="Sub-Admin Password" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold" />
+              <div className="relative">
+                <input
+                  type={showEditPwd ? "text" : "password"}
+                  value={editingAdminUser.password || ''}
+                  onChange={(e) => setEditingAdminUser({ ...editingAdminUser, password: e.target.value })}
+                  placeholder="Sub-Admin Password"
+                  className="w-full p-3 pr-10 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEditPwd(!showEditPwd)}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-200"
+                  title={showEditPwd ? "Hide Password" : "Show Password"}
+                >
+                  {showEditPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <button type="submit" className="btn-primary w-full py-3"><Save className="w-4 h-4 mr-1 inline" /> Save Sub-Admin Updates</button>
           </form>

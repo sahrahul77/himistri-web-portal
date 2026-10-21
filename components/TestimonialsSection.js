@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
-import { Star, Quote, ChevronDown, HelpCircle } from 'lucide-react';
+import { Star, Quote, ChevronDown, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TestimonialsSection() {
   const [openFaq, setOpenFaq] = useState(null);
   const [testimonials, setTestimonials] = useState([]);
   const [faqs, setFaqs] = useState([]);
+  const [testSliderIdx, setTestSliderIdx] = useState(0);
 
-  // Robust Snapshot Parser to parse ALL items from Firebase Database
+  // Robust Snapshot Parser
   const parseFirebaseSnapshot = (snapshot) => {
     const list = [];
     if (snapshot && snapshot.exists()) {
@@ -43,50 +44,111 @@ export default function TestimonialsSection() {
     return () => { unsubTestimonials(); unsubFaqs(); };
   }, []);
 
+  // Compute 3 visible testimonials for slider when count >= 4
+  const isSliderMode = testimonials.length >= 4;
+  const visibleTestimonials = isSliderMode
+    ? [0, 1, 2].map(i => testimonials[(testSliderIdx + i) % testimonials.length]).filter(Boolean)
+    : testimonials;
+
   return (
     <div className="space-y-16 my-16">
-      {/* Testimonials Section - Render ALL items stored in Firebase Database */}
+      {/* Testimonials Section */}
       {testimonials.length > 0 && (
         <div>
-          <div className="text-center max-w-xl mx-auto mb-10">
-            <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Customer Experience ({testimonials.length})</span>
-            <h2 className="text-2xl sm:text-3xl font-black mt-1">Loved by 10,000+ Sikkim Residents</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Real ratings and feedback from customers in Gangtok, Deorali & Singtam</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+            <div>
+              <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Customer Experience ({testimonials.length})</span>
+              <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-900 dark:text-white">Loved by 10,000+ Sikkim Residents</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Real ratings and feedback from customers in Gangtok, Deorali & Singtam</p>
+            </div>
+
+            {/* Next / Prev Slider Buttons (Visible when 4 or more testimonials exist) */}
+            {isSliderMode && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setTestSliderIdx((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
+                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 hover:border-redPrimary text-slate-800 dark:text-white transition shadow-sm"
+                  title="Previous Review"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <span className="text-xs font-black text-slate-500 dark:text-slate-400 px-1">
+                  {testSliderIdx + 1} / {testimonials.length}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setTestSliderIdx((prev) => (prev + 1) % testimonials.length)}
+                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 hover:border-redPrimary text-slate-800 dark:text-white transition shadow-sm"
+                  title="Next Review"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <motion.div
-                key={t.id}
-                whileHover={{ y: -6 }}
-                className="web-card flex flex-col justify-between shadow-xl border-t-4 border-t-redPrimary"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex text-amber-400">
-                      {[...Array(parseInt(t.rating) || 5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400" />
-                      ))}
-                    </div>
-                    <Quote className="w-6 h-6 text-redPrimary/20" />
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">"{t.text}"</p>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-neutral-800 flex justify-between items-center text-xs">
+          {/* Cards Grid with Framer Motion Slide Transitions */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={testSliderIdx}
+              initial={{ opacity: 0, x: isSliderMode ? 20 : 0 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: isSliderMode ? -20 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            >
+              {visibleTestimonials.map((t) => (
+                <motion.div
+                  key={t.id}
+                  whileHover={{ y: -6 }}
+                  className="web-card flex flex-col justify-between shadow-xl border-t-4 border-t-redPrimary bg-white dark:bg-neutral-900"
+                >
                   <div>
-                    <strong className="block font-bold text-slate-900 dark:text-white">{t.name}</strong>
-                    <span className="text-[11px] text-slate-500">{t.location}</span>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex text-amber-400">
+                        {[...Array(parseInt(t.rating) || 5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-amber-400" />
+                        ))}
+                      </div>
+                      <Quote className="w-6 h-6 text-redPrimary/20" />
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">"{t.text}"</p>
                   </div>
-                  <span className="px-3 py-1.5 rounded-full bg-redPrimary/10 text-redPrimary font-bold text-[10px] tracking-wide">{t.service || 'Verified Customer'}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+
+                  <div className="pt-4 border-t border-slate-100 dark:border-neutral-800 flex justify-between items-center text-xs">
+                    <div>
+                      <strong className="block font-bold text-slate-900 dark:text-white">{t.name}</strong>
+                      <span className="text-[11px] text-slate-500">{t.location}</span>
+                    </div>
+                    <span className="px-3 py-1.5 rounded-full bg-redPrimary/10 text-redPrimary font-bold text-[10px] tracking-wide">{t.service || 'Verified Customer'}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Dot Indicators when in Slider Mode */}
+          {isSliderMode && (
+            <div className="flex justify-center gap-2 pt-6">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setTestSliderIdx(i)}
+                  className={`h-2 rounded-full transition-all ${
+                    testSliderIdx === i ? 'w-8 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700 hover:bg-redPrimary/50'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* FAQ Accordion Section - Render ALL FAQs stored in Firebase Database */}
+      {/* FAQ Accordion Section */}
       {faqs.length > 0 && (
         <div className="web-card max-w-3xl mx-auto shadow-2xl">
           <div className="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-neutral-800 pb-4">

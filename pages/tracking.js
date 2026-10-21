@@ -11,6 +11,7 @@ export default function TrackingPage() {
   const [isDark, setIsDark] = useState(true);
   const [activeTab, setActiveTab] = useState(0); // 0=Active, 1=Completed/History, 2=Cancelled
   const [bookings, setBookings] = useState([]);
+  const [nowTime, setNowTime] = useState(Date.now());
 
   // Selected Order for Live Detailed Tracking Modal
   const [detailedOrder, setDetailedOrder] = useState(null);
@@ -27,6 +28,14 @@ export default function TrackingPage() {
       document.documentElement.setAttribute('data-theme', 'light');
     }
   };
+
+  // Live timer tick every 5 seconds to update 1-minute cancellation window
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTime(Date.now());
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const bookingsRef = ref(rtdb, 'bookings');
@@ -50,6 +59,15 @@ export default function TrackingPage() {
         trackingStatus: 'Order Cancelled by Customer'
       }).then(() => alert('Booking cancelled successfully.'));
     }
+  };
+
+  // Helper: Check if order was created within last 60 seconds (1 minute)
+  const isWithinOneMinute = (createdAtStr) => {
+    if (!createdAtStr) return true;
+    const createdTime = new Date(createdAtStr).getTime();
+    if (isNaN(createdTime)) return true;
+    const diffInSeconds = (nowTime - createdTime) / 1000;
+    return diffInSeconds <= 60;
   };
 
   // Filter bookings for the logged-in customer
@@ -108,7 +126,7 @@ export default function TrackingPage() {
               </span>
             </div>
 
-            {/* 3 Navigation Tabs (Exact Replica of Screenshot) */}
+            {/* 3 Navigation Tabs */}
             <div className="flex border-b border-neutral-800">
               <button
                 onClick={() => setActiveTab(0)}
@@ -194,7 +212,19 @@ export default function TrackingPage() {
                       <span>Live Status: {b.trackingStatus || 'Order Placed by Customer'}</span>
                     </div>
 
-                    {/* Action Buttons Row matching Screenshot 1 */}
+                    {/* Partner Assignment Details if assigned */}
+                    {b.assignedPartnerName && (
+                      <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs flex justify-between items-center text-blue-400">
+                        <div>
+                          <strong>Assigned Mistri: {b.assignedPartnerName}</strong> ({b.assignedPartnerSkill || 'Specialist'})
+                        </div>
+                        {b.assignedPartnerPhone && (
+                          <a href={`tel:${b.assignedPartnerPhone}`} className="text-emerald-500 font-bold underline">Call Mistri</a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Buttons Row */}
                     <div className="space-y-2 pt-1">
                       <div className="grid grid-cols-2 gap-3">
                         <button
@@ -214,14 +244,25 @@ export default function TrackingPage() {
                         </a>
                       </div>
 
-                      {/* Full-width Cancel Order Button below two buttons matching Screenshot 1 */}
+                      {/* 1-Minute Dynamic Cancel Button Logic */}
                       {b.status === 'PENDING' && (
-                        <button
-                          onClick={() => handleCancelBooking(b.id)}
-                          className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
-                        >
-                          Cancel Order (Free within 1 min)
-                        </button>
+                        <div>
+                          {isWithinOneMinute(b.createdAt) ? (
+                            <button
+                              onClick={() => handleCancelBooking(b.id)}
+                              className="w-full py-3 rounded-xl border border-rose-800/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-500 text-xs font-bold transition shadow-sm"
+                            >
+                              Cancel Order (Free within 1 min)
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="w-full py-3 rounded-xl border border-neutral-800 bg-neutral-900/50 text-slate-500 text-xs font-bold cursor-not-allowed opacity-60 text-center"
+                            >
+                              Can't cancel now. Contact Customer Support.
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -232,7 +273,7 @@ export default function TrackingPage() {
         )}
       </main>
 
-      {/* Screenshot 2: Live Order Tracking Detail Modal */}
+      {/* Live Order Tracking Detail Modal */}
       {detailedOrder && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl w-full max-w-lg text-white shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
@@ -270,7 +311,7 @@ export default function TrackingPage() {
                 <p className="text-xs font-bold text-emerald-400 pl-6">{detailedOrder.trackingStatus || 'Order Placed by Customer'}</p>
               </div>
 
-              {/* Order Status Timeline (6 Stages matching Screenshot 2) */}
+              {/* Order Status Timeline (6 Stages) */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-sm font-extrabold text-white">Order Status Timeline</h4>
 

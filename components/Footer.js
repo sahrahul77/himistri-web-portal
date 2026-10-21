@@ -1,10 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Phone, Mail, MapPin, ShieldCheck, Send, CheckCircle2, Heart, ExternalLink, ChevronRight } from 'lucide-react';
+import { Phone, Mail, MapPin, ShieldCheck, Send, CheckCircle2, Heart, ExternalLink, ChevronRight, ChevronUp } from 'lucide-react';
 
 export default function Footer() {
   const [emailInput, setEmailInput] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [showTopBtn, setShowTopBtn] = useState(false);
+
+  // Monitor Scroll Position for Bottom-to-Top Button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowTopBtn(true);
+      } else {
+        setShowTopBtn(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -121,6 +139,18 @@ export default function Footer() {
       <div className="bg-black py-4 text-center text-xs text-slate-500 border-t border-neutral-900">
         HiMistri Platform &copy; 2026. Official Domain: <strong className="text-slate-300">himistri.techcoders.in</strong>. All Rights Reserved.
       </div>
+
+      {/* FLOATING BOTTOM-TO-TOP SCROLL BUTTON ACROSS ENTIRE WEBSITE */}
+      {showTopBtn && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 p-3.5 rounded-2xl bg-redPrimary hover:bg-redDark text-white shadow-2xl transition-all duration-300 scale-100 hover:scale-110 flex items-center justify-center border border-white/20 cursor-pointer"
+          title="Scroll to Top"
+        >
+          <ChevronUp className="w-6 h-6" />
+        </button>
+      )}
     </footer>
   );
 }

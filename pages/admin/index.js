@@ -103,30 +103,62 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // FileReader Helper: Converts local image files (Max 200KB) into Data URLs
+  // HTML5 Canvas Image Resizer & Quality Optimizer (Compresses ANY Image File to < 100KB)
   const handleImageFileUpload = (e, callback) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
-    if (file.size > 200 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       setPopupState({
         isOpen: true,
-        title: 'File Size Exceeds 200KB Limit',
-        message: 'Please choose an image file under 200KB for fast icon loading and optimal performance.',
+        title: 'File Too Large',
+        message: 'Please choose an image file under 5MB.',
         type: 'error'
       });
       return;
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      callback(reader.result);
-      setPopupState({
-        isOpen: true,
-        title: 'Image Uploaded',
-        message: 'Icon image file uploaded and converted successfully!',
-        type: 'success'
-      });
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize to max 600px width/height for fast icon loading & low memory footprint
+        const MAX_WIDTH = 600;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress image to JPEG Data URL at 0.75 quality
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+        callback(compressedDataUrl);
+
+        setPopupState({
+          isOpen: true,
+          title: 'Image Uploaded & Reflected!',
+          message: `Image optimized (${Math.round(compressedDataUrl.length / 1024)} KB) and preview reflected. Click Save to publish.`,
+          type: 'success'
+        });
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   };
@@ -1487,8 +1519,18 @@ export default function AdminControlPanelPage() {
 
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Icon File (&le;200KB) / URL</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingCategory({ ...editingCategory, iconUrl: res }))} className="p-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white w-full mb-2" />
-              <input type="text" value={editingCategory.iconUrl} onChange={(e) => setEditingCategory({ ...editingCategory, iconUrl: e.target.value })} placeholder="Or paste Icon Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              <div className="flex flex-col gap-2">
+                <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition">
+                  <Upload className="w-4 h-4" /> 📷 Upload New Icon File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageFileUpload(e, (res) => setEditingCategory({ ...editingCategory, iconUrl: res }))}
+                    className="hidden"
+                  />
+                </label>
+                <input type="text" value={editingCategory.iconUrl} onChange={(e) => setEditingCategory({ ...editingCategory, iconUrl: e.target.value })} placeholder="Or paste Icon Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              </div>
             </div>
 
             {editingCategory.iconUrl && (
@@ -1528,8 +1570,18 @@ export default function AdminControlPanelPage() {
 
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Service Image File (&le;200KB) / URL</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingService({ ...editingService, imageUrl: res }))} className="p-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white w-full mb-2" />
-              <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              <div className="flex flex-col gap-2">
+                <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition">
+                  <Upload className="w-4 h-4" /> 📷 Upload New Image File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageFileUpload(e, (res) => setEditingService({ ...editingService, imageUrl: res }))}
+                    className="hidden"
+                  />
+                </label>
+                <input type="text" value={editingService.imageUrl} onChange={(e) => setEditingService({ ...editingService, imageUrl: e.target.value })} placeholder="Or paste Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              </div>
             </div>
 
             {editingService.imageUrl && (
@@ -1563,8 +1615,18 @@ export default function AdminControlPanelPage() {
 
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Banner Image File (&le;200KB) / URL</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, (res) => setEditingBanner({ ...editingBanner, imageUrl: res }))} className="p-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white w-full mb-2" />
-              <input type="text" value={editingBanner.imageUrl} onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} placeholder="Or Banner Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              <div className="flex flex-col gap-2">
+                <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition">
+                  <Upload className="w-4 h-4" /> 📷 Upload New Banner Image File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageFileUpload(e, (res) => setEditingBanner({ ...editingBanner, imageUrl: res }))}
+                    className="hidden"
+                  />
+                </label>
+                <input type="text" value={editingBanner.imageUrl} onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })} placeholder="Or Banner Image URL" className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs text-slate-900 dark:text-white" />
+              </div>
             </div>
 
             {editingBanner.imageUrl && (

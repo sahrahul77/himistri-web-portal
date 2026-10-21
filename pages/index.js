@@ -20,7 +20,7 @@ export default function HomePage() {
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Live Firebase States initialized with defaults so page is NEVER empty
+  // Live Firebase States
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [services, setServices] = useState(DEFAULT_SERVICES);
   const [banners, setBanners] = useState(DEFAULT_BANNERS);
@@ -39,7 +39,6 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    // 1. Listen to Categories
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
@@ -51,7 +50,6 @@ export default function HomePage() {
       if (list.length > 0) setCategories(list);
     });
 
-    // 2. Listen to Services
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
@@ -63,7 +61,6 @@ export default function HomePage() {
       if (list.length > 0) setServices(list);
     });
 
-    // 3. Listen to Banners
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
@@ -114,7 +111,7 @@ export default function HomePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search services (e.g. Plumber, Electrician, Tutor)..."
-            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-darkSurface text-sm font-medium focus:outline-none focus:border-redPrimary shadow-lg"
+            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-darkSurface text-sm font-medium focus:outline-none focus:border-redPrimary shadow-lg text-slate-900 dark:text-white"
           />
         </div>
 
@@ -156,7 +153,7 @@ export default function HomePage() {
                 <Link href={`/categories?id=${c.id}`} key={c.id}>
                   <motion.div
                     whileHover={{ y: -4, scale: 1.02 }}
-                    className="web-card text-center p-5 cursor-pointer shadow-md flex flex-col justify-center items-center h-full"
+                    className="web-card text-center p-5 cursor-pointer shadow-md flex flex-col justify-center items-center h-full bg-white dark:bg-neutral-900"
                   >
                     <div className="w-14 h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mb-3">
                       <img
@@ -198,7 +195,7 @@ export default function HomePage() {
                   <motion.div
                     key={s.id}
                     whileHover={{ y: -4 }}
-                    className="web-card flex flex-col justify-between shadow-xl relative"
+                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-neutral-900"
                   >
                     <div>
                       <div className="relative">
@@ -249,79 +246,79 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="web-card flex items-start gap-4">
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
               <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-bold text-base text-slate-900 dark:text-white">100% Verified</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Background checked mistris & technicians in Sikkim</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Background checked mistris & technicians in Sikkim</p>
               </div>
             </div>
 
-            <div className="web-card flex items-start gap-4">
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
               <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
                 <DollarSign className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-bold text-base text-slate-900 dark:text-white">Affordable Rates</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Transparent upfront pricing with zero hidden fees</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Transparent upfront pricing with zero hidden fees</p>
               </div>
             </div>
 
-            <div className="web-card flex items-start gap-4">
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
               <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
                 <Clock className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-bold text-base text-slate-900 dark:text-white">On-Time Service</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Doorstep arrival at your scheduled date & slot</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Doorstep arrival at your scheduled date & slot</p>
               </div>
             </div>
 
-            <div className="web-card flex items-start gap-4">
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
               <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-bold text-base text-slate-900 dark:text-white">30-Day Guarantee</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Service re-visit guarantee for total peace of mind</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Service re-visit guarantee for total peace of mind</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 7. 50+ Verified Service Partners Banner Card */}
-        <div className="web-card bg-[#1E1E1E] border border-neutral-800 p-6 rounded-2xl flex items-center gap-5 shadow-xl">
+        {/* 7. 50+ Verified Service Partners Banner Card (Fixed Light Mode Visibility) */}
+        <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-6 rounded-2xl flex items-center gap-5 shadow-xl">
           <div className="w-14 h-14 rounded-full bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-lg">
             <Handshake className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-lg font-extrabold text-white">50+ Verified Service Partners</h3>
-            <p className="text-xs text-slate-400 mt-1">Skilled plumbers, electricians, tutors, drivers & craftsmen across Sikkim.</p>
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">50+ Verified Service Partners</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Skilled plumbers, electricians, tutors, drivers & craftsmen across Sikkim.</p>
           </div>
         </div>
 
-        {/* 8. About HiMistri Card */}
-        <div className="web-card bg-[#1E1E1E] border border-neutral-800 p-6 rounded-2xl space-y-3 shadow-xl">
+        {/* 8. About HiMistri Card (Fixed Light Mode Visibility) */}
+        <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-6 rounded-2xl space-y-3 shadow-xl">
           <div className="flex items-center gap-2.5 text-redPrimary">
             <Info className="w-5 h-5" />
-            <h3 className="text-lg font-extrabold text-white">About HiMistri</h3>
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">About HiMistri</h3>
           </div>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
             HiMistri is a Gangtok – based start-up company established in 2022 that provides different kinds of services in several categories to customers in and around Sikkim. Our main aim is to provide all basic needs required by an individual in different prospects of life in one single frame, providing technical manpower at minimum cost and maximum benefits.
           </p>
         </div>
 
-        {/* 9. 24x7 Support Hotline Card */}
-        <div className="web-card bg-[#1E1E1E] border border-neutral-800 p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+        {/* 9. 24x7 Support Hotline Card (Fixed Light Mode Visibility) */}
+        <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
           <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-redPrimary/20 text-redPrimary">
+            <div className="p-3.5 rounded-2xl bg-redPrimary/10 text-redPrimary">
               <Phone className="w-6 h-6" />
             </div>
             <div>
               <h4 className="font-extrabold text-base text-redPrimary">24x7 Support Hotline</h4>
-              <p className="text-xs text-slate-400 font-bold mt-0.5">+91 7430887960</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-bold mt-0.5">+91 7430887960</p>
             </div>
           </div>
 

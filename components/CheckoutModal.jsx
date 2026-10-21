@@ -11,7 +11,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
   const [date, setDate] = useState('');
   const [slot, setSlot] = useState('');
 
-  // Booking Plan & Duration States
+  // Booking Plan & Duration Dropdown States
   const [bookingPlan, setBookingPlan] = useState('HOURLY'); // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
   const [durationValue, setDurationValue] = useState(1);
 
@@ -212,7 +212,7 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
         ) : (
           <>
             <h3 className="text-xl font-bold mb-1">Checkout & Booking</h3>
-            <p className="text-xs text-slate-400 mb-6">Select duration basis plan, schedule date & address</p>
+            <p className="text-xs text-slate-400 mb-6">Select duration basis dropdowns, schedule date & address</p>
 
             <form onSubmit={handleCheckoutSubmit} className="space-y-6">
               {/* Service Summary & Quantity */}
@@ -231,43 +231,50 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
                 </div>
               </div>
 
-              {/* Booking Duration Basis Plan Selector */}
-              <div className="space-y-3 bg-[#242424] p-4 rounded-xl border border-[#333333]">
-                <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <Timer className="w-4 h-4 text-redPrimary" /> Select Booking Duration Basis
-                </label>
+              {/* DUAL DROPDOWNS: BOOKING DURATION PLAN & UNITS */}
+              <div className="p-4 rounded-xl bg-[#242424] border border-[#333333] space-y-4">
+                <h4 className="text-xs font-black text-redPrimary uppercase tracking-wider flex items-center gap-1.5">
+                  <Timer className="w-4 h-4" /> Select Booking Duration Basis (Dropdowns)
+                </h4>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                  {DURATION_PLANS.map((plan) => (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => handlePlanChange(plan.id)}
-                      className={`p-2.5 rounded-xl border text-left transition ${
-                        bookingPlan === plan.id
-                          ? 'bg-redPrimary/20 border-redPrimary text-redPrimary font-extrabold'
-                          : 'bg-[#0F0F0F] border-[#333333] text-slate-400 hover:border-slate-500'
-                      }`}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                  {/* Dropdown 1: Duration Plan Basis */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Timer className="w-3.5 h-3.5 text-redPrimary" /> 1. Duration Basis Plan *
+                    </label>
+                    <select
+                      value={bookingPlan}
+                      onChange={(e) => handlePlanChange(e.target.value)}
+                      className="w-full p-3.5 rounded-xl border border-[#444444] bg-[#0F0F0F] text-xs font-extrabold text-white outline-none focus:border-redPrimary shadow-sm cursor-pointer"
                     >
-                      <span className="text-xs block font-black">{plan.label}</span>
-                      <span className="text-[9px] text-slate-500 block mt-0.5">{plan.desc}</span>
-                    </button>
-                  ))}
-                </div>
+                      {DURATION_PLANS.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.label} ({plan.desc})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="flex justify-between items-center bg-[#0F0F0F] p-3 rounded-xl border border-[#333333] text-xs">
-                  <span>Specify Units (<strong className="text-redPrimary">{durationText}</strong>):</span>
-                  <select
-                    value={durationValue}
-                    onChange={(e) => setDurationValue(parseInt(e.target.value, 10))}
-                    className="p-2 rounded-lg border border-[#444444] bg-[#1A1A1A] text-white font-bold outline-none focus:border-redPrimary"
-                  >
-                    {durationOptions.map((unit) => (
-                      <option key={unit} value={unit}>
-                        {unit} {bookingPlan === 'HOURLY' ? (unit === 1 ? 'Hour' : 'Hours') : bookingPlan === 'DAILY' ? (unit === 1 ? 'Day' : 'Days') : bookingPlan === 'WEEKLY' ? (unit === 1 ? 'Week' : 'Weeks') : bookingPlan === 'MONTHLY' ? (unit === 1 ? 'Month' : 'Months') : (unit === 1 ? 'Year' : 'Years')}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Dropdown 2: Duration Units */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-redPrimary" /> 2. Duration Units (<strong className="text-redPrimary">{durationText}</strong>) *
+                    </label>
+                    <select
+                      value={durationValue}
+                      onChange={(e) => setDurationValue(parseInt(e.target.value, 10))}
+                      className="w-full p-3.5 rounded-xl border border-[#444444] bg-[#0F0F0F] text-xs font-extrabold text-white outline-none focus:border-redPrimary shadow-sm cursor-pointer"
+                    >
+                      {durationOptions.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit} {bookingPlan === 'HOURLY' ? (unit === 1 ? 'Hour' : 'Hours') : bookingPlan === 'DAILY' ? (unit === 1 ? 'Day' : 'Days') : bookingPlan === 'WEEKLY' ? (unit === 1 ? 'Week' : 'Weeks') : bookingPlan === 'MONTHLY' ? (unit === 1 ? 'Month' : 'Months') : (unit === 1 ? 'Year' : 'Years')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                 </div>
               </div>
 

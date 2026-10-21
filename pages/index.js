@@ -85,15 +85,24 @@ export default function HomePage() {
     }
   };
 
+  // Smart Real-time Filter matching search query & clicked quick filter chip
   const filteredServices = services.filter((s) => {
-    const matchesSearch =
-      (s.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.categoryName || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesChip = activeChip === 'ALL' || (s.categoryName || '').toLowerCase().includes(activeChip.toLowerCase());
+    const q = searchQuery.toLowerCase().trim();
+    const chip = activeChip.toLowerCase().trim();
+
+    const matchesSearch = !q ||
+      (s.title || '').toLowerCase().includes(q) ||
+      (s.categoryName || '').toLowerCase().includes(q) ||
+      (s.shortDescription || '').toLowerCase().includes(q);
+
+    const matchesChip = chip === 'all' ||
+      (s.categoryName || '').toLowerCase().includes(chip) ||
+      (s.title || '').toLowerCase().includes(chip) ||
+      chip.includes((s.categoryName || '').toLowerCase());
+
     return matchesSearch && matchesChip;
   });
 
-  // Display EXACTLY 6 Categories and 10 Popular Services on Home
   const displayCategories = categories.slice(0, 6);
   const popularServices = filteredServices.slice(0, 10);
 
@@ -115,21 +124,37 @@ export default function HomePage() {
           />
         </div>
 
-        {/* 2. Quick Filter Chips Row */}
+        {/* 2. Interactive Quick Filter Chips Row (Dynamic from Categories) */}
         <div className="flex gap-2.5 overflow-x-auto pb-2 justify-start sm:justify-center">
-          {['ALL', 'Plumber', 'Electrician', 'Barber', 'Cleaner', 'Carpenter', 'Tutor'].map((chip) => (
-            <button
-              key={chip}
-              onClick={() => setActiveChip(chip)}
-              className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all ${
-                activeChip === chip
-                  ? 'bg-white dark:bg-darkSurface text-slate-900 dark:text-white border-slate-300 dark:border-neutral-700 shadow-md scale-105'
-                  : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-300 border-transparent hover:border-redPrimary'
-              }`}
-            >
-              ⚡ {chip === 'ALL' ? 'All Services' : chip}
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => setActiveChip('ALL')}
+            className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all cursor-pointer ${
+              activeChip === 'ALL'
+                ? 'bg-redPrimary text-white border-redPrimary shadow-lg scale-105'
+                : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-300 border-transparent hover:border-redPrimary'
+            }`}
+          >
+            ⚡ All Services
+          </button>
+
+          {categories.map((c) => {
+            const isSelected = activeChip.toLowerCase() === c.name.toLowerCase();
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setActiveChip(isSelected ? 'ALL' : c.name)}
+                className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-redPrimary text-white border-redPrimary shadow-lg scale-105'
+                    : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-300 border-transparent hover:border-redPrimary'
+                }`}
+              >
+                ⚡ {c.name}
+              </button>
+            );
+          })}
         </div>
 
         {/* 3. Hero Banner Carousel */}
@@ -171,19 +196,28 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok (10 Services) */}
-        {popularServices.length > 0 && (
-          <div>
-            <div className="flex justify-between items-baseline mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Popular Services in Gangtok</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Top rated doorstep solutions requested by Sikkim residents</p>
-              </div>
-              <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3.5 py-1.5 rounded-full">
-                View Catalog
-              </Link>
+        {/* 5. Popular Services in Gangtok (10 Services filtered by Chip) */}
+        <div>
+          <div className="flex justify-between items-baseline mb-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+                {activeChip === 'ALL' ? 'Popular Services in Gangtok' : `${activeChip} Services in Gangtok`}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Top rated doorstep solutions requested by Sikkim residents</p>
             </div>
+            <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3.5 py-1.5 rounded-full">
+              View Catalog
+            </Link>
+          </div>
 
+          {popularServices.length === 0 ? (
+            <div className="web-card text-center py-12 text-slate-500 space-y-2">
+              <p className="font-bold text-sm">No services found matching "{activeChip}".</p>
+              <button onClick={() => setActiveChip('ALL')} className="btn-primary text-xs py-2 px-4 mt-2">
+                Reset Filter
+              </button>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {popularServices.map((s) => {
                 const rating = parseFloat(s.ratingAverage || 4.9).toFixed(1);
@@ -235,8 +269,8 @@ export default function HomePage() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* 6. Why Choose HiMistri? (2x2 Grid) */}
         <div>
@@ -288,7 +322,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 7. 50+ Verified Service Partners Banner Card (Fixed Light Mode Visibility) */}
+        {/* 7. 50+ Verified Service Partners Banner Card */}
         <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-6 rounded-2xl flex items-center gap-5 shadow-xl">
           <div className="w-14 h-14 rounded-full bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-lg">
             <Handshake className="w-7 h-7" />
@@ -299,7 +333,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 8. About HiMistri Card (Fixed Light Mode Visibility) */}
+        {/* 8. About HiMistri Card */}
         <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-6 rounded-2xl space-y-3 shadow-xl">
           <div className="flex items-center gap-2.5 text-redPrimary">
             <Info className="w-5 h-5" />
@@ -310,7 +344,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* 9. 24x7 Support Hotline Card (Fixed Light Mode Visibility) */}
+        {/* 9. 24x7 Support Hotline Card */}
         <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
           <div className="flex items-center gap-4">
             <div className="p-3.5 rounded-2xl bg-redPrimary/10 text-redPrimary">

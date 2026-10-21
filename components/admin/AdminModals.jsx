@@ -29,7 +29,7 @@ export function AdminModals({
   // Fallback to DEFAULT_CATEGORIES if categoriesList is empty or loading
   const activeCategoriesList = (categoriesList && categoriesList.length > 0) ? categoriesList : DEFAULT_CATEGORIES;
 
-  // Robust Lead Developer Category Matcher for Editing Service
+  // Robust Category Matcher for Editing Service
   const matchedCatObj = editingService ? (
     activeCategoriesList.find(c => c.id === editingService.categoryId) ||
     activeCategoriesList.find(c => (c.name || '').toLowerCase() === (editingService.categoryName || '').toLowerCase()) ||
@@ -221,23 +221,24 @@ export function AdminModals({
         </div>
       )}
 
-      {/* EDIT MODAL FOR SERVICES (PROMINENT CATEGORY CONNECTION DROPDOWN) */}
+      {/* EDIT MODAL FOR SERVICES */}
       {editingService && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
           <form onSubmit={handleSaveServiceEdit} className="bg-white dark:bg-[#242424] border border-slate-300 dark:border-neutral-700 rounded-2xl p-6 w-full max-w-md text-slate-900 dark:text-white space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button type="button" onClick={() => setEditingService(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold text-redPrimary flex items-center gap-2">
-              <Layers className="w-5 h-5" /> Edit Service Details
+              <Layers className="w-5 h-5" /> Edit Service
             </h3>
 
+            {/* Field 1: Service Title */}
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Title *</label>
               <input type="text" value={editingService.title || ''} onChange={(e) => setEditingService({ ...editingService, title: e.target.value })} placeholder="Service Title" required className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
             </div>
 
-            {/* Category Dropdown Selector inside Edit Service Modal */}
+            {/* Field 2: Category Dropdown Selector placed RIGHT AFTER Service Title */}
             <div>
-              <label className="text-[11px] font-extrabold text-redPrimary block mb-1">Category Connection *</label>
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Category (Link/Connect) *</label>
               <select
                 value={matchedCategoryId}
                 onChange={(e) => {
@@ -248,7 +249,7 @@ export function AdminModals({
                     categoryName: selectedCat ? selectedCat.name : editingService.categoryName
                   });
                 }}
-                className="w-full p-3 rounded-lg border border-redPrimary/40 bg-redPrimary/10 text-xs font-extrabold text-redPrimary outline-none focus:border-redPrimary cursor-pointer"
+                className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
               >
                 {activeCategoriesList.map((cat) => (
                   <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">
@@ -258,6 +259,7 @@ export function AdminModals({
               </select>
             </div>
 
+            {/* Field 3: Original Price & Discount Price */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Original Price (₹)</label>
@@ -269,7 +271,7 @@ export function AdminModals({
               </div>
             </div>
 
-            {/* Service Rating Field */}
+            {/* Field 4: Service Rating Field */}
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Service Rating Average (★ Max 5.0)</label>
               <div className="flex items-center gap-2">
@@ -287,6 +289,7 @@ export function AdminModals({
               </div>
             </div>
 
+            {/* Field 5: Image Upload */}
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Service Image File (&le;200KB) / URL</label>
               <div className="flex flex-col gap-2">

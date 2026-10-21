@@ -18,14 +18,16 @@ export default function CheckoutPage() {
   const [date, setDate] = useState('');
   const [slot, setSlot] = useState('');
 
-  // Address Form States
+  // Address Form Structured States
   const [savedAddressesList, setSavedAddressesList] = useState([]);
   const [selectedSavedAddr, setSelectedSavedAddr] = useState('new');
-  const [newAddrType, setNewAddrType] = useState('Home'); // Home, Work, Other
+  const [newAddrType, setNewAddrType] = useState('Home'); // Home, Work, Office, Other
   const [houseNo, setHouseNo] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
-  const [landmark, setLandmark] = useState('');
-  const [pincode, setPincode] = useState('737102');
+  const [locality, setLocality] = useState('');
+  const [city, setCity] = useState('Gangtok');
+  const [state, setState] = useState('Sikkim');
+  const [pincode, setPincode] = useState('737101');
 
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,14 +61,17 @@ export default function CheckoutPage() {
             }));
             setSavedAddressesList(addrs);
 
-            // Auto pre-fill all 4 address fields from primary saved address
+            // Auto pre-fill structured address fields from primary saved address
             if (addrs.length > 0) {
               const firstAddr = addrs[0];
               setSelectedSavedAddr(firstAddr.id);
+              setNewAddrType(firstAddr.title || 'Home');
               setHouseNo(firstAddr.houseNo || '');
               setStreetAddress(firstAddr.streetAddress || firstAddr.fullAddress || '');
-              setLandmark(firstAddr.landmark || '');
-              if (firstAddr.pincode) setPincode(firstAddr.pincode);
+              setLocality(firstAddr.locality || '');
+              setCity(firstAddr.city || 'Gangtok');
+              setState('Sikkim');
+              setPincode(firstAddr.pincode || '737101');
             }
           }
         }
@@ -95,18 +100,20 @@ export default function CheckoutPage() {
     if (val === 'new') {
       setHouseNo('');
       setStreetAddress('');
-      setLandmark('');
+      setLocality('');
+      setCity('Gangtok');
+      setState('Sikkim');
+      setPincode('737101');
     } else {
       const matchedAddr = savedAddressesList.find(a => a.id === val || a.fullAddress === val);
       if (matchedAddr) {
+        setNewAddrType(matchedAddr.title || 'Home');
         setHouseNo(matchedAddr.houseNo || '');
         setStreetAddress(matchedAddr.streetAddress || matchedAddr.fullAddress || '');
-        setLandmark(matchedAddr.landmark || '');
-        if (matchedAddr.pincode) setPincode(matchedAddr.pincode);
-      } else {
-        const parts = val.split(', Pincode: ');
-        setStreetAddress(parts[0] || val);
-        if (parts[1]) setPincode(parts[1]);
+        setLocality(matchedAddr.locality || '');
+        setCity(matchedAddr.city || 'Gangtok');
+        setState('Sikkim');
+        setPincode(matchedAddr.pincode || '737101');
       }
     }
   };
@@ -128,7 +135,7 @@ export default function CheckoutPage() {
       setPopupState({
         isOpen: true,
         title: 'Address Required',
-        message: 'Please enter a valid Street Address / Locality in Gangtok.',
+        message: 'Please enter Address (Building, Street, Area).',
         type: 'error'
       });
       return;
@@ -148,7 +155,7 @@ export default function CheckoutPage() {
 
     const bookingRef = 'HM-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.floor(100 + Math.random() * 900);
     const bookingId = 'bk_' + Math.random().toString(36).substring(2, 10);
-    const fullAddrString = `${houseNo ? houseNo + ', ' : ''}${streetAddress}, ${landmark ? landmark + ', ' : ''}Gangtok, Sikkim. PIN: ${pincode}`;
+    const fullAddrString = `${houseNo ? houseNo + ', ' : ''}${streetAddress}, ${locality ? locality + ', ' : ''}${city || 'Gangtok'}, Sikkim. PIN: ${pincode || '737101'}`;
 
     // Save structured address object if adding a new address
     if (selectedSavedAddr === 'new' && currentUser) {
@@ -158,8 +165,10 @@ export default function CheckoutPage() {
           title: newAddrType,
           houseNo: houseNo,
           streetAddress: streetAddress,
-          landmark: landmark,
-          pincode: pincode,
+          locality: locality,
+          city: city || 'Gangtok',
+          state: 'Sikkim',
+          pincode: pincode || '737101',
           fullAddress: fullAddrString,
           createdAt: new Date().toISOString()
         });
@@ -195,7 +204,7 @@ export default function CheckoutPage() {
         setIsSubmitting(false);
         localStorage.removeItem('himistri_checkout_service');
 
-        // Show Sleek Professional Dynamic Popup Modal
+        // Show Dynamic Popup Modal
         setPopupState({
           isOpen: true,
           title: 'Order Placed Successfully!',
@@ -300,10 +309,10 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Address Section */}
+                {/* Structured Address Section (Matching User Requirements) */}
                 <div className="space-y-4 pt-4 border-t border-[#333333]">
                   <label className="text-xs font-black text-slate-500 flex items-center gap-1.5 uppercase tracking-wider">
-                    <MapPin className="w-4 h-4 text-redPrimary" /> Delivery Address (Gangtok, Sikkim)
+                    <MapPin className="w-4 h-4 text-redPrimary" /> Delivery Address Details
                   </label>
 
                   <select
@@ -311,64 +320,104 @@ export default function CheckoutPage() {
                     onChange={handleSavedAddressChange}
                     className="w-full p-3.5 rounded-xl border border-[#333333] bg-[#0F0F0F] text-white text-sm font-bold shadow-sm outline-none focus:border-redPrimary"
                   >
-                    <option value="new">+ Add New Address in Gangtok</option>
+                    <option value="new">+ Add New Address in Sikkim</option>
                     {savedAddressesList.map((a) => (
                       <option key={a.id} value={a.id}>{a.title} - {a.fullAddress}</option>
                     ))}
                   </select>
 
-                  {/* Address Tag Selector for New Address */}
-                  {selectedSavedAddr === 'new' && (
-                    <div className="flex items-center gap-3 pt-1">
-                      <span className="text-xs font-extrabold text-slate-400">Save Address As:</span>
-                      {['Home', 'Work', 'Other'].map((tag) => (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => setNewAddrType(tag)}
-                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition ${
-                            newAddrType === tag
-                              ? 'bg-redPrimary text-white border-redPrimary shadow-md'
-                              : 'bg-[#0F0F0F] text-slate-400 border-[#333333] hover:border-slate-500'
-                          }`}
-                        >
-                          {tag === 'Home' ? '🏡 Home' : tag === 'Work' ? '🏢 Work' : '📍 Other'}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#242424] p-4 rounded-xl border border-[#333333]">
-                    <input
-                      type="text"
-                      value={houseNo}
-                      onChange={(e) => setHouseNo(e.target.value)}
-                      placeholder="Flat / House No. / Building"
-                      className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                    />
-                    <input
-                      type="text"
-                      value={streetAddress}
-                      onChange={(e) => setStreetAddress(e.target.value)}
-                      placeholder="Street Address / Locality *"
-                      required
-                      className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                    />
-                    <input
-                      type="text"
-                      value={landmark}
-                      onChange={(e) => setLandmark(e.target.value)}
-                      placeholder="Landmark (Optional)"
-                      className="p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
-                    />
-                    <div className="relative">
-                      <Map className="w-4 h-4 absolute left-3.5 top-4 text-slate-400" />
+
+                    {/* Address Type Selector */}
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Type of Address *</label>
+                      <div className="flex gap-2">
+                        {['Home', 'Work', 'Office', 'Other'].map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => setNewAddrType(tag)}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition ${
+                              newAddrType === tag
+                                ? 'bg-redPrimary text-white border-redPrimary shadow-md'
+                                : 'bg-[#0F0F0F] text-slate-400 border-[#333333] hover:border-slate-500'
+                            }`}
+                          >
+                            {tag === 'Home' ? '🏡 Home' : tag === 'Work' ? '🏢 Work' : tag === 'Office' ? '💼 Office' : '📍 Other'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* House No / Tower / Block */}
+                    <div>
+                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">House No. / Tower / Block</label>
+                      <input
+                        type="text"
+                        value={houseNo}
+                        onChange={(e) => setHouseNo(e.target.value)}
+                        placeholder="e.g. Flat 4B / Block C"
+                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
+                      />
+                    </div>
+
+                    {/* Address (Building, Street, Area) */}
+                    <div>
+                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
+                      <input
+                        type="text"
+                        value={streetAddress}
+                        onChange={(e) => setStreetAddress(e.target.value)}
+                        placeholder="e.g. Upper Syari, Deorali *"
+                        required
+                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
+                      />
+                    </div>
+
+                    {/* Locality / Town */}
+                    <div>
+                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Locality / Town</label>
+                      <input
+                        type="text"
+                        value={locality}
+                        onChange={(e) => setLocality(e.target.value)}
+                        placeholder="e.g. Near ICDS Center"
+                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
+                      />
+                    </div>
+
+                    {/* City / District */}
+                    <div>
+                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">City / District</label>
+                      <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="Gangtok"
+                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
+                      />
+                    </div>
+
+                    {/* State (Fixed Pre-selected Sikkim) */}
+                    <div>
+                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">State (Fixed)</label>
+                      <input
+                        type="text"
+                        value={state}
+                        disabled
+                        className="w-full p-3.5 rounded-lg border border-[#333333] bg-[#111111] text-slate-400 text-sm font-bold cursor-not-allowed"
+                      />
+                    </div>
+
+                    {/* Pincode (Default 737101) */}
+                    <div>
+                      <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Pincode (Default: 737101)</label>
                       <input
                         type="text"
                         value={pincode}
                         onChange={(e) => setPincode(e.target.value)}
-                        placeholder="Pincode (737102)"
-                        className="w-full pl-10 p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
+                        placeholder="737101"
+                        className="w-full p-3.5 rounded-lg border border-[#444444] bg-[#0F0F0F] text-white text-sm font-medium focus:border-redPrimary outline-none shadow-sm"
                       />
                     </div>
                   </div>

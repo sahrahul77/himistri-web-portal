@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { ref, onValue, update, push, remove } from 'firebase/database';
+import { ref, onValue, update, push, remove, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { UserCircle, MapPin, Save, Plus, Trash2, Lock, LogIn, Phone, Mail, User, ShoppingBag, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
+import { UserCircle, MapPin, Save, Plus, Trash2, Lock, LogIn, Phone, Mail, User, ShoppingBag, ArrowRight, CheckCircle2, Clock, Edit } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -16,16 +16,23 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
 
   const [addresses, setAddresses] = useState([]);
-  const [newAddrTitle, setNewAddrTitle] = useState('Home');
-  const [newAddrText, setNewAddrText] = useState('');
-  const [newPincode, setNewPincode] = useState('737102');
+  const [editingAddrId, setEditingAddrId] = useState(null);
+
+  // Structured Address Form States
+  const [addrHouseNo, setAddrHouseNo] = useState('');
+  const [addrStreet, setAddrStreet] = useState('');
+  const [addrLocality, setAddrLocality] = useState('');
+  const [addrCity, setAddrCity] = useState('Gangtok');
+  const [addrState, setAddrState] = useState('Sikkim'); // Fixed
+  const [addrPincode, setAddrPincode] = useState('737101');
+  const [addrType, setAddrType] = useState('Home'); // Home, Work, Office, Other
 
   const [customerBookings, setCustomerBookings] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
-      // 1. Fetch User Profile & Addresses
+      // 1. Fetch User Profile & Saved Addresses
       const userRef = ref(rtdb, `users/${currentUser.id}`);
       const unsubUser = onValue(userRef, (snapshot) => {
         if (snapshot.exists()) {
@@ -105,26 +112,59 @@ export default function ProfilePage() {
     setIsSaving(false);
   };
 
-  const handleAddAddress = async (e) => {
+  const handleStartEditAddress = (addr) => {
+    setEditingAddrId(addr.id);
+    setAddrType(addr.title || 'Home');
+    setAddrHouseNo(addr.houseNo || '');
+    setAddrStreet(addr.streetAddress || addr.fullAddress || '');
+    setAddrLocality(addr.locality || '');
+    setAddrCity(addr.city || 'Gangtok');
+    setAddrState('Sikkim');
+    setAddrPincode(addr.pincode || '737101');
+  };
+
+  const handleResetAddressForm = () => {
+    setEditingAddrId(null);
+    setAddrType('Home');
+    setAddrHouseNo('');
+    setAddrStreet('');
+    setAddrLocality('');
+    setAddrCity('Gangtok');
+    setAddrState('Sikkim');
+    setAddrPincode('737101');
+  };
+
+  const handleSaveAddress = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
-    if (!newAddrText) return alert('Address details are required.');
+    if (!addrStreet) return alert('Street Address / Locality is required.');
 
-    const newAddrObj = {
-      title: newAddrTitle,
-      houseNo: '',
-      streetAddress: newAddrText,
-      landmark: '',
-      pincode: newPincode,
-      fullAddress: `${newAddrText}, Pincode: ${newPincode}`,
-      createdAt: new Date().toISOString()
+    const fullAddrStr = `${addrHouseNo ? addrHouseNo + ', ' : ''}${addrStreet}, ${addrLocality ? addrLocality + ', ' : ''}${addrCity || 'Gangtok'}, Sikkim. PIN: ${addrPincode || '737101'}`;
+
+    const addrData = {
+      title: addrType,
+      houseNo: addrHouseNo,
+      streetAddress: addrStreet,
+      locality: addrLocality,
+      city: addrCity || 'Gangtok',
+      state: 'Sikkim',
+      pincode: addrPincode || '737101',
+      fullAddress: fullAddrStr,
+      updatedAt: new Date().toISOString()
     };
 
     try {
-      const addrRef = ref(rtdb, `users/${currentUser.id}/addresses`);
-      await push(addrRef, newAddrObj);
-      setNewAddrText('');
-      alert('Address saved to your profile in Firebase!');
+      if (editingAddrId) {
+        // Update Existing Address
+        await update(ref(rtdb, `users/${currentUser.id}/addresses/${editingAddrId}`), addrData);
+        alert('Address updated successfully in Firebase!');
+      } else {
+        // Add New Address
+        const newRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
+        await set(newRef, { ...addrData, createdAt: new Date().toISOString() });
+        alert('New address saved to your profile!');
+      }
+      handleResetAddressForm();
     } catch (err) {
       alert('Failed to save address: ' + err.message);
     }
@@ -236,7 +276,7 @@ export default function ProfilePage() {
               </button>
             </form>
 
-            {/* Address Book */}
+            {/* Address Book with Full Structured Editing */}
             <div className="web-card space-y-5 shadow-xl">
               <h2 className="text-lg font-bold border-b border-slate-100 dark:border-neutral-800 pb-2">Saved Addresses (Address Book)</h2>
 
@@ -245,50 +285,144 @@ export default function ProfilePage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {addresses.map((addr) => (
-                    <div key={addr.id} className="p-4 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 relative group">
-                      <h4 className="font-bold text-redPrimary text-sm mb-1">{addr.title}</h4>
-                      <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed pr-6">{addr.fullAddress}</p>
-                      <button
-                        onClick={() => handleDeleteAddress(addr.id)}
-                        className="absolute top-4 right-4 text-slate-400 hover:text-rose-600 transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div key={addr.id} className="p-4 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 relative group flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <h4 className="font-extrabold text-redPrimary text-sm">{addr.title || 'Home'}</h4>
+                        </div>
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed pr-6">{addr.fullAddress}</p>
+                      </div>
+
+                      <div className="flex gap-2 justify-end pt-3 mt-2 border-t border-slate-200 dark:border-neutral-700/60">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditAddress(addr)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2.5 py-1 rounded-lg font-extrabold flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          className="bg-rose-800 hover:bg-rose-900 text-white text-[10px] px-2.5 py-1 rounded-lg font-extrabold flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Add New Address Form */}
-              <form onSubmit={handleAddAddress} className="pt-4 border-t border-slate-100 dark:border-neutral-800 space-y-4">
-                <h3 className="font-bold text-sm">Add New Address</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <select
-                    value={newAddrTitle}
-                    onChange={(e) => setNewAddrTitle(e.target.value)}
-                    className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-bold"
-                  >
-                    <option>Home</option>
-                    <option>Work</option>
-                    <option>Other</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={newAddrText}
-                    onChange={(e) => setNewAddrText(e.target.value)}
-                    placeholder="Flat, House no., Building, Locality"
-                    className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm sm:col-span-2"
-                  />
-                  <input
-                    type="text"
-                    value={newPincode}
-                    onChange={(e) => setNewPincode(e.target.value)}
-                    placeholder="Pincode (e.g. 737102)"
-                    className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm sm:col-span-1"
-                  />
+              {/* Add / Edit Structured Address Form (Matching User Requirements 100%) */}
+              <form onSubmit={handleSaveAddress} className="pt-4 border-t border-slate-100 dark:border-neutral-800 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-extrabold text-sm text-redPrimary">
+                    {editingAddrId ? '✏️ Edit Address Details' : '+ Add New Structured Address'}
+                  </h3>
+                  {editingAddrId && (
+                    <button type="button" onClick={handleResetAddressForm} className="text-xs text-slate-400 hover:text-white underline">
+                      Cancel Editing
+                    </button>
+                  )}
                 </div>
-                <button type="submit" className="btn-outline border-redPrimary text-redPrimary hover:bg-redPrimary hover:text-white w-full sm:w-auto py-3 px-6">
-                  <Plus className="w-4 h-4 inline mr-1" /> Save Address to Firebase
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-neutral-900 p-4 rounded-2xl border border-slate-200 dark:border-neutral-800">
+
+                  {/* Address Type */}
+                  <div className="sm:col-span-2">
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Type of Address *</label>
+                    <div className="flex gap-2">
+                      {['Home', 'Work', 'Office', 'Other'].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setAddrType(t)}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold border transition ${
+                            addrType === t ? 'bg-redPrimary text-white border-redPrimary shadow-md' : 'bg-white dark:bg-neutral-800 text-slate-400 border-slate-200 dark:border-neutral-700'
+                          }`}
+                        >
+                          {t === 'Home' ? '🏡 Home' : t === 'Work' ? '🏢 Work' : t === 'Office' ? '💼 Office' : '📍 Other'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* House No / Tower / Block */}
+                  <div>
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">House No. / Tower / Block</label>
+                    <input
+                      type="text"
+                      value={addrHouseNo}
+                      onChange={(e) => setAddrHouseNo(e.target.value)}
+                      placeholder="e.g. Flat 4B / Block C"
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold"
+                    />
+                  </div>
+
+                  {/* Address (Building, Street, Area) */}
+                  <div>
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
+                    <input
+                      type="text"
+                      value={addrStreet}
+                      onChange={(e) => setAddrStreet(e.target.value)}
+                      placeholder="e.g. Upper Syari, Deorali-Bazar *"
+                      required
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold"
+                    />
+                  </div>
+
+                  {/* Locality / Town */}
+                  <div>
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Locality / Town</label>
+                    <input
+                      type="text"
+                      value={addrLocality}
+                      onChange={(e) => setAddrLocality(e.target.value)}
+                      placeholder="e.g. Near ICDS Center"
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold"
+                    />
+                  </div>
+
+                  {/* City / District */}
+                  <div>
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">City / District</label>
+                    <input
+                      type="text"
+                      value={addrCity}
+                      onChange={(e) => setAddrCity(e.target.value)}
+                      placeholder="Gangtok"
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold"
+                    />
+                  </div>
+
+                  {/* State (Fixed = Sikkim) */}
+                  <div>
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">State (Default Fixed)</label>
+                    <input
+                      type="text"
+                      value={addrState}
+                      disabled
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-200 dark:bg-neutral-950 text-slate-500 text-xs font-bold cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Pincode (Default = 737101) */}
+                  <div>
+                    <label className="text-[11px] font-extrabold text-slate-400 block mb-1">Pincode (Default: 737101)</label>
+                    <input
+                      type="text"
+                      value={addrPincode}
+                      onChange={(e) => setAddrPincode(e.target.value)}
+                      placeholder="737101"
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold rounded-xl shadow-lg">
+                  <Plus className="w-4 h-4 inline mr-1" /> {editingAddrId ? 'Save Address Updates in Firebase' : 'Save Address to Firebase'}
                 </button>
               </form>
             </div>

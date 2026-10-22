@@ -130,12 +130,15 @@ export default function TrackingPage() {
 
     try {
       const bookingKey = ratingBooking.dbKey || ratingBooking.id;
+
+      // Update order rating
       await update(ref(rtdb, `bookings/${bookingKey}`), {
         userRating: starCount,
         userReviewText: reviewText || 'Verified Customer Rating',
         ratedAt: new Date().toISOString()
       });
 
+      // Recalculate average star rating for the service
       if (ratingBooking.serviceId) {
         const serviceRef = ref(rtdb, `services/${ratingBooking.serviceId}`);
         try {
@@ -153,24 +156,13 @@ export default function TrackingPage() {
         }
       }
 
-      const newTestimonialRef = ref(rtdb, `testimonials/test_${Date.now()}`);
-      await set(newTestimonialRef, {
-        id: `test_${Date.now()}`,
-        name: currentUser?.fullName || ratingBooking.userName || 'Passang Bhutia',
-        location: ratingBooking.address || 'Gangtok, Sikkim',
-        text: reviewText || `Provided ${starCount}-star rating for ${ratingBooking.serviceTitle}.`,
-        rating: starCount,
-        service: ratingBooking.serviceTitle || 'Verified Service',
-        createdAt: new Date().toISOString()
-      });
-
       setIsSubmittingReview(false);
       setRatingBooking(null);
 
       setPopupState({
         isOpen: true,
-        title: 'Thank You for Your Feedback!',
-        message: `Your ${starCount}★ rating and review for ${ratingBooking.serviceTitle} have been published!`,
+        title: 'Thank You for Your Rating!',
+        message: `Your ${starCount}★ rating for ${ratingBooking.serviceTitle} has been saved!`,
         type: 'success'
       });
     } catch (err) {

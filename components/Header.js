@@ -27,20 +27,44 @@ export default function Header({ isDark, onToggleTheme }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
-  // Realtime Listener for Firebase Notifications Count
+  // Realtime Listener for Personalized Unread Notifications Count for Logged-In User
   useEffect(() => {
+    if (!currentUser) {
+      setUnreadNotifCount(0);
+      return;
+    }
+
     const notifsRef = ref(rtdb, 'notifications');
-    const unsub = onValue(notifsRef, (snapshot) => {
+    const userRef = ref(rtdb, `users/${currentUser.id}`);
+
+    const unsubNotifs = onValue(notifsRef, (snapshot) => {
+      const allNotifs = [];
       if (snapshot.exists()) {
         const val = snapshot.val();
-        const count = typeof val === 'object' && val !== null ? Object.keys(val).length : 0;
-        setUnreadNotifCount(count);
-      } else {
-        setUnreadNotifCount(0);
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach(k => {
+            if (val[k]) allNotifs.push({ id: k, ...val[k] });
+          });
+        }
       }
+
+      onValue(userRef, (userSnap) => {
+        if (userSnap.exists()) {
+          const userData = userSnap.val();
+          const readMap = userData.readNotifications || {};
+          const clearedMap = userData.clearedNotifications || {};
+
+          // Count notifications that are NEITHER cleared NOR read by THIS user
+          const unreadList = allNotifs.filter(n => !clearedMap[n.id] && !readMap[n.id]);
+          setUnreadNotifCount(unreadList.length);
+        } else {
+          setUnreadNotifCount(allNotifs.length);
+        }
+      });
     });
-    return () => unsub();
-  }, []);
+
+    return () => unsubNotifs();
+  }, [currentUser]);
 
   const refreshGps = () => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -97,15 +121,15 @@ export default function Header({ isDark, onToggleTheme }) {
         {/* Right Action Icons (Notifications Bell, Theme, Phone, Account, Mobile Hamburger) */}
         <div className="flex items-center gap-2 sm:gap-2.5">
 
-          {/* Notification Bell Icon with Red Counter Badge (Matching Mobile App Header 100%) */}
+          {/* Notification Bell Icon with Red Counter Badge */}
           <Link
             href="/notifications"
-            className="relative bg-white/20 hover:bg-white/30 text-white p-2 rounded-full flex items-center justify-center transition"
+            className="relative bg-white/20 hover:bg-white/30 text-white p-2 rounded-full flex items-center justify-center transition cursor-pointer"
             title="View Notifications"
           >
             <Bell className="w-4 h-4 text-white" />
             {unreadNotifCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-redPrimary border border-white text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+              <span className="absolute -top-1 -right-1 bg-redPrimary border border-white text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-pulse">
                 {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
               </span>
             )}

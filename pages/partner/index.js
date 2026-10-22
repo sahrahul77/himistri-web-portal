@@ -4,10 +4,10 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import PopupModal from '../../components/PopupModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ref, onValue, update } from 'firebase/database';
+import { ref, onValue, update, set } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
-import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell } from 'lucide-react';
+import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell, Trash2 } from 'lucide-react';
 
 export default function PartnerDashboardPage() {
   const [isDark, setIsDark] = useState(true);
@@ -64,29 +64,45 @@ export default function PartnerDashboardPage() {
       setBookings(list);
     });
 
-    // Realtime Listener for Partner Notifications from Firebase Database
-    const unsubNotifs = onValue(ref(rtdb, 'notifications'), (snapshot) => {
-      const list = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
+    // Realtime Listener for Partner Notifications with Cleared Map Filter
+    if (currentUser) {
+      const notifsRef = ref(rtdb, 'notifications');
+      const userRef = ref(rtdb, `users/${currentUser.id}`);
+
+      const unsubNotifs = onValue(notifsRef, (snapshot) => {
+        const rawList = [];
+        if (snapshot.exists()) {
+          snapshot.forEach((child) => {
+            rawList.push({ id: child.key, ...child.val() });
+          });
+        }
+        rawList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+        onValue(userRef, (userSnap) => {
+          let clearedMap = {};
+          if (userSnap.exists()) {
+            const userData = userSnap.val();
+            clearedMap = userData.clearedNotifications || {};
+          }
+
+          // Filter notifications targeting PARTNERS or ALL and exclude cleared alerts for THIS partner
+          const partnerList = rawList.filter(n => {
+            const target = (n.targetAudience || '').toUpperCase();
+            const isTarget = target === 'PARTNERS' || target === 'ALL' || target === 'SERVICE_PARTNERS';
+            return isTarget && !clearedMap[n.id];
+          });
+          setPartnerNotifications(partnerList);
         });
-      }
-      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-      // Filter notifications targeting PARTNERS or ALL
-      const partnerList = list.filter(n => {
-        const target = (n.targetAudience || '').toUpperCase();
-        return target === 'PARTNERS' || target === 'ALL' || target === 'SERVICE_PARTNERS';
       });
-      setPartnerNotifications(partnerList);
-    });
 
-    return () => {
-      unsub();
-      unsubNotifs();
-    };
-  }, []);
+      return () => {
+        unsub();
+        unsubNotifs();
+      };
+    } else {
+      return () => unsub();
+    }
+  }, [currentUser]);
 
   const handleToggleOnline = (nextVal) => {
     setIsOnline(nextVal);
@@ -107,6 +123,32 @@ export default function PartnerDashboardPage() {
         type: 'success'
       });
     });
+  };
+
+  // Clear all alerts ONLY for this specific partner
+  const handleClearAllPartnerNotifs = async () => {
+    if (!currentUser) return;
+    try {
+      const clearedUpdates = {};
+      partnerNotifications.forEach((n) => {
+        clearedUpdates[`users/${currentUser.id}/clearedNotifications/${n.id}`] = true;
+      });
+      await update(ref(rtdb), clearedUpdates);
+      setPartnerNotifications([]);
+    } catch (err) {
+      console.error("Could not clear partner notifications:", err);
+    }
+  };
+
+  // Dismiss single alert ONLY for this specific partner
+  const handleDismissPartnerNotif = async (notifId) => {
+    if (!currentUser) return;
+    try {
+      await set(ref(rtdb, `users/${currentUser.id}/clearedNotifications/${notifId}`), true);
+      setPartnerNotifications(prev => prev.filter(n => n.id !== notifId));
+    } catch (err) {
+      console.error("Could not dismiss partner notification:", err);
+    }
   };
 
   const handleSavePartnerProfile = async (e) => {
@@ -206,19 +248,42 @@ export default function PartnerDashboardPage() {
                     <Bell className="w-5 h-5 text-redPrimary animate-bounce" />
                     <h3 className="font-extrabold text-sm sm:text-base text-white">Broadcast Alerts for Service Partners</h3>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30">
-                    {partnerNotifications.length} Alerts
-                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30">
+                      {partnerNotifications.length} Alerts
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleClearAllPartnerNotifs}
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                      title="Clear All Alerts for Me"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-400" /> Clear All
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
                   {partnerNotifications.map((notif) => (
-                    <div key={notif.id} className="p-4 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1">
-                      <div className="flex justify-between items-center text-xs">
-                        <strong className="text-redPrimary font-extrabold">{notif.title}</strong>
-                        <span className="text-[10px] text-slate-400">{new Date(notif.createdAt || Date.now()).toLocaleString()}</span>
+                    <div key={notif.id} className="p-4 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1 flex items-start justify-between gap-3 group">
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs gap-2">
+                          <strong className="text-redPrimary font-extrabold">{notif.title}</strong>
+                          <span className="text-[10px] text-slate-400">{new Date(notif.createdAt || Date.now()).toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed font-medium">{notif.body}</p>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed font-medium">{notif.body}</p>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDismissPartnerNotif(notif.id)}
+                        className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition shrink-0 cursor-pointer"
+                        title="Dismiss Alert"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>

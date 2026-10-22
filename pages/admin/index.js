@@ -10,12 +10,13 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star, Bell, Send
 } from 'lucide-react';
+import { DEFAULT_CATEGORIES } from '../../lib/defaultData';
 
 export default function AdminControlPanelPage() {
   const [isDark, setIsDark] = useState(true);
-  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs
+  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs, 11=Notifications
 
   // Slider Index States for Admin Tabs
   const [orderSliderIdx, setOrderSliderIdx] = useState(0);
@@ -34,6 +35,13 @@ export default function AdminControlPanelPage() {
   const [bannersList, setBannersList] = useState([]);
   const [testimonialsList, setTestimonialsList] = useState([]);
   const [faqsList, setFaqsList] = useState([]);
+  const [notificationsList, setNotificationsList] = useState([]);
+
+  // Push Notification Form States
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifBody, setNotifBody] = useState('');
+  const [targetAudience, setTargetAudience] = useState('ALL'); // ALL, CUSTOMERS, PARTNERS
+  const [isSendingNotif, setIsSendingNotif] = useState(false);
 
   // Dynamic Popup Modal State
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
@@ -109,7 +117,7 @@ export default function AdminControlPanelPage() {
     setIsDark(prev => !prev);
   };
 
-  // HTML5 Canvas Image Resizer & Quality Optimizer (Compresses ANY Image File to < 200KB)
+  // HTML5 Canvas Image Resizer & Quality Optimizer
   const handleImageFileUpload = (e, callback) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -227,6 +235,12 @@ export default function AdminControlPanelPage() {
       setFaqsList(list);
     });
 
+    const unsubNotifs = onValue(ref(rtdb, 'notifications'), (snapshot) => {
+      const list = parseFirebaseSnapshot(snapshot);
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      setNotificationsList(list);
+    });
+
     return () => {
       unsubBookings();
       unsubUsers();
@@ -235,6 +249,7 @@ export default function AdminControlPanelPage() {
       unsubBanners();
       unsubTestimonials();
       unsubFaqs();
+      unsubNotifs();
     };
   }, []);
 
@@ -259,6 +274,54 @@ export default function AdminControlPanelPage() {
       });
       setAssigningBooking(null);
     });
+  };
+
+  // Broadcast Push Notification Functionality (Connected to Mobile & Web App)
+  const handleSendNotification = async (e) => {
+    e.preventDefault();
+    if (!notifTitle || !notifBody) {
+      setPopupState({
+        isOpen: true,
+        title: 'Fields Required',
+        message: 'Notification Title and Message Body are required.',
+        type: 'error'
+      });
+      return;
+    }
+
+    setIsSendingNotif(true);
+    const notifId = 'notif_' + Date.now();
+
+    const notifData = {
+      id: notifId,
+      title: notifTitle,
+      body: notifBody,
+      targetAudience: targetAudience,
+      sentBy: currentUser?.fullName || adminName || 'Lead Admin',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      await set(ref(rtdb, `notifications/${notifId}`), notifData);
+      setIsSendingNotif(false);
+      setNotifTitle('');
+      setNotifBody('');
+
+      setPopupState({
+        isOpen: true,
+        title: 'Broadcast Notification Sent 🔔',
+        message: `Title: ${notifData.title}\nAudience: ${targetAudience}\n\nBroadcasted to Realtime Database & Mobile App!`,
+        type: 'success'
+      });
+    } catch (err) {
+      setIsSendingNotif(false);
+      setPopupState({
+        isOpen: true,
+        title: 'Broadcast Failed',
+        message: err.message,
+        type: 'error'
+      });
+    }
   };
 
   const currentAdmins = usersList.filter(u => (u.role || '').toUpperCase() === 'ADMIN');
@@ -486,15 +549,17 @@ export default function AdminControlPanelPage() {
   const handleSaveServiceEdit = (e) => {
     e.preventDefault();
     if (!editingService) return;
-    const matchedCat = categoriesList.find(c => c.id === editingService.categoryId);
+    const activeCats = (categoriesList && categoriesList.length > 0) ? categoriesList : DEFAULT_CATEGORIES;
+    const matchedCat = activeCats.find(c => c.id === editingService.categoryId || c.name === editingService.categoryName);
+
     update(ref(rtdb, `services/${editingService.id}`), {
       title: editingService.title,
       originalPrice: parseFloat(editingService.originalPrice) || 1000,
       discountedPrice: parseFloat(editingService.discountedPrice) || 800,
       ratingAverage: parseFloat(editingService.ratingAverage) || 5.0,
       imageUrl: editingService.imageUrl,
-      categoryId: editingService.categoryId || 'cat_services',
-      categoryName: matchedCat ? matchedCat.name : (editingService.categoryName || 'General')
+      categoryId: editingService.categoryId || (matchedCat ? matchedCat.id : 'cat_services'),
+      categoryName: matchedCat ? matchedCat.name : (editingService.categoryName || 'Services Manpower')
     }).then(() => {
       setPopupState({ isOpen: true, title: 'Service Updated', message: 'Service details and category connection saved successfully!', type: 'success' });
       setEditingService(null);
@@ -684,6 +749,7 @@ export default function AdminControlPanelPage() {
                 { id: 5, label: `Categories (${categoriesList.length})` },
                 { id: 6, label: `Services (${servicesList.length})` },
                 { id: 7, label: `Banners (${bannersList.length})` },
+                { id: 11, label: 'Push Notifications 🔔' },
                 { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
                 { id: 10, label: `FAQs (${faqsList.length})` },
                 { id: 8, label: `Manage Sub-Admins 🔑 (${currentAdmins.length}/3)` }
@@ -1016,6 +1082,104 @@ export default function AdminControlPanelPage() {
                 handleAddFaq={handleAddFaq} newFaqQ={newFaqQ} setNewFaqQ={setNewFaqQ} newFaqA={newFaqA} setNewFaqA={setNewFaqA}
                 handleImageFileUpload={handleImageFileUpload}
               />
+            )}
+
+            {/* TAB 11: PUSH NOTIFICATIONS BROADCAST (Matching Mobile App Admin Panel 100%) */}
+            {activeTab === 11 && (
+              <div className="space-y-6">
+                <div className="web-card space-y-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 sm:p-8 rounded-2xl shadow-xl max-w-2xl mx-auto">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3.5 rounded-2xl bg-redPrimary/10 text-redPrimary shrink-0">
+                      <Bell className="w-7 h-7 text-redPrimary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">Broadcast Push Notification</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Send real-time alerts & discount offers across Sikkim</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSendNotification} className="space-y-4 pt-2">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Notification Title *</label>
+                      <input
+                        type="text"
+                        value={notifTitle}
+                        onChange={(e) => setNotifTitle(e.target.value)}
+                        placeholder="Notification Title *"
+                        required
+                        className="w-full p-4 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Message Body *</label>
+                      <textarea
+                        value={notifBody}
+                        onChange={(e) => setNotifBody(e.target.value)}
+                        placeholder="Message Body *"
+                        rows={4}
+                        required
+                        className="w-full p-4 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary leading-relaxed"
+                      ></textarea>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-2">Target Audience:</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { id: 'ALL', label: 'All App Users' },
+                          { id: 'CUSTOMERS', label: 'Customers' },
+                          { id: 'PARTNERS', label: 'Service Partners' }
+                        ].map((aud) => (
+                          <button
+                            key={aud.id}
+                            type="button"
+                            onClick={() => setTargetAudience(aud.id)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${
+                              targetAudience === aud.id
+                                ? 'bg-redPrimary text-white shadow-lg scale-102'
+                                : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-neutral-700'
+                            }`}
+                          >
+                            {aud.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSendingNotif}
+                      className="btn-primary w-full py-4 text-sm font-black shadow-xl bg-redPrimary hover:bg-redDark text-white transition cursor-pointer rounded-xl flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      {isSendingNotif ? 'Broadcasting Alert...' : 'Send & Broadcast Notification 🔔'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Sent Notifications History Log */}
+                {notificationsList.length > 0 && (
+                  <div className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl shadow-xl space-y-4 max-w-2xl mx-auto">
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-800 pb-2">Broadcast History ({notificationsList.length})</h4>
+                    <div className="space-y-3">
+                      {notificationsList.map((n) => (
+                        <div key={n.id} className="p-4 rounded-xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-1">
+                          <div className="flex justify-between items-center text-xs">
+                            <strong className="text-redPrimary font-extrabold">{n.title}</strong>
+                            <span className="text-[10px] text-slate-400">{new Date(n.createdAt).toLocaleString()}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{n.body}</p>
+                          <div className="flex justify-between items-center pt-2 text-[10px] text-slate-400">
+                            <span>Target: <strong className="text-emerald-500">{n.targetAudience}</strong></span>
+                            <span>By: {n.sentBy || 'Admin'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* TAB 8: ADMIN ROLES & CREATION MANAGER */}

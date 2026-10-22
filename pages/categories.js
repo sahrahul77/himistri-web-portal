@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CheckoutModal from '../components/CheckoutModal';
-import { FALLBACK_ICON } from '../lib/defaultData';
+import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -15,9 +15,9 @@ export default function CategoriesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Live Firebase States
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
+  // Initialize state with default data to avoid blank loading pauses
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -41,10 +41,12 @@ export default function CategoriesPage() {
       const list = [];
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
-          list.push({ id: child.key, ...child.val() });
+          if (child.val() && (child.val().name || '').toLowerCase().includes('manpower')) {
+            list.push({ id: child.key, ...child.val() });
+          }
         });
       }
-      setCategories(list);
+      if (list.length > 0) setCategories(list);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -54,7 +56,7 @@ export default function CategoriesPage() {
           list.push({ id: child.key, ...child.val() });
         });
       }
-      setServices(list);
+      if (list.length > 0) setServices(list);
     });
 
     return () => { unsubCat(); unsubSrv(); };
@@ -169,6 +171,8 @@ export default function CategoriesPage() {
                             <Star className="w-3.5 h-3.5 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" /> {rating}
                           </div>
                         </div>
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{s.shortDescription || 'Doorstep expert technical service in Gangtok'}</p>
                       </div>
                     </div>
 

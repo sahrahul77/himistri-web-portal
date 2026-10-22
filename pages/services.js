@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CheckoutModal from '../components/CheckoutModal';
-import { FALLBACK_ICON } from '../lib/defaultData';
+import { DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -15,8 +15,8 @@ export default function ServicesPage() {
   const [query, setQuery] = useState('');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Live Firebase Services State
-  const [services, setServices] = useState([]);
+  // Initialize state with default services to eliminate blank loading pauses
+  const [services, setServices] = useState(DEFAULT_SERVICES);
   const { currentUser, isAuthLoaded } = useAuth();
 
   // Automatic Theme Synchronization Effect
@@ -42,7 +42,7 @@ export default function ServicesPage() {
           list.push({ id: child.key, ...child.val() });
         });
       }
-      setServices(list);
+      if (list.length > 0) setServices(list);
     });
 
     return () => unsubSrv();
@@ -90,7 +90,7 @@ export default function ServicesPage() {
           />
         </div>
 
-        {/* Services Grid (Full Box Occupying Image + Rating at the End of Service Title) */}
+        {/* Services Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {filtered.map((s) => {
             const rating = parseFloat(s.ratingAverage || 5.0).toFixed(1);

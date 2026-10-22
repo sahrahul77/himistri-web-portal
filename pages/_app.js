@@ -1,6 +1,6 @@
 import '../styles/globals.css';
 import { AuthProvider, useAuth } from '../lib/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 
 function AuthGuard({ children }) {
@@ -42,9 +42,31 @@ function AuthGuard({ children }) {
 }
 
 export default function App({ Component, pageProps }) {
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  useEffect(() => {
+    const handleStart = () => setIsNavigating(true);
+    const handleComplete = () => setIsNavigating(false);
+
+    router.events.on('routeChangeStart', handleStart);
+    router.events.on('routeChangeComplete', handleComplete);
+    router.events.on('routeChangeError', handleComplete);
+
+    return () => {
+      router.events.off('routeChangeStart', handleStart);
+      router.events.off('routeChangeComplete', handleComplete);
+      router.events.off('routeChangeError', handleComplete);
+    };
+  }, [router]);
+
   return (
     <AuthProvider>
       <AuthGuard>
+        {/* Global Top Page Navigation Loading Progress Bar */}
+        {isNavigating && (
+          <div className="fixed top-0 left-0 right-0 h-1.5 bg-redPrimary z-[99999] animate-pulse shadow-2xl transition-all duration-300" />
+        )}
         <Component {...pageProps} />
       </AuthGuard>
     </AuthProvider>

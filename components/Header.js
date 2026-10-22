@@ -27,7 +27,7 @@ export default function Header({ isDark, onToggleTheme }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
-  // Realtime Listener for Personalized Unread Notifications Count for Logged-In User
+  // Realtime Listener for Personalized Unread Notifications Count for Logged-In Customer
   useEffect(() => {
     if (!currentUser) {
       setUnreadNotifCount(0);
@@ -49,17 +49,27 @@ export default function Header({ isDark, onToggleTheme }) {
       }
 
       onValue(userRef, (userSnap) => {
+        let readMap = {};
+        let clearedMap = {};
         if (userSnap.exists()) {
           const userData = userSnap.val();
-          const readMap = userData.readNotifications || {};
-          const clearedMap = userData.clearedNotifications || {};
-
-          // Count notifications that are NEITHER cleared NOR read by THIS user
-          const unreadList = allNotifs.filter(n => !clearedMap[n.id] && !readMap[n.id]);
-          setUnreadNotifCount(unreadList.length);
-        } else {
-          setUnreadNotifCount(allNotifs.length);
+          readMap = userData.readNotifications || {};
+          clearedMap = userData.clearedNotifications || {};
         }
+
+        const isCustomer = !currentUser?.role || currentUser?.role === 'CUSTOMER';
+
+        // Count notifications that are NEITHER cleared NOR read by THIS user (excluding partner-only notices for customers)
+        const unreadList = allNotifs.filter(n => {
+          if (clearedMap[n.id] || readMap[n.id]) return false;
+          const target = (n.targetAudience || '').toUpperCase().trim();
+          if (isCustomer && (target === 'PARTNERS' || target === 'SERVICE_PARTNERS')) {
+            return false;
+          }
+          return true;
+        });
+
+        setUnreadNotifCount(unreadList.length);
       });
     });
 

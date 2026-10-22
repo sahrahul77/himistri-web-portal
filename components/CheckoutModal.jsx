@@ -363,11 +363,10 @@ export default function CheckoutModal({ isOpen, onClose, service, currentUser })
                 </div>
               </div>
 
-              {/* Promo Code Input Box */}
+              {/* Promo Code Input Box (NO e.g. SIKKIM10 LABEL) */}
               <div className="p-4 rounded-xl bg-[#242424] border border-[#333333] space-y-2">
-                <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><Tag className="w-4 h-4 text-redPrimary" /> Have a Promo Code / Coupon?</span>
-                  <span className="text-redPrimary text-[10px] font-black">e.g. SIKKIM10</span>
+                <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <Tag className="w-4 h-4 text-redPrimary" /> Have a Promo Code / Coupon?
                 </label>
 
                 {appliedCoupon ? (

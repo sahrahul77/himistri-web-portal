@@ -573,7 +573,7 @@ export default function CheckoutPage() {
 
               </div>
 
-              {/* Right Column: Dynamic Price Summary with Promo Code Field */}
+              {/* Right Column: Dynamic Price Summary with Clean Promo Code Field */}
               <div className="space-y-6">
                 <div className="web-card p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-xl space-y-4 sticky top-24">
                   <h3 className="text-base font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-800 pb-3">Booking Price Summary</h3>
@@ -616,11 +616,10 @@ export default function CheckoutPage() {
                       </div>
                     )}
 
-                    {/* PROMO CODE INPUT BOX */}
+                    {/* CLEAN PROMO CODE INPUT BOX (NO e.g. SIKKIM10 LABEL) */}
                     <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-2">
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block flex items-center justify-between">
-                        <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5 text-redPrimary" /> Apply Promo Code</span>
-                        <span className="text-redPrimary text-[10px] font-black">e.g. SIKKIM10</span>
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5 text-redPrimary" /> Apply Promo Code / Coupon
                       </label>
 
                       {appliedCoupon ? (

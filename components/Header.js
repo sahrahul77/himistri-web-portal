@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/AuthContext';
-import { Sun, Moon, Phone, User, MapPin, ChevronDown, UserCircle, Map, LogOut, ShieldCheck, HardHat, FileText, Menu, X, Home, Layers, Wrench } from 'lucide-react';
+import { Sun, Moon, Phone, User, MapPin, ChevronDown, UserCircle, Map, LogOut, ShieldCheck, HardHat, FileText, Menu, X, Home, Layers, Wrench, Bell } from 'lucide-react';
+import { ref, onValue } from 'firebase/database';
+import { rtdb } from '../lib/firebase';
 
 export default function Header({ isDark, onToggleTheme }) {
   const router = useRouter();
@@ -11,6 +13,7 @@ export default function Header({ isDark, onToggleTheme }) {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   const dropdownRef = useRef(null);
 
@@ -23,6 +26,21 @@ export default function Header({ isDark, onToggleTheme }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
+
+  // Realtime Listener for Firebase Notifications Count
+  useEffect(() => {
+    const notifsRef = ref(rtdb, 'notifications');
+    const unsub = onValue(notifsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        const count = typeof val === 'object' && val !== null ? Object.keys(val).length : 0;
+        setUnreadNotifCount(count);
+      } else {
+        setUnreadNotifCount(0);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const refreshGps = () => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -76,8 +94,22 @@ export default function Header({ isDark, onToggleTheme }) {
           </nav>
         )}
 
-        {/* Right Action Icons (Theme, Phone, Account, Mobile Hamburger) */}
+        {/* Right Action Icons (Notifications Bell, Theme, Phone, Account, Mobile Hamburger) */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+
+          {/* Notification Bell Icon with Red Counter Badge (Matching Mobile App Header 100%) */}
+          <Link
+            href="/notifications"
+            className="relative bg-white/20 hover:bg-white/30 text-white p-2 rounded-full flex items-center justify-center transition"
+            title="View Notifications"
+          >
+            <Bell className="w-4 h-4 text-white" />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-redPrimary border border-white text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+              </span>
+            )}
+          </Link>
 
           {/* Theme Toggle Button */}
           <button onClick={onToggleTheme} className="bg-white/20 hover:bg-white/30 text-white p-2 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition">
@@ -143,68 +175,41 @@ export default function Header({ isDark, onToggleTheme }) {
                 </div>
               )}
             </div>
-          ) : (
-            <Link href="/auth" className="bg-white/20 hover:bg-white/30 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition">
-              <User className="w-4 h-4" /> Sign In
+          ) : isAuthLoaded && (
+            <Link href="/auth" className="bg-white text-redPrimary hover:bg-slate-100 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-extrabold transition shadow-md shrink-0">
+              Sign In
             </Link>
           )}
 
           {/* Mobile Hamburger Toggle Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition ml-1"
-            title="Toggle Menu"
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-1.5 rounded-xl hover:bg-white/20 transition">
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Navigation Drawer (Visible on Mobile when Toggled) */}
+      {/* Sub-Header Bar: GPS Location & Quick Search Strip */}
+      <div className="bg-white dark:bg-darkSurface border-b border-slate-200 dark:border-neutral-800 px-4 sm:px-6 py-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
+        <div className="flex items-center gap-2 truncate max-w-full">
+          <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0" />
+          <span className="font-extrabold text-slate-900 dark:text-white truncate">{gpsText}</span>
+        </div>
+
+        <button onClick={refreshGps} className="text-redPrimary hover:underline font-bold text-[11px] shrink-0 self-end sm:self-auto">
+          Refresh GPS
+        </button>
+      </div>
+
+      {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-neutral-900 text-white border-b border-neutral-800 px-6 py-4 space-y-3 animate-in slide-in-from-top duration-200 shadow-2xl">
-          <nav className="flex flex-col space-y-2 text-xs font-extrabold pt-1">
-            <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="p-2.5 rounded-xl hover:bg-neutral-800 flex items-center gap-2.5">
-              <Home className="w-4 h-4 text-redPrimary" /> Home Portal
-            </Link>
-            <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="p-2.5 rounded-xl hover:bg-neutral-800 flex items-center gap-2.5">
-              <Layers className="w-4 h-4 text-redPrimary" /> Explore Categories
-            </Link>
-            <Link href="/services" onClick={() => setIsMobileMenuOpen(false)} className="p-2.5 rounded-xl hover:bg-neutral-800 flex items-center gap-2.5">
-              <Wrench className="w-4 h-4 text-redPrimary" /> Doorstep Services
-            </Link>
-
-            {currentUser && !isAdmin && !isPartner && (
-              <>
-                <Link href="/tracking" onClick={() => setIsMobileMenuOpen(false)} className="p-2.5 rounded-xl hover:bg-neutral-800 flex items-center gap-2.5 text-amber-300">
-                  <FileText className="w-4 h-4 text-amber-300" /> My Orders & Tracking
-                </Link>
-                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="p-2.5 rounded-xl hover:bg-neutral-800 flex items-center gap-2.5">
-                  <UserCircle className="w-4 h-4 text-redPrimary" /> My Profile & Address Book
-                </Link>
-              </>
-            )}
-
-            {isAdmin && (
-              <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="p-2.5 rounded-xl bg-redPrimary/20 text-redPrimary flex items-center gap-2.5">
-                <ShieldCheck className="w-4 h-4" /> Admin Control Panel
-              </Link>
-            )}
-
-            {isPartner && (
-              <Link href="/partner" onClick={() => setIsMobileMenuOpen(false)} className="p-2.5 rounded-xl bg-orangeSecondary/20 text-orangeSecondary flex items-center gap-2.5">
-                <HardHat className="w-4 h-4" /> Service Partner Dashboard
-              </Link>
-            )}
-          </nav>
+        <div className="md:hidden bg-white dark:bg-darkSurface border-b border-slate-200 dark:border-neutral-800 px-4 py-4 space-y-3 font-bold text-xs shadow-2xl text-slate-800 dark:text-slate-200">
+          <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Home className="w-4 h-4 text-redPrimary" /> Home</Link>
+          <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Layers className="w-4 h-4 text-redPrimary" /> Explore Categories</Link>
+          <Link href="/services" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Wrench className="w-4 h-4 text-redPrimary" /> Doorstep Services</Link>
+          <Link href="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Bell className="w-4 h-4 text-redPrimary" /> Notifications ({unreadNotifCount})</Link>
+          <Link href="/tracking" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><FileText className="w-4 h-4 text-redPrimary" /> Order Tracking</Link>
         </div>
       )}
-
-      {/* GPS Location Strip */}
-      <div onClick={refreshGps} className="bg-black/25 text-white px-4 sm:px-6 py-2 flex justify-between items-center text-[11px] sm:text-xs font-semibold cursor-pointer hover:bg-black/35 transition">
-        <div className="flex items-center gap-2 truncate pr-2"><MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0" /><span className="truncate">{gpsText}</span></div>
-        <span className="underline opacity-80 shrink-0">Refresh GPS</span>
-      </div>
     </header>
   );
 }

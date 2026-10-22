@@ -758,7 +758,7 @@ export default function AdminControlPanelPage() {
                 { id: 5, label: `Categories (${categoriesList.length})` },
                 { id: 6, label: `Services (${servicesList.length})` },
                 { id: 7, label: `Banners (${bannersList.length})` },
-                { id: 11, label: 'Push Notifications 🔔' },
+                { id: 11, label: `Push Notifications 🔔 (${notificationsList.length})` },
                 { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
                 { id: 10, label: `FAQs (${faqsList.length})` },
                 { id: 8, label: `Manage Sub-Admins 🔑 (${currentAdmins.length}/3)` }
@@ -1220,7 +1220,7 @@ export default function AdminControlPanelPage() {
 
                           <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">{currentNotifObj.body}</p>
 
-                          <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-neutral-800/80 text-xs">
+                          <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-neutral-800 text-xs">
                             <span className="text-[11px] text-slate-400">By: {currentNotifObj.sentBy || 'Admin'}</span>
                             <button
                               type="button"

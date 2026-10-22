@@ -26,6 +26,7 @@ export default function AdminControlPanelPage() {
   const [bnrSliderIdx, setBnrSliderIdx] = useState(0);
   const [testSliderIdx, setTestSliderIdx] = useState(0);
   const [faqSliderIdx, setFaqSliderIdx] = useState(0);
+  const [notifSliderIdx, setNotifSliderIdx] = useState(0);
 
   // Realtime Database States
   const [bookings, setBookings] = useState([]);
@@ -615,9 +616,14 @@ export default function AdminControlPanelPage() {
 
   // Robust Revenue & GMV Calculations
   const totalPlatformGMV = bookings.reduce((sum, b) => sum + (parseFloat(b.totalAmount) || 0), 0);
-  const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
+  const completedBookings = bookings.filter(b => (b.status || '').toUpperCase().trim() === 'COMPLETED');
   const totalRevenue = completedBookings.reduce((sum, b) => sum + (parseFloat(b.totalAmount) || 0), 0) || totalPlatformGMV;
-  const activeOrdersCount = bookings.filter(b => b.status !== 'COMPLETED').length;
+
+  // Active Orders Count strictly excludes COMPLETED, CANCELLED, and REJECTED orders
+  const activeOrdersCount = bookings.filter(b => {
+    const st = (b.status || '').toUpperCase().trim();
+    return st !== 'COMPLETED' && st !== 'CANCELLED' && st !== 'REJECTED' && !st.includes('CANCEL');
+  }).length;
 
   const allPartnersList = usersList.filter(u => {
     const roleUpper = (u.role || '').toUpperCase();
@@ -661,6 +667,9 @@ export default function AdminControlPanelPage() {
 
   const safeOrderIdx = orderSliderIdx % (filteredOrders.length || 1);
   const currentOrder = filteredOrders[safeOrderIdx] || filteredOrders[0];
+
+  const safeNotifIdx = notifSliderIdx % (notificationsList.length || 1);
+  const currentNotifObj = notificationsList[safeNotifIdx] || notificationsList[0];
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
@@ -756,7 +765,7 @@ export default function AdminControlPanelPage() {
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setUserSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); }}
+                  onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setUserSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); setNotifSliderIdx(0); }}
                   className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition shrink-0 ${
                     activeTab === t.id ? 'bg-redPrimary text-white shadow-lg scale-105' : 'bg-white dark:bg-[#1A1A1A] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-[#333333] hover:text-slate-900 dark:hover:text-white'
                   }`}
@@ -1158,25 +1167,85 @@ export default function AdminControlPanelPage() {
                   </form>
                 </div>
 
-                {/* Sent Notifications History Log */}
+                {/* Sent Notifications History Carousel Slider with Delete Option */}
                 {notificationsList.length > 0 && (
                   <div className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl shadow-xl space-y-4 max-w-2xl mx-auto">
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-800 pb-2">Broadcast History ({notificationsList.length})</h4>
-                    <div className="space-y-3">
-                      {notificationsList.map((n) => (
-                        <div key={n.id} className="p-4 rounded-xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <strong className="text-redPrimary font-extrabold">{n.title}</strong>
-                            <span className="text-[10px] text-slate-400">{new Date(n.createdAt).toLocaleString()}</span>
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{n.body}</p>
-                          <div className="flex justify-between items-center pt-2 text-[10px] text-slate-400">
-                            <span>Target: <strong className="text-emerald-500">{n.targetAudience}</strong></span>
-                            <span>By: {n.sentBy || 'Admin'}</span>
-                          </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-neutral-800">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                        Broadcast History <span className="text-redPrimary">({safeNotifIdx + 1} of {notificationsList.length})</span>
+                      </h4>
+
+                      {notificationsList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNotifSliderIdx((prev) => (prev - 1 + notificationsList.length) % notificationsList.length)}
+                            className="p-1.5 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-white hover:border-redPrimary"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <span className="text-xs font-bold text-slate-500">
+                            {safeNotifIdx + 1} / {notificationsList.length}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setNotifSliderIdx((prev) => (prev + 1) % notificationsList.length)}
+                            className="p-1.5 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-white hover:border-redPrimary"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
                         </div>
-                      ))}
+                      )}
                     </div>
+
+                    {currentNotifObj && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={currentNotifObj.id || safeNotifIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.2 }}
+                          className="p-5 rounded-2xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-3 relative shadow-inner"
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <strong className="text-redPrimary text-base block font-extrabold">{currentNotifObj.title}</strong>
+                              <span className="text-[10px] text-slate-400 block mt-0.5">{new Date(currentNotifObj.createdAt).toLocaleString()}</span>
+                            </div>
+                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
+                              Target: {currentNotifObj.targetAudience}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">{currentNotifObj.body}</p>
+
+                          <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-neutral-800/80 text-xs">
+                            <span className="text-[11px] text-slate-400">By: {currentNotifObj.sentBy || 'Admin'}</span>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingPath(`notifications/${currentNotifObj.id}`)}
+                              className="bg-rose-700 hover:bg-rose-800 text-white text-xs px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1 transition shadow-sm"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete Broadcast
+                            </button>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {notificationsList.length > 1 && (
+                      <div className="flex justify-center gap-1.5 pt-1">
+                        {notificationsList.map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setNotifSliderIdx(i)}
+                            className={`h-2 rounded-full transition-all ${safeNotifIdx === i ? 'w-6 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700'}`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

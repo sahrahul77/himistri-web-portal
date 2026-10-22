@@ -7,8 +7,9 @@ import PopupModal from '../components/PopupModal';
 import { ref, set, push, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck, Tag, Percent } from 'lucide-react';
 import { DURATION_PLANS, getDurationOptions, getDurationUnitText, calculateDurationPrice } from '../lib/durationHelpers';
+import { DEFAULT_COUPONS } from '../lib/defaultData';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -33,6 +34,12 @@ export default function CheckoutPage() {
   const [city, setCity] = useState('Gangtok');
   const [state, setState] = useState('Sikkim');
   const [pincode, setPincode] = useState('737101');
+
+  // Promo Code States
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponsList, setCouponsList] = useState(DEFAULT_COUPONS);
+  const [promoError, setPromoError] = useState('');
 
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,14 +86,43 @@ export default function CheckoutPage() {
         }
       });
     }
+
+    // Fetch Live Coupons from Firebase Realtime Database
+    const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => {
+            if (val[k]) list.push({ id: k, ...val[k] });
+          });
+        }
+      }
+      setCouponsList(list.length > 0 ? list : DEFAULT_COUPONS);
+    });
+
+    return () => unsubCoupons();
   }, [currentUser]);
 
-  // Dynamic Duration Price Calculation
+  // Dynamic Duration Price & Promo Discount Calculation
   const basePrice = service ? (service.discountedPrice || service.originalPrice || 800) : 800;
   const singleUnitDurationPrice = calculateDurationPrice(basePrice, bookingPlan, durationValue);
-  const totalPrice = singleUnitDurationPrice * quantity;
+  const subtotalPrice = singleUnitDurationPrice * quantity;
   const durationText = getDurationUnitText(bookingPlan, durationValue);
   const durationOptions = getDurationOptions(bookingPlan);
+
+  // Promo Discount Logic
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    const discVal = parseFloat(appliedCoupon.discountValue) || 0;
+    if (appliedCoupon.discountType === 'PERCENTAGE') {
+      discountAmount = Math.round(subtotalPrice * (discVal / 100));
+    } else {
+      discountAmount = Math.min(subtotalPrice, discVal);
+    }
+  }
+
+  const finalTotalPrice = Math.max(0, subtotalPrice - discountAmount);
 
   const toggleTheme = () => {
     setIsDark(prev => !prev);
@@ -120,6 +156,47 @@ export default function CheckoutPage() {
         setPincode(matchedAddr.pincode || '737101');
       }
     }
+  };
+
+  // Promo Code Handlers
+  const handleApplyPromoCode = (e) => {
+    e.preventDefault();
+    setPromoError('');
+    const codeClean = promoInput.trim().toUpperCase();
+
+    if (!codeClean) {
+      setPromoError('Please enter a promo code.');
+      return;
+    }
+
+    const activeCoupons = couponsList.length > 0 ? couponsList : DEFAULT_COUPONS;
+    const foundCoupon = activeCoupons.find(c => (c.code || '').toUpperCase() === codeClean && (c.isActive !== false));
+
+    if (!foundCoupon) {
+      setPromoError('Invalid or expired promo code.');
+      return;
+    }
+
+    const minAmount = parseFloat(foundCoupon.minOrderAmount) || 0;
+    if (subtotalPrice < minAmount) {
+      setPromoError(`Code requires a minimum subtotal order of ₹${minAmount}.`);
+      return;
+    }
+
+    setAppliedCoupon(foundCoupon);
+    setPromoError('');
+    setPopupState({
+      isOpen: true,
+      title: 'Promo Code Applied! 🎉',
+      message: `Code '${foundCoupon.code}' applied successfully!\nDiscount: ${foundCoupon.discountType === 'PERCENTAGE' ? foundCoupon.discountValue + '% OFF' : 'Flat ₹' + foundCoupon.discountValue + ' OFF'}`,
+      type: 'success'
+    });
+  };
+
+  const handleRemovePromoCode = () => {
+    setAppliedCoupon(null);
+    setPromoInput('');
+    setPromoError('');
   };
 
   const handleSubmit = async (e) => {
@@ -180,7 +257,7 @@ export default function CheckoutPage() {
       }
     }
 
-    // Save Complete Booking object with Duration Plan to Firebase
+    // Save Complete Booking object with Promo Code & Final Price
     const bookingData = {
       id: bookingId,
       bookingRef: bookingRef,
@@ -195,7 +272,10 @@ export default function CheckoutPage() {
       bookingPlan: bookingPlan, // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
       durationValue: durationValue,
       durationUnitText: durationText, // e.g. "3 Hours", "2 Days", "1 Week"
-      totalAmount: totalPrice,
+      subtotalAmount: subtotalPrice,
+      appliedPromoCode: appliedCoupon ? appliedCoupon.code : 'NONE',
+      discountAmount: discountAmount,
+      totalAmount: finalTotalPrice,
       scheduledDate: date,
       scheduledTimeSlot: slot,
       address: fullAddrString,
@@ -213,7 +293,7 @@ export default function CheckoutPage() {
       setPopupState({
         isOpen: true,
         title: 'Order Confirmed!',
-        message: `Booking Ref: ${bookingRef}\nDuration: ${durationText}\nTotal: ₹${totalPrice}\n\nOur verified technician is dispatched!`,
+        message: `Booking Ref: ${bookingRef}\nDuration: ${durationText}\nTotal: ₹${finalTotalPrice}${discountAmount > 0 ? ' (Saved ₹' + discountAmount + ')' : ''}\n\nOur verified technician is dispatched!`,
         type: 'success',
         onAction: () => router.push(`/tracking?ref=${bookingRef}`)
       });
@@ -261,7 +341,7 @@ export default function CheckoutPage() {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-black">Complete Your Doorstep Booking</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Select duration dropdowns, schedule date & address in Gangtok, Sikkim</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Select duration dropdowns, promo code & address in Gangtok, Sikkim</p>
               </div>
             </div>
 
@@ -493,7 +573,7 @@ export default function CheckoutPage() {
 
               </div>
 
-              {/* Right Column: Dynamic Price Summary */}
+              {/* Right Column: Dynamic Price Summary with Promo Code Field */}
               <div className="space-y-6">
                 <div className="web-card p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-xl space-y-4 sticky top-24">
                   <h3 className="text-base font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-800 pb-3">Booking Price Summary</h3>
@@ -524,9 +604,68 @@ export default function CheckoutPage() {
                       <span>x {quantity}</span>
                     </div>
 
+                    <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200 pt-1">
+                      <span>Subtotal Amount:</span>
+                      <span>₹{subtotalPrice}</span>
+                    </div>
+
+                    {appliedCoupon && (
+                      <div className="flex justify-between text-emerald-500 font-black">
+                        <span>Promo Discount ({appliedCoupon.code}):</span>
+                        <span>-₹{discountAmount}</span>
+                      </div>
+                    )}
+
+                    {/* PROMO CODE INPUT BOX */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-2">
+                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block flex items-center justify-between">
+                        <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5 text-redPrimary" /> Apply Promo Code</span>
+                        <span className="text-redPrimary text-[10px] font-black">e.g. SIKKIM10</span>
+                      </label>
+
+                      {appliedCoupon ? (
+                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                          <div>
+                            <strong className="text-xs font-black text-emerald-500 block">✓ {appliedCoupon.code} Applied</strong>
+                            <span className="text-[10px] text-slate-400">
+                              {appliedCoupon.discountType === 'PERCENTAGE' ? `${appliedCoupon.discountValue}% OFF` : `Flat ₹${appliedCoupon.discountValue} OFF`}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleRemovePromoCode}
+                            className="text-xs font-extrabold text-rose-500 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={promoInput}
+                            onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(''); }}
+                            placeholder="Enter Promo Code"
+                            className="flex-1 p-2.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:border-redPrimary"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyPromoCode}
+                            className="px-4 py-2.5 rounded-xl bg-redPrimary hover:bg-redDark text-white text-xs font-extrabold transition shadow-md shrink-0 cursor-pointer"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      )}
+
+                      {promoError && (
+                        <p className="text-[11px] font-bold text-rose-500 mt-1">{promoError}</p>
+                      )}
+                    </div>
+
                     <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-neutral-800 text-base font-black text-redPrimary">
                       <span>Total Amount:</span>
-                      <span>₹{totalPrice}</span>
+                      <span>₹{finalTotalPrice}</span>
                     </div>
                   </div>
 
@@ -536,7 +675,7 @@ export default function CheckoutPage() {
                     className="btn-primary w-full py-4 text-sm font-black shadow-lg rounded-xl bg-redPrimary hover:bg-redDark text-white transition cursor-pointer"
                   >
                     <CheckCircle className="w-4 h-4 inline mr-1" />
-                    {isSubmitting ? 'Placing Booking...' : `Confirm & Book (${durationText} • ₹${totalPrice})`}
+                    {isSubmitting ? 'Placing Booking...' : `Confirm & Book (${durationText} • ₹${finalTotalPrice})`}
                   </button>
 
                   <p className="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1">

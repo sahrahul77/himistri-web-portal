@@ -10,13 +10,13 @@ import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star, Bell, Send
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star, Bell, Send, Tag, Percent
 } from 'lucide-react';
-import { DEFAULT_CATEGORIES } from '../../lib/defaultData';
+import { DEFAULT_CATEGORIES, DEFAULT_COUPONS } from '../../lib/defaultData';
 
 export default function AdminControlPanelPage() {
   const [isDark, setIsDark] = useState(true);
-  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs, 11=Notifications
+  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs, 11=Notifications, 12=Coupons
 
   // Slider Index States for Admin Tabs
   const [orderSliderIdx, setOrderSliderIdx] = useState(0);
@@ -27,6 +27,7 @@ export default function AdminControlPanelPage() {
   const [testSliderIdx, setTestSliderIdx] = useState(0);
   const [faqSliderIdx, setFaqSliderIdx] = useState(0);
   const [notifSliderIdx, setNotifSliderIdx] = useState(0);
+  const [couponSliderIdx, setCouponSliderIdx] = useState(0);
 
   // Realtime Database States
   const [bookings, setBookings] = useState([]);
@@ -37,12 +38,20 @@ export default function AdminControlPanelPage() {
   const [testimonialsList, setTestimonialsList] = useState([]);
   const [faqsList, setFaqsList] = useState([]);
   const [notificationsList, setNotificationsList] = useState([]);
+  const [couponsList, setCouponsList] = useState([]);
 
   // Push Notification Form States
   const [notifTitle, setNotifTitle] = useState('');
   const [notifBody, setNotifBody] = useState('');
   const [targetAudience, setTargetAudience] = useState('ALL'); // ALL, CUSTOMERS, PARTNERS
   const [isSendingNotif, setIsSendingNotif] = useState(false);
+
+  // Promo Code Management States
+  const [newCouponCode, setNewCouponCode] = useState('');
+  const [newCouponType, setNewCouponType] = useState('PERCENTAGE'); // 'PERCENTAGE' | 'FLAT'
+  const [newCouponValue, setNewCouponValue] = useState('');
+  const [newCouponMinOrder, setNewCouponMinOrder] = useState('');
+  const [newCouponDesc, setNewCouponDesc] = useState('');
 
   // Dynamic Popup Modal State
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
@@ -242,6 +251,11 @@ export default function AdminControlPanelPage() {
       setNotificationsList(list);
     });
 
+    const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
+      const list = parseFirebaseSnapshot(snapshot);
+      setCouponsList(list.length > 0 ? list : DEFAULT_COUPONS);
+    });
+
     return () => {
       unsubBookings();
       unsubUsers();
@@ -251,6 +265,7 @@ export default function AdminControlPanelPage() {
       unsubTestimonials();
       unsubFaqs();
       unsubNotifs();
+      unsubCoupons();
     };
   }, []);
 
@@ -277,7 +292,7 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Broadcast Push Notification Functionality (Connected to Mobile & Web App)
+  // Broadcast Push Notification Functionality
   const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!notifTitle || !notifBody) {
@@ -319,6 +334,56 @@ export default function AdminControlPanelPage() {
       setPopupState({
         isOpen: true,
         title: 'Broadcast Failed',
+        message: err.message,
+        type: 'error'
+      });
+    }
+  };
+
+  // Create & Manage Promo Codes
+  const handleAddCoupon = async (e) => {
+    e.preventDefault();
+    if (!newCouponCode || !newCouponValue) {
+      setPopupState({
+        isOpen: true,
+        title: 'Form Incomplete',
+        message: 'Promo Code string and Discount Value are required.',
+        type: 'error'
+      });
+      return;
+    }
+
+    const couponCodeClean = newCouponCode.trim().toUpperCase();
+    const couponId = 'coupon_' + couponCodeClean.toLowerCase();
+
+    const couponData = {
+      id: couponId,
+      code: couponCodeClean,
+      discountType: newCouponType, // 'PERCENTAGE' | 'FLAT'
+      discountValue: parseFloat(newCouponValue) || 10,
+      minOrderAmount: parseFloat(newCouponMinOrder) || 0,
+      description: newCouponDesc || `${couponCodeClean} Discount Offer`,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      await set(ref(rtdb, `coupons/${couponId}`), couponData);
+      setNewCouponCode('');
+      setNewCouponValue('');
+      setNewCouponMinOrder('');
+      setNewCouponDesc('');
+
+      setPopupState({
+        isOpen: true,
+        title: 'Promo Code Saved! 🎟️',
+        message: `Code '${couponCodeClean}' created successfully!\nDiscount: ${newCouponType === 'PERCENTAGE' ? newCouponValue + '% OFF' : 'Flat ₹' + newCouponValue + ' OFF'}`,
+        type: 'success'
+      });
+    } catch (err) {
+      setPopupState({
+        isOpen: true,
+        title: 'Creation Failed',
         message: err.message,
         type: 'error'
       });
@@ -671,6 +736,10 @@ export default function AdminControlPanelPage() {
   const safeNotifIdx = notifSliderIdx % (notificationsList.length || 1);
   const currentNotifObj = notificationsList[safeNotifIdx] || notificationsList[0];
 
+  const activeCouponsList = couponsList.length > 0 ? couponsList : DEFAULT_COUPONS;
+  const safeCouponIdx = couponSliderIdx % (activeCouponsList.length || 1);
+  const currentCouponObj = activeCouponsList[safeCouponIdx] || activeCouponsList[0];
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
@@ -759,13 +828,14 @@ export default function AdminControlPanelPage() {
                 { id: 6, label: `Services (${servicesList.length})` },
                 { id: 7, label: `Banners (${bannersList.length})` },
                 { id: 11, label: `Push Notifications 🔔 (${notificationsList.length})` },
+                { id: 12, label: `Promo Codes 🎟️ (${activeCouponsList.length})` },
                 { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
                 { id: 10, label: `FAQs (${faqsList.length})` },
                 { id: 8, label: `Manage Sub-Admins 🔑 (${currentAdmins.length}/3)` }
               ].map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setUserSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); setNotifSliderIdx(0); }}
+                  onClick={() => { setActiveTab(t.id); setOrderSliderIdx(0); setUserSliderIdx(0); setCatSliderIdx(0); setSrvSliderIdx(0); setBnrSliderIdx(0); setTestSliderIdx(0); setFaqSliderIdx(0); setNotifSliderIdx(0); setCouponSliderIdx(0); }}
                   className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition shrink-0 ${
                     activeTab === t.id ? 'bg-redPrimary text-white shadow-lg scale-105' : 'bg-white dark:bg-[#1A1A1A] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-[#333333] hover:text-slate-900 dark:hover:text-white'
                   }`}
@@ -854,10 +924,18 @@ export default function AdminControlPanelPage() {
 
                           <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{currentOrder.serviceTitle} • ₹{currentOrder.totalAmount} <span className="text-xs text-slate-400">(Qty: {currentOrder.quantity || 1})</span></h3>
 
-                          {/* Duration Plan Display */}
-                          <div className="p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex items-center gap-2 text-xs font-bold text-redPrimary">
-                            <Timer className="w-4 h-4 text-redPrimary shrink-0" />
-                            <span>Booking Duration: {currentOrder.durationUnitText || '1 Hour'} ({currentOrder.bookingPlan || 'HOURLY'} BASIS)</span>
+                          {/* Duration & Promo Code Details */}
+                          <div className="flex flex-wrap gap-2 text-xs font-bold">
+                            <div className="p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex items-center gap-2 text-redPrimary flex-1 min-w-[200px]">
+                              <Timer className="w-4 h-4 text-redPrimary shrink-0" />
+                              <span>Booking Duration: {currentOrder.durationUnitText || '1 Hour'} ({currentOrder.bookingPlan || 'HOURLY'} BASIS)</span>
+                            </div>
+                            {currentOrder.appliedPromoCode && currentOrder.appliedPromoCode !== 'NONE' && (
+                              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center gap-2 shrink-0">
+                                <Tag className="w-4 h-4 text-emerald-500 shrink-0" />
+                                <span>Promo: {currentOrder.appliedPromoCode} (-₹{currentOrder.discountAmount || 0})</span>
+                              </div>
+                            )}
                           </div>
 
                           <p className="text-xs text-slate-600 dark:text-slate-400">Customer: <strong className="text-slate-900 dark:text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
@@ -1093,7 +1171,7 @@ export default function AdminControlPanelPage() {
               />
             )}
 
-            {/* TAB 11: PUSH NOTIFICATIONS BROADCAST (Matching Mobile App Admin Panel 100%) */}
+            {/* TAB 11: PUSH NOTIFICATIONS BROADCAST */}
             {activeTab === 11 && (
               <div className="space-y-6">
                 <div className="web-card space-y-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 sm:p-8 rounded-2xl shadow-xl max-w-2xl mx-auto">
@@ -1242,6 +1320,168 @@ export default function AdminControlPanelPage() {
                             type="button"
                             onClick={() => setNotifSliderIdx(i)}
                             className={`h-2 rounded-full transition-all ${safeNotifIdx === i ? 'w-6 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700'}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 12: PROMO CODES & COUPON MANAGEMENT */}
+            {activeTab === 12 && (
+              <div className="space-y-6">
+                <form onSubmit={handleAddCoupon} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl shadow-xl max-w-2xl mx-auto">
+                  <h3 className="font-extrabold text-base text-redPrimary flex items-center gap-2">
+                    <Tag className="w-5 h-5 text-redPrimary" /> Create New Promo Code / Discount Coupon
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Promo Code String *</label>
+                      <input
+                        type="text"
+                        value={newCouponCode}
+                        onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. SIKKIM10"
+                        required
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:border-redPrimary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Discount Type *</label>
+                      <select
+                        value={newCouponType}
+                        onChange={(e) => setNewCouponType(e.target.value)}
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                      >
+                        <option value="PERCENTAGE">Percentage Discount (% OFF)</option>
+                        <option value="FLAT">Flat Money Deduction (₹ OFF)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                        {newCouponType === 'PERCENTAGE' ? 'Discount Percentage (% OFF) *' : 'Flat Deduction Amount (₹ OFF) *'}
+                      </label>
+                      <input
+                        type="number"
+                        value={newCouponValue}
+                        onChange={(e) => setNewCouponValue(e.target.value)}
+                        placeholder={newCouponType === 'PERCENTAGE' ? 'e.g. 10 (for 10% OFF)' : 'e.g. 100 (for ₹100 OFF)'}
+                        required
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Minimum Order Subtotal (₹)</label>
+                      <input
+                        type="number"
+                        value={newCouponMinOrder}
+                        onChange={(e) => setNewCouponMinOrder(e.target.value)}
+                        placeholder="e.g. 300 (Optional min requirement)"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Coupon Offer Description</label>
+                      <input
+                        type="text"
+                        value={newCouponDesc}
+                        onChange={(e) => setNewCouponDesc(e.target.value)}
+                        placeholder="e.g. 10% OFF on all doorstep bookings in Sikkim"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn-primary w-full py-4 text-xs font-extrabold shadow-lg rounded-xl cursor-pointer">
+                    <Plus className="w-4 h-4 inline mr-1" /> Save & Activate Promo Code
+                  </button>
+                </form>
+
+                {/* Promo Codes Slider / List */}
+                {activeCouponsList.length > 0 && (
+                  <div className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl shadow-xl space-y-4 max-w-2xl mx-auto">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-neutral-800">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                        Active Promo Codes <span className="text-redPrimary">({safeCouponIdx + 1} of {activeCouponsList.length})</span>
+                      </h4>
+
+                      {activeCouponsList.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setCouponSliderIdx((prev) => (prev - 1 + activeCouponsList.length) % activeCouponsList.length)}
+                            className="p-1.5 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-white hover:border-redPrimary"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <span className="text-xs font-bold text-slate-500">
+                            {safeCouponIdx + 1} / {activeCouponsList.length}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setCouponSliderIdx((prev) => (prev + 1) % activeCouponsList.length)}
+                            className="p-1.5 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-white hover:border-redPrimary"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {currentCouponObj && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={currentCouponObj.id || safeCouponIdx}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.2 }}
+                          className="p-5 rounded-2xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-3 relative shadow-inner"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <Tag className="w-5 h-5 text-redPrimary" />
+                              <strong className="text-xl font-black text-slate-900 dark:text-white uppercase">{currentCouponObj.code}</strong>
+                            </div>
+                            <span className="px-3 py-1 rounded-full text-xs font-black bg-redPrimary/20 text-redPrimary border border-redPrimary/30">
+                              {currentCouponObj.discountType === 'PERCENTAGE' ? `${currentCouponObj.discountValue}% OFF` : `Flat ₹${currentCouponObj.discountValue} OFF`}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">{currentCouponObj.description || 'Promotional Offer Code'}</p>
+
+                          <div className="text-[11px] text-slate-400">
+                            <span>Min Order Subtotal: <strong className="text-slate-200">₹{currentCouponObj.minOrderAmount || 0}</strong></span>
+                          </div>
+
+                          <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-neutral-800">
+                            <button
+                              type="button"
+                              onClick={() => setDeletingPath(`coupons/${currentCouponObj.id}`)}
+                              className="bg-rose-700 hover:bg-rose-800 text-white text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1 transition shadow-sm"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete Promo Code
+                            </button>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {activeCouponsList.length > 1 && (
+                      <div className="flex justify-center gap-1.5 pt-1">
+                        {activeCouponsList.map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setCouponSliderIdx(i)}
+                            className={`h-2 rounded-full transition-all ${safeCouponIdx === i ? 'w-6 bg-redPrimary' : 'w-2 bg-slate-300 dark:bg-neutral-700'}`}
                           />
                         ))}
                       </div>

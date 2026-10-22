@@ -53,8 +53,25 @@ export default function NotificationsPage() {
         }
         setClearedNotifMap(clearedMap);
 
-        // Filter out notifications cleared specifically for THIS user
-        const userVisibleNotifs = rawList.filter(n => !clearedMap[n.id]);
+        // Strict Audience Filtering: EXCLUDE partner-only notices from customer accounts!
+        const isCustomer = !currentUser?.role || currentUser?.role === 'CUSTOMER';
+
+        const userVisibleNotifs = rawList.filter(n => {
+          const isCleared = clearedMap[n.id];
+          if (isCleared) return false;
+
+          const target = (n.targetAudience || '').toUpperCase().trim();
+
+          if (isCustomer) {
+            // Strictly exclude PARTNERS / SERVICE_PARTNERS notices from customers
+            if (target === 'PARTNERS' || target === 'SERVICE_PARTNERS') {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
         setNotifications(userVisibleNotifs);
 
         // Automatically mark all visible notifications as READ for this user so header badge clears
@@ -71,7 +88,7 @@ export default function NotificationsPage() {
     return () => unsubNotifs();
   }, [currentUser]);
 
-  // Clear All Notifications ONLY for this specific user (does NOT delete from global database)
+  // Clear All Notifications ONLY for this specific user
   const handleClearAllForUser = async () => {
     if (!currentUser) return;
     try {
@@ -119,7 +136,6 @@ export default function NotificationsPage() {
   });
 
   const offersNotifs = notifications.filter(n => {
-    const target = (n.targetAudience || '').toUpperCase();
     const title = (n.title || '').toLowerCase();
     const body = (n.body || '').toLowerCase();
     return title.includes('offer') || body.includes('offer') || title.includes('promo') || body.includes('discount') || title.includes('code');

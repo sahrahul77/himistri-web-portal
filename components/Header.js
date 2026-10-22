@@ -118,22 +118,24 @@ export default function Header({ isDark, onToggleTheme }) {
           </nav>
         )}
 
-        {/* Right Action Icons (Notifications Bell, Theme, Phone, Account, Mobile Hamburger) */}
+        {/* Right Action Icons (Notifications Bell for Customers, Theme, Phone, Account, Mobile Hamburger) */}
         <div className="flex items-center gap-2 sm:gap-2.5">
 
-          {/* Notification Bell Icon with Red Counter Badge */}
-          <Link
-            href="/notifications"
-            className="relative bg-white/20 hover:bg-white/30 text-white p-2 rounded-full flex items-center justify-center transition cursor-pointer"
-            title="View Notifications"
-          >
-            <Bell className="w-4 h-4 text-white" />
-            {unreadNotifCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-redPrimary border border-white text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-pulse">
-                {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
-              </span>
-            )}
-          </Link>
+          {/* Notification Bell Icon - ONLY VISIBLE FOR CUSTOMERS (HIDDEN FOR ADMIN & PARTNER) */}
+          {!isAdmin && !isPartner && (
+            <Link
+              href="/notifications"
+              className="relative bg-white/20 hover:bg-white/30 text-white p-2 rounded-full flex items-center justify-center transition cursor-pointer"
+              title="View Notifications"
+            >
+              <Bell className="w-4 h-4 text-white" />
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-redPrimary border border-white text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-pulse">
+                  {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* Theme Toggle Button */}
           <button onClick={onToggleTheme} className="bg-white/20 hover:bg-white/30 text-white p-2 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition">
@@ -230,7 +232,9 @@ export default function Header({ isDark, onToggleTheme }) {
           <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Home className="w-4 h-4 text-redPrimary" /> Home</Link>
           <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Layers className="w-4 h-4 text-redPrimary" /> Explore Categories</Link>
           <Link href="/services" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Wrench className="w-4 h-4 text-redPrimary" /> Doorstep Services</Link>
-          <Link href="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Bell className="w-4 h-4 text-redPrimary" /> Notifications ({unreadNotifCount})</Link>
+          {!isAdmin && !isPartner && (
+            <Link href="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Bell className="w-4 h-4 text-redPrimary" /> Notifications ({unreadNotifCount})</Link>
+          )}
           <Link href="/tracking" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><FileText className="w-4 h-4 text-redPrimary" /> Order Tracking</Link>
         </div>
       )}

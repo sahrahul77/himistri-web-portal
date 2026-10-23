@@ -247,7 +247,11 @@ export default function AdminControlPanelPage() {
 
     const unsubNotifs = onValue(ref(rtdb, 'notifications'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
-      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      list.sort((a, b) => {
+        const tA = new Date(a.createdAt || a.date || a.timestamp || 0).getTime();
+        const tB = new Date(b.createdAt || b.date || b.timestamp || 0).getTime();
+        return tB - tA;
+      });
       setNotificationsList(list);
     });
 
@@ -292,7 +296,7 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Broadcast Push Notification Functionality
+  // Broadcast Push Notification Functionality with Complete Date/Timestamp Keys
   const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!notifTitle || !notifBody) {
@@ -307,6 +311,8 @@ export default function AdminControlPanelPage() {
 
     setIsSendingNotif(true);
     const notifId = 'notif_' + Date.now();
+    const nowIso = new Date().toISOString();
+    const nowFormatted = nowIso.slice(0, 16).replace('T', ' ');
 
     const notifData = {
       id: notifId,
@@ -314,7 +320,9 @@ export default function AdminControlPanelPage() {
       body: notifBody,
       targetAudience: targetAudience,
       sentBy: currentUser?.fullName || adminName || 'Lead Admin',
-      createdAt: new Date().toISOString()
+      createdAt: nowIso,
+      date: nowFormatted,
+      timestamp: Date.now()
     };
 
     try {
@@ -1289,7 +1297,9 @@ export default function AdminControlPanelPage() {
                           <div className="flex justify-between items-start gap-2">
                             <div>
                               <strong className="text-redPrimary text-base block font-extrabold">{currentNotifObj.title}</strong>
-                              <span className="text-[10px] text-slate-400 block mt-0.5">{new Date(currentNotifObj.createdAt).toLocaleString()}</span>
+                              <span className="text-[10px] text-slate-400 block mt-0.5">
+                                {currentNotifObj.date || currentNotifObj.createdAt || 'Just Now'}
+                              </span>
                             </div>
                             <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
                               Target: {currentNotifObj.targetAudience}

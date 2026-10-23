@@ -30,62 +30,97 @@ export default function NotificationsPage() {
     }
   };
 
+  // Robust Date Formatter handling ISO strings, numeric timestamps, and date strings
+  const formatNotifDate = (notif) => {
+    const rawDate = notif.createdAt || notif.date || notif.timestamp || notif.sentAt || notif.time;
+    if (!rawDate) return new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+    let d = new Date(rawDate);
+    if (isNaN(d.getTime())) {
+      const num = Number(rawDate);
+      if (!isNaN(num)) {
+        d = new Date(num);
+      }
+    }
+
+    if (isNaN(d.getTime())) {
+      return String(rawDate);
+    }
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+  };
+
+  // Parallel Realtime Listener to optimize notification retrieval speed
   useEffect(() => {
     if (!currentUser) return;
+
+    let rawNotifList = [];
+    let userClearedMap = {};
 
     const notifsRef = ref(rtdb, 'notifications');
     const userRef = ref(rtdb, `users/${currentUser.id}`);
 
     const unsubNotifs = onValue(notifsRef, (snapshot) => {
-      const rawList = [];
+      const list = [];
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
-          rawList.push({ id: child.key, ...child.val() });
+          list.push({ id: child.key, ...child.val() });
         });
       }
-      rawList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-      onValue(userRef, (userSnap) => {
-        let clearedMap = {};
-        if (userSnap.exists()) {
-          const userData = userSnap.val();
-          clearedMap = userData.clearedNotifications || {};
-        }
-        setClearedNotifMap(clearedMap);
-
-        // Strict Audience Filtering: EXCLUDE partner-only notices from customer accounts!
-        const isCustomer = !currentUser?.role || currentUser?.role === 'CUSTOMER';
-
-        const userVisibleNotifs = rawList.filter(n => {
-          const isCleared = clearedMap[n.id];
-          if (isCleared) return false;
-
-          const target = (n.targetAudience || '').toUpperCase().trim();
-
-          if (isCustomer) {
-            // Strictly exclude PARTNERS / SERVICE_PARTNERS notices from customers
-            if (target === 'PARTNERS' || target === 'SERVICE_PARTNERS') {
-              return false;
-            }
-          }
-
-          return true;
-        });
-
-        setNotifications(userVisibleNotifs);
-
-        // Automatically mark all visible notifications as READ for this user so header badge clears
-        if (userVisibleNotifs.length > 0) {
-          const readUpdates = {};
-          userVisibleNotifs.forEach((n) => {
-            readUpdates[`users/${currentUser.id}/readNotifications/${n.id}`] = true;
-          });
-          update(ref(rtdb), readUpdates);
-        }
+      list.sort((a, b) => {
+        const tA = new Date(a.createdAt || a.date || a.timestamp || 0).getTime();
+        const tB = new Date(b.createdAt || b.date || b.timestamp || 0).getTime();
+        return tB - tA;
       });
+      rawNotifList = list;
+      updateUserNotifs();
     });
 
-    return () => unsubNotifs();
+    const unsubUser = onValue(userRef, (userSnap) => {
+      if (userSnap.exists()) {
+        const userData = userSnap.val();
+        userClearedMap = userData.clearedNotifications || {};
+      } else {
+        userClearedMap = {};
+      }
+      setClearedNotifMap(userClearedMap);
+      updateUserNotifs();
+    });
+
+    function updateUserNotifs() {
+      const isCustomer = !currentUser?.role || currentUser?.role === 'CUSTOMER';
+
+      const userVisibleNotifs = rawNotifList.filter(n => {
+        if (userClearedMap[n.id]) return false;
+        const target = (n.targetAudience || '').toUpperCase().trim();
+        if (isCustomer && (target === 'PARTNERS' || target === 'SERVICE_PARTNERS')) {
+          return false;
+        }
+        return true;
+      });
+
+      setNotifications(userVisibleNotifs);
+
+      // Automatically mark visible notifications as read
+      if (userVisibleNotifs.length > 0) {
+        const readUpdates = {};
+        userVisibleNotifs.forEach((n) => {
+          readUpdates[`users/${currentUser.id}/readNotifications/${n.id}`] = true;
+        });
+        update(ref(rtdb), readUpdates);
+      }
+    }
+
+    return () => {
+      unsubNotifs();
+      unsubUser();
+    };
   }, [currentUser]);
 
   // Clear All Notifications ONLY for this specific user
@@ -161,7 +196,7 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <>
-            {/* Top Header Row matching Mobile App 100% */}
+            {/* Top Header Row */}
             <div className="bg-redPrimary text-white p-4 sm:p-5 rounded-2xl shadow-xl flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <Link href="/" className="p-1.5 rounded-full hover:bg-white/20 transition">
@@ -184,7 +219,7 @@ export default function NotificationsPage() {
               )}
             </div>
 
-            {/* 3 Navigation Tabs matching Mobile App Screenshot 2 */}
+            {/* 3 Navigation Tabs */}
             <div className="flex border-b border-slate-200 dark:border-neutral-800">
               <button
                 onClick={() => setActiveTab(0)}
@@ -235,7 +270,7 @@ export default function NotificationsPage() {
                   >
                     <div className="flex items-start gap-3.5 sm:gap-4">
 
-                      {/* Pinkish Red Circular Icon Badge matching Screenshot 2 */}
+                      {/* Pinkish Red Circular Icon Badge */}
                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0 mt-0.5">
                         <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
                       </div>
@@ -250,7 +285,7 @@ export default function NotificationsPage() {
                         </p>
 
                         <span className="text-[10px] font-semibold text-slate-400 block pt-1">
-                          {new Date(notif.createdAt || Date.now()).toISOString().slice(0, 16).replace('T', ' ')}
+                          {formatNotifDate(notif)}
                         </span>
                       </div>
                     </div>
@@ -259,7 +294,7 @@ export default function NotificationsPage() {
                     <button
                       type="button"
                       onClick={() => handleClearSingleForUser(notif.id)}
-                      className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition"
+                      className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition cursor-pointer"
                       title="Clear Notification for Me"
                     >
                       <Trash2 className="w-4 h-4" />

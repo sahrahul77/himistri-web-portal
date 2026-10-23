@@ -124,18 +124,19 @@ input, select, textarea {
   min-height: 42px;
 }
 
-/* FORCE DATE PICKER & NATIVE DROPDOWN COLOR IN LIGHT/DARK MODE */
-input[type="date"] {
+/* FORCE DATE & TIME PICKER & NATIVE DROPDOWN COLOR IN LIGHT/DARK MODE */
+input[type="date"], input[type="time"] {
   color: var(--text-main);
   background-color: var(--surface-color);
 }
-input[type="date"]::-webkit-datetime-edit {
+input[type="date"]::-webkit-datetime-edit, input[type="time"]::-webkit-datetime-edit {
   color: var(--text-main);
 }
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
-[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator {
   filter: none;
 }
 select option {

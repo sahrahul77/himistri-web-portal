@@ -440,19 +440,14 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Time Slot *</label>
-                  <select
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Preferred Time *</label>
+                  <input
+                    type="time"
                     value={slot}
                     onChange={(e) => setSlot(e.target.value)}
                     required
-                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
-                  >
-                    <option value="">Select Time Slot...</option>
-                    <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM (Morning Slot)</option>
-                    <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM (Midday Slot)</option>
-                    <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM (Afternoon Slot)</option>
-                    <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM (Evening Slot)</option>
-                  </select>
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                  />
                 </div>
               </div>
             </div>

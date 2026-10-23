@@ -84,18 +84,15 @@ export default function CategoriesPage() {
 
   const filteredServices = services.filter(s => {
     const q = searchQuery.toLowerCase().trim();
-    const matchesSearch = !q ||
-      (s.title || '').toLowerCase().includes(q) ||
-      (s.categoryName || '').toLowerCase().includes(q) ||
-      (s.shortDescription || '').toLowerCase().includes(q);
-
-    let matchesCategory = true;
-    if (selectedCategoryId !== 'ALL') {
-      matchesCategory = s.categoryId === selectedCategoryId ||
-        (selectedCategoryObj && (s.categoryName || '').toLowerCase().includes((selectedCategoryObj.name || '').toLowerCase()));
+    if (q) {
+      return (s.title || '').toLowerCase().includes(q) ||
+        (s.categoryName || '').toLowerCase().includes(q) ||
+        (s.shortDescription || '').toLowerCase().includes(q);
     }
 
-    return matchesSearch && matchesCategory;
+    if (selectedCategoryId === 'ALL') return true;
+    return s.categoryId === selectedCategoryId ||
+      (selectedCategoryObj && (s.categoryName || '').toLowerCase().includes((selectedCategoryObj.name || '').toLowerCase()));
   });
 
   return (
@@ -115,8 +112,8 @@ export default function CategoriesPage() {
           </p>
         </div>
 
-        {/* Eye-Catching Glassmorphism Search Bar */}
-        <div className="relative max-w-3xl mx-auto w-full group">
+        {/* Instant Live Search Bar with Dropdown */}
+        <div className="relative max-w-3xl mx-auto w-full group z-40">
           <div className="absolute -inset-1 bg-gradient-to-r from-redPrimary via-orangeSecondary to-amber-500 rounded-3xl blur-md opacity-25 group-hover:opacity-60 transition duration-300" />
           <div className="relative flex items-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl p-2">
             <Search className="w-5 h-5 ml-3 text-redPrimary shrink-0" />
@@ -133,13 +130,58 @@ export default function CategoriesPage() {
               </button>
             )}
           </div>
+
+          {/* Instant Live Search Suggestions Dropdown */}
+          {searchQuery.trim().length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto p-2 space-y-1 divide-y divide-slate-100 dark:divide-neutral-800">
+              <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-redPrimary flex justify-between items-center">
+                <span>Instant Live Matches ({filteredServices.length})</span>
+                <span className="text-[9px] text-slate-400">Click item to book</span>
+              </div>
+
+              {filteredServices.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-500 font-bold">
+                  No services matching "{searchQuery}". Try searching "Plumber", "Electrician", or "Tutor".
+                </div>
+              ) : (
+                filteredServices.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => {
+                      handleHireNow(s);
+                      setSearchQuery('');
+                    }}
+                    className="p-3 hover:bg-slate-50 dark:hover:bg-neutral-800/80 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={s.imageUrl || FALLBACK_ICON}
+                        alt=""
+                        className="w-10 h-10 object-cover rounded-xl shrink-0 bg-slate-100 dark:bg-neutral-800"
+                        onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                      />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">{s.title}</h4>
+                        <span className="text-[10px] text-redPrimary font-bold uppercase">{s.categoryName || 'General'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                      <span className="btn-primary py-1 px-3 text-[11px] font-black rounded-lg">Hire Now →</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* Categories Chips Filter Bar */}
         <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
           <button
             type="button"
-            onClick={() => setSelectedCategoryId('ALL')}
+            onClick={() => { setSelectedCategoryId('ALL'); setSearchQuery(''); }}
             className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-black whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
               selectedCategoryId === 'ALL'
                 ? 'bg-redPrimary text-white shadow-lg scale-105'
@@ -153,7 +195,7 @@ export default function CategoriesPage() {
             <button
               key={c.id}
               type="button"
-              onClick={() => setSelectedCategoryId(c.id)}
+              onClick={() => { setSelectedCategoryId(c.id); setSearchQuery(''); }}
               className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition flex items-center gap-2 cursor-pointer shrink-0 ${
                 selectedCategoryId === c.id
                   ? 'bg-redPrimary text-white shadow-lg scale-105'
@@ -167,7 +209,7 @@ export default function CategoriesPage() {
         </div>
 
         {/* Category Visual Grid Showcase */}
-        {selectedCategoryId === 'ALL' && (
+        {selectedCategoryId === 'ALL' && !searchQuery && (
           <div className="space-y-4">
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white border-b border-slate-200 dark:border-neutral-800 pb-2">
               Browse All Workforce Categories
@@ -175,7 +217,7 @@ export default function CategoriesPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-5">
               {categories.map((c) => (
-                <div key={c.id} onClick={() => setSelectedCategoryId(c.id)}>
+                <div key={c.id} onClick={() => { setSelectedCategoryId(c.id); setSearchQuery(''); }}>
                   <motion.div
                     whileHover={{ y: -6, scale: 1.03 }}
                     transition={{ duration: 0.2 }}
@@ -205,7 +247,7 @@ export default function CategoriesPage() {
             <div>
               <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Available Services</span>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-                Services in {selectedCategoryObj?.name || 'All Categories'}
+                {searchQuery ? `Search Results for "${searchQuery}"` : `Services in ${selectedCategoryObj?.name || 'All Categories'}`}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Found {filteredServices.length} verified doorstep options</p>
             </div>

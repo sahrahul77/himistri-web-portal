@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/router';
@@ -13,7 +13,7 @@ import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import {
   Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign,
-  Sparkles, Zap, Flame, Tag, BadgePercent, Check, ExternalLink, TrendingUp, Heart, UserCheck, Timer, Gift, Layers, ChevronLeft, ChevronRight
+  Sparkles, Zap, Flame, Tag, BadgePercent, Check, ExternalLink, TrendingUp, Heart, UserCheck, Timer, Gift, Layers, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -22,6 +22,8 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
+
+  const searchRef = useRef(null);
 
   // Live Ticker State & Coupon Slider State
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -40,22 +42,18 @@ export default function HomePage() {
   // Dynamic Ticker Events retrieved directly from Firebase Realtime Database
   const tickerEvents = [];
 
-  // 1. Include REAL Coupons from Database
   coupons.forEach((c) => {
     tickerEvents.push(`🎉 Promo Code: Use '${c.code}' to get ${c.discountType === 'PERCENTAGE' ? c.discountValue + '% OFF' : 'Flat ₹' + c.discountValue + ' OFF'}!`);
   });
 
-  // 2. Include REAL Customer Reviews/Feedback from Database
   testimonials.forEach((t) => {
     tickerEvents.push(`⭐ Customer Feedback by ${t.name || 'Sikkim Resident'}: "${t.text || 'Great doorstep service!'}" (${t.rating || 5}★)`);
   });
 
-  // 3. Include ONLY REAL Orders/Bookings that exist in Database
   bookings.forEach((b) => {
     tickerEvents.push(`⚡ Real Order: ${b.serviceTitle} in ${b.address || 'Gangtok'} • Status: ${b.status || 'ACTIVE'}`);
   });
 
-  // Fallback if empty database
   if (tickerEvents.length === 0) {
     tickerEvents.push("⚡ Welcome to HiMistri: Sikkim's #1 Doorstep Service Platform!");
   }
@@ -67,7 +65,6 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [tickerEvents.length]);
 
-  // Auto-play rotation for Promo Coupon Carousel Slider set to 10 seconds
   useEffect(() => {
     if (coupons.length === 0) return;
     const timer = setInterval(() => {
@@ -76,7 +73,6 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [coupons]);
 
-  // Automatic Theme Synchronization Effect
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -91,7 +87,6 @@ export default function HomePage() {
     setIsDark(prev => !prev);
   };
 
-  // Strictly purge any category from Firebase Database where "manpower" is NOT written in the category name
   useEffect(() => {
     const categoriesRef = ref(rtdb, 'categories');
     onValue(categoriesRef, (snapshot) => {
@@ -107,7 +102,6 @@ export default function HomePage() {
     }, { onlyOnce: true });
   }, []);
 
-  // Fetch Live Realtime Database Nodes (Categories, Services, Banners, Coupons, Testimonials, Bookings)
   useEffect(() => {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
@@ -199,7 +193,7 @@ export default function HomePage() {
     }
   };
 
-  // Fixed Global Search Logic: Overrides Active Chip when Search Query is Entered
+  // Instant Global Real-time Search Filter Logic
   const filteredServices = services.filter((s) => {
     const q = searchQuery.toLowerCase().trim();
     const chip = activeChip.toLowerCase().trim();
@@ -227,7 +221,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      {/* DYNAMIC REALTIME TICKER STRIP (PROMO CODES, FEEDBACK, REAL ORDERS FROM DATABASE) */}
+      {/* DYNAMIC REALTIME TICKER STRIP */}
       <div className="bg-gradient-to-r from-redPrimary via-orangeSecondary to-redDark text-white py-2 px-4 text-xs font-black shadow-md overflow-hidden">
         <div className="web-container flex items-center justify-between">
           <AnimatePresence mode="wait">
@@ -252,8 +246,8 @@ export default function HomePage() {
 
       <main className="web-container py-6 sm:py-10 flex-1 space-y-10 sm:space-y-14 max-w-7xl mx-auto px-4 sm:px-6 w-full">
 
-        {/* 1. GLASSMORPHISM HERO SEARCH BAR */}
-        <div className="relative max-w-3xl mx-auto w-full group">
+        {/* 1. GLASSMORPHISM HERO SEARCH BAR WITH INSTANT LIVE SUGGESTIONS DROPDOWN */}
+        <div className="relative max-w-3xl mx-auto w-full group z-40" ref={searchRef}>
           <div className="absolute -inset-1 bg-gradient-to-r from-redPrimary via-orangeSecondary to-amber-500 rounded-3xl blur-md opacity-30 group-hover:opacity-70 transition duration-300" />
           <div className="relative flex items-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl p-2 sm:p-2.5">
             <Search className="w-5 h-5 sm:w-6 sm:h-6 ml-3 text-redPrimary shrink-0" />
@@ -273,6 +267,51 @@ export default function HomePage() {
               </button>
             )}
           </div>
+
+          {/* Instant Live Search Suggestions Floating Dropdown */}
+          {searchQuery.trim().length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto p-2 space-y-1 divide-y divide-slate-100 dark:divide-neutral-800">
+              <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-redPrimary flex justify-between items-center">
+                <span>Instant Live Matches ({filteredServices.length})</span>
+                <span className="text-[9px] text-slate-400">Click item to book</span>
+              </div>
+
+              {filteredServices.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-500 font-bold">
+                  No services matching "{searchQuery}". Try searching "Plumber", "Electrician", or "Tutor".
+                </div>
+              ) : (
+                filteredServices.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => {
+                      handleHireNow(s);
+                      setSearchQuery('');
+                    }}
+                    className="p-3 hover:bg-slate-50 dark:hover:bg-neutral-800/80 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={s.imageUrl || FALLBACK_ICON}
+                        alt=""
+                        className="w-10 h-10 object-cover rounded-xl shrink-0 bg-slate-100 dark:bg-neutral-800"
+                        onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                      />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">{s.title}</h4>
+                        <span className="text-[10px] text-redPrimary font-bold uppercase">{s.categoryName || 'General'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                      <span className="btn-primary py-1 px-3 text-[11px] font-black rounded-lg">Hire Now →</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* 2. EXPLORE CATEGORIES CIRCULAR AVATAR BAR */}

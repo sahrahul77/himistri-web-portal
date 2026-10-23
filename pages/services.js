@@ -78,16 +78,15 @@ export default function ServicesPage() {
     const q = query.toLowerCase().trim();
     const chip = activeChip.toLowerCase().trim();
 
-    const matchesSearch = !q ||
-      (s.title || '').toLowerCase().includes(q) ||
-      (s.categoryName || '').toLowerCase().includes(q) ||
-      (s.shortDescription || '').toLowerCase().includes(q);
+    if (q) {
+      return (s.title || '').toLowerCase().includes(q) ||
+        (s.categoryName || '').toLowerCase().includes(q) ||
+        (s.shortDescription || '').toLowerCase().includes(q);
+    }
 
-    const matchesChip = chip === 'all' ||
-      (s.categoryName || '').toLowerCase().includes(chip) ||
+    if (chip === 'all') return true;
+    return (s.categoryName || '').toLowerCase().includes(chip) ||
       (s.title || '').toLowerCase().includes(chip);
-
-    return matchesSearch && matchesChip;
   });
 
   return (
@@ -107,8 +106,8 @@ export default function ServicesPage() {
           </p>
         </div>
 
-        {/* Eye-Catching Glassmorphism Search Bar */}
-        <div className="relative max-w-3xl mx-auto w-full group">
+        {/* Instant Live Search Bar with Dropdown */}
+        <div className="relative max-w-3xl mx-auto w-full group z-40">
           <div className="absolute -inset-1 bg-gradient-to-r from-redPrimary via-orangeSecondary to-amber-500 rounded-3xl blur-md opacity-25 group-hover:opacity-60 transition duration-300" />
           <div className="relative flex items-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl p-2">
             <Search className="w-5 h-5 ml-3 text-redPrimary shrink-0" />
@@ -125,13 +124,58 @@ export default function ServicesPage() {
               </button>
             )}
           </div>
+
+          {/* Instant Live Search Suggestions Dropdown */}
+          {query.trim().length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto p-2 space-y-1 divide-y divide-slate-100 dark:divide-neutral-800">
+              <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-redPrimary flex justify-between items-center">
+                <span>Instant Live Matches ({filtered.length})</span>
+                <span className="text-[9px] text-slate-400">Click item to book</span>
+              </div>
+
+              {filtered.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-500 font-bold">
+                  No services matching "{query}". Try searching "Plumber", "Electrician", or "Tutor".
+                </div>
+              ) : (
+                filtered.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => {
+                      handleHireNow(s);
+                      setQuery('');
+                    }}
+                    className="p-3 hover:bg-slate-50 dark:hover:bg-neutral-800/80 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={s.imageUrl || FALLBACK_ICON}
+                        alt=""
+                        className="w-10 h-10 object-cover rounded-xl shrink-0 bg-slate-100 dark:bg-neutral-800"
+                        onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                      />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">{s.title}</h4>
+                        <span className="text-[10px] text-redPrimary font-bold uppercase">{s.categoryName || 'General'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
+                      <span className="btn-primary py-1 px-3 text-[11px] font-black rounded-lg">Hire Now →</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* Interactive Quick Filter Chips Row */}
         <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
           <button
             type="button"
-            onClick={() => setActiveChip('ALL')}
+            onClick={() => { setActiveChip('ALL'); setQuery(''); }}
             className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-black whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeChip === 'ALL'
                 ? 'bg-redPrimary text-white shadow-lg scale-105'
@@ -147,7 +191,7 @@ export default function ServicesPage() {
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setActiveChip(isSelected ? 'ALL' : c.name)}
+                onClick={() => { setActiveChip(isSelected ? 'ALL' : c.name); setQuery(''); }}
                 className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition flex items-center gap-2 cursor-pointer shrink-0 ${
                   isSelected
                     ? 'bg-redPrimary text-white shadow-lg scale-105'
@@ -167,7 +211,7 @@ export default function ServicesPage() {
             <div>
               <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Service Catalog</span>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-                {activeChip === 'ALL' ? 'All Verified Doorstep Services' : `${activeChip} Services in Gangtok`}
+                {query ? `Search Results for "${query}"` : activeChip === 'ALL' ? 'All Verified Doorstep Services' : `${activeChip} Services in Gangtok`}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Showing {filtered.length} verified technical solutions</p>
             </div>

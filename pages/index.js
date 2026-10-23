@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
-import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, FALLBACK_ICON } from '../lib/defaultData';
+import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, DEFAULT_COUPONS, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue, remove } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign, Sparkles, Zap, Heart, UserCheck, Flame } from 'lucide-react';
+import {
+  Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign,
+  Sparkles, Zap, Flame, Tag, BadgePercent, Check, ExternalLink, TrendingUp, Heart, UserCheck, Timer, Gift, Layers
+} from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
@@ -20,12 +23,31 @@ export default function HomePage() {
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
+  // Live Ticker State
+  const [tickerIndex, setTickerIndex] = useState(0);
+
   // Live Firebase States
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [services, setServices] = useState(DEFAULT_SERVICES);
   const [banners, setBanners] = useState(DEFAULT_BANNERS);
+  const [coupons, setCoupons] = useState(DEFAULT_COUPONS);
 
   const { currentUser, isAuthLoaded } = useAuth();
+
+  // Ticker items inspired by Swiggy / Zomato live booking notifications
+  const tickerEvents = [
+    "⚡ Passang Bhutia booked Full House Wiring in Deorali • 2 mins ago",
+    "🎉 SIKKIM10 applied: Saved ₹200 on Door Lock Repair • 5 mins ago",
+    "🟢 Mistri Dhiraj Jaiswal dispatched to Upper Syari • 8 mins ago",
+    "⭐ Piku Shah completed Deep Cleaning service in Gangtok (5.0★)"
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTickerIndex((prev) => (prev + 1) % tickerEvents.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Automatic Theme Synchronization Effect
   useEffect(() => {
@@ -101,7 +123,18 @@ export default function HomePage() {
       if (list.length > 0) setBanners(list);
     });
 
-    return () => { unsubCat(); unsubSrv(); unsubBanners(); };
+    const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      if (list.length > 0) setCoupons(list);
+    });
+
+    return () => { unsubCat(); unsubSrv(); unsubBanners(); unsubCoupons(); };
   }, []);
 
   const handleHireNow = (serviceObj) => {
@@ -139,19 +172,42 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
+      {/* SWIGGY / ZOMATO STYLE LIVE TICKER STRIP */}
+      <div className="bg-gradient-to-r from-redPrimary via-orangeSecondary to-redDark text-white py-2 px-4 text-xs font-black shadow-md overflow-hidden">
+        <div className="web-container flex items-center justify-between">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tickerIndex}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center gap-2 truncate"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 shrink-0 animate-pulse" />
+              <span className="truncate">{tickerEvents[tickerIndex]}</span>
+            </motion.div>
+          </AnimatePresence>
+
+          <Link href="/services" className="hidden md:flex items-center gap-1 text-[11px] font-black uppercase text-amber-200 hover:underline shrink-0">
+            Book Now <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+
       <main className="web-container py-6 sm:py-10 flex-1 space-y-10 sm:space-y-14 max-w-7xl mx-auto px-4 sm:px-6 w-full">
 
-        {/* 1. Eye-Catching Glassmorphism Hero Search Bar */}
+        {/* 1. APPLE STYLE GLASSMORPHISM HERO SEARCH BAR */}
         <div className="relative max-w-3xl mx-auto w-full group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-redPrimary via-orangeSecondary to-amber-500 rounded-3xl blur opacity-25 group-hover:opacity-60 transition duration-300" />
-          <div className="relative flex items-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl p-1.5 sm:p-2">
+          <div className="absolute -inset-1 bg-gradient-to-r from-redPrimary via-orangeSecondary to-amber-500 rounded-3xl blur-md opacity-30 group-hover:opacity-70 transition duration-300" />
+          <div className="relative flex items-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl p-2 sm:p-2.5">
             <Search className="w-5 h-5 sm:w-6 sm:h-6 ml-3 text-redPrimary shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search doorstep services (e.g. Plumber, Electrician, Tutor, Barber)..."
-              className="w-full px-3 py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm font-semibold text-slate-900 dark:text-white outline-none placeholder:text-slate-400"
+              className="w-full px-3 py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm font-bold text-slate-900 dark:text-white outline-none placeholder:text-slate-400"
             />
             {searchQuery && (
               <button
@@ -164,67 +220,32 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 2. Interactive Quick Filter Category Pill Chips */}
-        <div className="flex gap-2.5 overflow-x-auto pb-2 justify-start sm:justify-center -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveChip('ALL')}
-            className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-black whitespace-nowrap border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeChip === 'ALL'
-                ? 'bg-redPrimary text-white border-redPrimary shadow-lg scale-105'
-                : 'bg-white dark:bg-neutral-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-neutral-800 hover:border-redPrimary/50'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5 text-amber-300" /> All Services
-          </button>
+        {/* 2. SWIGGY / ZOMATO STYLE CIRCULAR CATEGORY AVATAR BAR */}
+        <div className="space-y-3">
+          <div className="flex justify-between items-center px-1">
+            <span className="text-xs font-black uppercase text-redPrimary tracking-widest flex items-center gap-1">
+              <Flame className="w-4 h-4 text-redPrimary" /> Explore Categories
+            </span>
+            <Link href="/categories" className="text-xs font-extrabold text-redPrimary hover:underline">
+              See All ({categories.length}) →
+            </Link>
+          </div>
 
-          {categories.map((c) => {
-            const isSelected = activeChip.toLowerCase() === c.name.toLowerCase();
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setActiveChip(isSelected ? 'ALL' : c.name)}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all cursor-pointer shrink-0 flex items-center gap-2 ${
-                  isSelected
-                    ? 'bg-redPrimary text-white border-redPrimary shadow-lg scale-105'
-                    : 'bg-white dark:bg-neutral-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-neutral-800 hover:border-redPrimary/50'
-                }`}
-              >
-                <img src={c.iconUrl || FALLBACK_ICON} alt="" className="w-4 h-4 object-contain" />
-                {c.name}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 3. Ultra-Modern Hero Banner Showcase Carousel */}
-        <HeroBanner banners={banners} />
-
-        {/* 4. Explore Manpower Categories Grid */}
-        {displayCategories.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-end border-b border-slate-200 dark:border-neutral-800 pb-3">
-              <div>
-                <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Specialized Workforce</span>
-                <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">Explore Manpower Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Verified HiMistri craftsmen & technical specialists in Gangtok</p>
-              </div>
-              <Link href="/categories" className="btn-primary text-xs py-2 px-4 shadow-md shrink-0 rounded-xl">
-                See All ({categories.length}) <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-5">
-              {displayCategories.map((c) => (
-                <Link href={`/categories?id=${c.id}`} key={c.id}>
-                  <motion.div
-                    whileHover={{ y: -6, scale: 1.03 }}
-                    transition={{ duration: 0.2 }}
-                    className="web-card text-center p-4 sm:p-5 cursor-pointer shadow-xl flex flex-col justify-center items-center h-full bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] hover:border-redPrimary rounded-2xl group relative overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-redPrimary/5 rounded-bl-full group-hover:bg-redPrimary/15 transition" />
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-redPrimary/10 group-hover:bg-redPrimary/20 flex items-center justify-center mb-3 shrink-0 p-2.5 transition shadow-inner">
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
+            {categories.map((c) => {
+              const isSelected = activeChip.toLowerCase() === c.name.toLowerCase();
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setActiveChip(isSelected ? 'ALL' : c.name)}
+                  className="flex flex-col items-center gap-2 cursor-pointer group shrink-0 w-20 sm:w-24 text-center"
+                >
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 transition-all duration-300 shadow-xl flex items-center justify-center ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-redPrimary to-orangeSecondary scale-110 shadow-redPrimary/40'
+                      : 'bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] group-hover:border-redPrimary group-hover:scale-105'
+                  }`}>
+                    <div className="w-full h-full rounded-full bg-slate-50 dark:bg-neutral-900 p-3 flex items-center justify-center">
                       <img
                         src={c.iconUrl || FALLBACK_ICON}
                         alt={c.name}
@@ -232,23 +253,52 @@ export default function HomePage() {
                         className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
-                    <strong className="text-xs sm:text-sm font-extrabold block text-slate-900 dark:text-white leading-tight group-hover:text-redPrimary transition">
-                      {c.name}
-                    </strong>
-                  </motion.div>
-                </Link>
-              ))}
-            </div>
+                  </div>
+                  <span className={`text-[11px] sm:text-xs font-extrabold leading-tight transition line-clamp-2 ${
+                    isSelected ? 'text-redPrimary font-black' : 'text-slate-800 dark:text-slate-200 group-hover:text-redPrimary'
+                  }`}>
+                    {c.name.replace(' Manpower', '')}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. APPLE STYLE HERO BANNER CAROUSEL */}
+        <HeroBanner banners={banners} />
+
+        {/* 4. FLIPKART / AMAZON STYLE PROMO COUPON CARDS */}
+        {coupons.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {coupons.slice(0, 3).map((coup) => (
+              <div
+                key={coup.id}
+                className="web-card p-4 sm:p-5 bg-gradient-to-r from-redPrimary/10 via-amber-500/10 to-transparent border border-redPrimary/30 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-redPrimary transition"
+              >
+                <div className="space-y-1 z-10">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-redPrimary text-white shadow-sm inline-block">
+                    {coup.discountType === 'PERCENTAGE' ? `${coup.discountValue}% OFF` : `Flat ₹${coup.discountValue} OFF`}
+                  </span>
+                  <h4 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">{coup.code}</h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium line-clamp-1">{coup.description || 'Doorstep discount offer'}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-redPrimary/20 text-redPrimary shrink-0 z-10 group-hover:scale-110 transition-transform">
+                  <Tag className="w-6 h-6 text-redPrimary" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* 5. Popular Doorstep Services Grid Showcase */}
+        {/* 5. POPULAR SERVICES GRID SHOWCASE (SWIGGY + APPLE STYLE) */}
         <div className="space-y-6">
           <div className="flex justify-between items-end border-b border-slate-200 dark:border-neutral-800 pb-3">
             <div>
               <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Top Requested</span>
               <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">
-                {activeChip === 'ALL' ? 'Most Booked Doorstep Services in Sikkim' : `${activeChip} Services in Gangtok`}
+                {activeChip === 'ALL' ? 'Most Booked Services in Sikkim' : `${activeChip} Services in Gangtok`}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">High-demand technical solutions delivered by local craftsmen</p>
             </div>
@@ -277,7 +327,7 @@ export default function HomePage() {
                     key={s.id}
                     whileHover={{ y: -6 }}
                     transition={{ duration: 0.2 }}
-                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl overflow-hidden group hover:border-redPrimary/60"
+                    className="web-card flex flex-col justify-between shadow-2xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-3xl overflow-hidden group hover:border-redPrimary/60"
                   >
                     <div>
                       {/* Image Box with Subtle Zoom Effect */}
@@ -296,7 +346,7 @@ export default function HomePage() {
 
                         {/* Verified Pill Badge on Top Right */}
                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-white/20 z-10 flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-emerald-400" /> Verified
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Verified
                         </div>
                       </div>
 
@@ -336,11 +386,11 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 6. Why Choose HiMistri? (High-Contrast Grid Feature Cards) */}
+        {/* 6. APPLE STYLE "THE HIMISTRI ADVANTAGE" FEATURE GRID */}
         <div className="space-y-6 pt-4">
           <div className="border-b border-slate-200 dark:border-neutral-800 pb-3">
-            <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Sikkim Standard</span>
-            <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">Why Choose HiMistri?</h2>
+            <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Sikkim Quality Standard</span>
+            <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">The HiMistri Advantage</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sikkim's premier doorstep technical manpower platform</p>
           </div>
 
@@ -389,7 +439,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 7. Service Partner Banner Card */}
+        {/* 7. SERVICE PARTNER FLEET BANNER */}
         <div className="web-card bg-gradient-to-r from-redPrimary/20 via-slate-100 dark:via-neutral-900 to-transparent border border-redPrimary/30 p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 shadow-2xl">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-lg">
@@ -406,10 +456,10 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* 8. Customer Testimonials & Verified Reviews Section */}
+        {/* 8. CUSTOMER TESTIMONIALS & VERIFIED REVIEWS SECTION */}
         <TestimonialsSection />
 
-        {/* 9. About HiMistri & 24x7 Customer Support Hotline Card */}
+        {/* 9. ZOMATO / SWIGGY STYLE 24x7 EMERGENCY HOTLINE CARD */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="md:col-span-2 web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl space-y-3 shadow-xl">
             <div className="flex items-center gap-2.5 text-redPrimary">

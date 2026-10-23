@@ -394,7 +394,7 @@ export default function CheckoutPage() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                    Select Duration ({getDurationUnitText(bookingPlan, durationValue)}) *
+                    Select Duration *
                   </label>
                   <select
                     value={durationValue}

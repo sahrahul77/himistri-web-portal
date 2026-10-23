@@ -92,7 +92,7 @@ export default function Header({ isDark, onToggleTheme }) {
     <header className="sticky top-0 z-50 shadow-2xl">
       {/* Top Black Official Bar */}
       <div className="bg-black text-slate-400 text-[10px] sm:text-xs px-4 sm:px-6 py-1.5 flex justify-between items-center border-b border-neutral-800">
-        <span className="font-semibold text-slate-300 truncate">Official Web Portal: <strong className="text-white">himistri.techcoders.in</strong></span>
+        <span className="font-semibold text-slate-300 truncate">Official Web Portal: <strong className="text-white">himistri.in</strong></span>
         <span className="hidden md:inline shrink-0">100% Background Verified Local Craftsmen in Sikkim</span>
       </div>
 

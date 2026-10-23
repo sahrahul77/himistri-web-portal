@@ -139,7 +139,7 @@ export default function Footer() {
           </p>
           <p className="text-xs flex items-center gap-2.5 text-slate-600 dark:text-slate-300">
             <Mail className="w-4 h-4 text-redPrimary shrink-0" />
-            <a href="mailto:info@himistri.techcoders.in" className="hover:underline">info@himistri.techcoders.in</a>
+            <a href="mailto:info@himistri.in" className="hover:underline">info@himistri.in</a>
           </p>
           <a
             href="https://maps.google.com/?q=Upper+Syari+Gangtok"
@@ -155,7 +155,7 @@ export default function Footer() {
       {/* Service Towns Footer Strip & Live Website Visit Counter */}
       <div className="bg-slate-200/80 dark:bg-black/60 border-t border-slate-300 dark:border-neutral-800 py-3 text-[11px] text-slate-600 dark:text-slate-500 text-center">
         <div className="web-container flex flex-col sm:flex-row justify-between items-center gap-2">
-          <span>Active Coverage: <strong className="text-slate-800 dark:text-slate-400">Gangtok (Upper Syari, Deorali, Chandmari, Burtuk), Singtam, Pakyong, Rangpo & Namchi</strong></span>
+          <span>Active Coverage: <strong className="text-slate-800 dark:text-slate-400">Gangtok, Sikkim</strong> <span className="text-redPrimary font-bold">• Coming Soon to Other Parts of Sikkim!</span></span>
 
           <div className="flex items-center gap-3">
             {/* Live Realtime Website Visit Badge */}
@@ -171,7 +171,7 @@ export default function Footer() {
 
       {/* Copyright Strip */}
       <div className="bg-slate-300/80 dark:bg-black py-4 text-center text-xs text-slate-600 dark:text-slate-500 border-t border-slate-300 dark:border-neutral-900">
-        HiMistri Platform &copy; 2026. Official Domain: <strong className="text-slate-900 dark:text-slate-300">himistri.techcoders.in</strong>. All Rights Reserved.
+        HiMistri Platform &copy; 2026. Official Domain: <strong className="text-slate-900 dark:text-slate-300">himistri.in</strong>. All Rights Reserved.
       </div>
 
       {/* FLOATING BOTTOM-TO-TOP SCROLL BUTTON ACROSS ENTIRE WEBSITE */}

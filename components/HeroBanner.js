@@ -18,28 +18,33 @@ export default function HeroBanner({ banners }) {
   const slide = banners[index] || banners[0];
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-neutral-800 shadow-2xl h-[220px] sm:h-[360px] md:h-[420px] lg:h-[480px] bg-neutral-900 group">
+    <div className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-neutral-800 shadow-2xl aspect-[16/8] sm:aspect-[16/6] lg:aspect-[21/8] bg-neutral-900 group">
 
-      {/* 100% Crystal Clear Unobscured Banner & Ad Image */}
+      {/* 100% Ultra-HD High-Definition Sharp Crisp Banner & Ad Image */}
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
-          initial={{ opacity: 0, scale: 1.02 }}
+          initial={{ opacity: 0, scale: 1.01 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+          exit={{ opacity: 0, scale: 0.99 }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
           className="absolute inset-0 w-full h-full"
         >
           <img
             src={slide.imageUrl}
             alt={slide.title || "Banner Ad"}
             className="w-full h-full object-cover rounded-2xl sm:rounded-3xl"
+            style={{
+              imageRendering: '-webkit-optimize-contrast',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'translateZ(0)'
+            }}
           />
         </motion.div>
       </AnimatePresence>
 
-      {/* Subtle Bottom Gradient Mask for Navigation Indicator Visibility */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none rounded-2xl sm:rounded-3xl" />
+      {/* Subtle Bottom Gradient Overlay for Navigation Indicator Visibility */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none rounded-2xl sm:rounded-3xl" />
 
       {/* Sleek Floating Glassmorphic Navigation Controls */}
       {banners.length > 1 && (
@@ -66,7 +71,7 @@ export default function HeroBanner({ banners }) {
 
       {/* Minimalist Active Progress Dots Indicator */}
       {banners.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full shadow-lg">
+        <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full shadow-lg">
           {banners.map((s, i) => (
             <button
               key={s.id}

@@ -133,16 +133,16 @@ export default function AdminControlPanelPage() {
     setIsDark(prev => !prev);
   };
 
-  // HTML5 Canvas Image Resizer & Quality Optimizer
+  // HTML5 Canvas 2000px Ultra-HD Image Quality Preserver
   const handleImageFileUpload = (e, callback) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 8 * 1024 * 1024) {
       setPopupState({
         isOpen: true,
         title: 'File Too Large',
-        message: 'Please choose an image file under 5MB.',
+        message: 'Please choose an image file under 8MB.',
         type: 'error'
       });
       return;
@@ -152,8 +152,8 @@ export default function AdminControlPanelPage() {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_WIDTH = 600;
-        const MAX_HEIGHT = 600;
+        const MAX_WIDTH = 2000;
+        const MAX_HEIGHT = 2000;
         let width = img.width;
         let height = img.height;
 
@@ -175,14 +175,14 @@ export default function AdminControlPanelPage() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
         callback(compressedDataUrl);
 
         setPopupState({
           isOpen: true,
-          title: 'Image Uploaded & Reflected!',
-          message: `Image optimized (${Math.round(compressedDataUrl.length / 1024)} KB) and preview reflected. Click Save to publish.`,
+          title: 'HD Image Uploaded!',
+          message: `Ultra-HD Image optimized (${Math.round(compressedDataUrl.length / 1024)} KB) and ready to publish.`,
           type: 'success'
         });
       };

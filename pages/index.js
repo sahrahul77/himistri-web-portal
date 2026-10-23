@@ -233,7 +233,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 2. SWIGGY / ZOMATO STYLE CIRCULAR CATEGORY AVATAR BAR */}
+        {/* 2. HERO BANNER CAROUSEL SLIDER (Positioned above Explore Categories) */}
+        <HeroBanner banners={banners} />
+
+        {/* 3. SWIGGY / ZOMATO STYLE CIRCULAR CATEGORY AVATAR BAR (Positioned below Image Slider) */}
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
             <span className="text-xs font-black uppercase text-redPrimary tracking-widest flex items-center gap-1">
@@ -278,10 +281,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 3. APPLE STYLE HERO BANNER CAROUSEL (10 Seconds Interval) */}
-        <HeroBanner banners={banners} />
-
-        {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER (10 Seconds Interval) */}
+        {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
         {coupons.length > 0 && (
           <div className="space-y-3">
             <div className="flex justify-between items-center px-1">

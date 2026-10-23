@@ -5,12 +5,12 @@ import Footer from '../../components/Footer';
 import { AdminSliders } from '../../components/admin/AdminSliders';
 import { AdminModals } from '../../components/admin/AdminModals';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ref, onValue, update, remove, set, push } from 'firebase/database';
+import { ref, onValue, update, remove, set, push, get } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
 import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
-  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star, Bell, Send, Tag, Percent
+  BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star, Bell, Send, Tag, Percent, RefreshCw
 } from 'lucide-react';
 import { DEFAULT_CATEGORIES, DEFAULT_COUPONS } from '../../lib/defaultData';
 
@@ -39,6 +39,12 @@ export default function AdminControlPanelPage() {
   const [faqsList, setFaqsList] = useState([]);
   const [notificationsList, setNotificationsList] = useState([]);
   const [couponsList, setCouponsList] = useState([]);
+
+  // Pull To Refresh & Manual Sync States
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
 
   // Push Notification Form States
   const [notifTitle, setNotifTitle] = useState('');
@@ -203,6 +209,87 @@ export default function AdminControlPanelPage() {
       }
     }
     return list;
+  };
+
+  // Manual Refresh & Pull-To-Refresh Sync Handler
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+
+    try {
+      const [bSnap, uSnap, cSnap, sSnap, bnrSnap, tSnap, fSnap, nSnap, coupSnap] = await Promise.all([
+        get(ref(rtdb, 'bookings')),
+        get(ref(rtdb, 'users')),
+        get(ref(rtdb, 'categories')),
+        get(ref(rtdb, 'services')),
+        get(ref(rtdb, 'banners')),
+        get(ref(rtdb, 'testimonials')),
+        get(ref(rtdb, 'faqs')),
+        get(ref(rtdb, 'notifications')),
+        get(ref(rtdb, 'coupons'))
+      ]);
+
+      if (bSnap.exists()) {
+        const list = parseFirebaseSnapshot(bSnap);
+        list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setBookings(list);
+      }
+      if (uSnap.exists()) setUsersList(parseFirebaseSnapshot(uSnap));
+      if (cSnap.exists()) setCategoriesList(parseFirebaseSnapshot(cSnap));
+      if (sSnap.exists()) setServicesList(parseFirebaseSnapshot(sSnap));
+      if (bnrSnap.exists()) setBannersList(parseFirebaseSnapshot(bnrSnap));
+      if (tSnap.exists()) setTestimonialsList(parseFirebaseSnapshot(tSnap));
+      if (fSnap.exists()) setFaqsList(parseFirebaseSnapshot(fSnap));
+      if (nSnap.exists()) {
+        const list = parseFirebaseSnapshot(nSnap);
+        list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setNotificationsList(list);
+      }
+      if (coupSnap.exists()) setCouponsList(parseFirebaseSnapshot(coupSnap));
+
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+        setIsPulling(false);
+        setPopupState({
+          isOpen: true,
+          title: 'Platform Refreshed! 🔄',
+          message: 'All live data trees (Orders, Users, Services, Banners, Notifications) re-synchronized from Firebase Database!',
+          type: 'success'
+        });
+      }, 600);
+    } catch (err) {
+      setIsRefreshing(false);
+      setPullDistance(0);
+      setIsPulling(false);
+      console.error("Refresh error:", err);
+    }
+  };
+
+  // Touch Drag Pull to Refresh Handlers
+  const handleTouchStart = (e) => {
+    if (window.scrollY === 0) {
+      setStartY(e.touches[0].clientY);
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isPulling || window.scrollY > 0) return;
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - startY;
+    if (distance > 0) {
+      setPullDistance(Math.min(distance * 0.5, 120));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isPulling) return;
+    if (pullDistance > 70 && !isRefreshing) {
+      handleManualRefresh();
+    } else {
+      setPullDistance(0);
+      setIsPulling(false);
+    }
   };
 
   useEffect(() => {
@@ -751,10 +838,29 @@ export default function AdminControlPanelPage() {
   const currentCouponObj = activeCouponsList[safeCouponIdx] || activeCouponsList[0];
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
+    <div
+      className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
       <main className="web-container py-6 sm:py-10 flex-1 space-y-6 max-w-7xl mx-auto px-4 sm:px-6 w-full">
+
+        {/* Pull to Refresh Mobile & Touch Indicator */}
+        {(pullDistance > 0 || isRefreshing) && (
+          <div
+            className="w-full flex items-center justify-center gap-2 py-3 bg-redPrimary/10 border border-redPrimary/30 rounded-2xl text-redPrimary text-xs font-black transition-all shadow-md"
+            style={{ transform: `translateY(${Math.min(pullDistance, 40)}px)` }}
+          >
+            <RefreshCw className={`w-4 h-4 text-redPrimary ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>
+              {isRefreshing ? 'Refreshed! Syncing Realtime Database...' : pullDistance > 70 ? 'Release to Refresh Admin Panel 🔄' : 'Pull down to refresh Admin Panel...'}
+            </span>
+          </div>
+        )}
+
         {!isAuthLoaded ? (<div className="web-card text-center py-16 text-slate-500">Loading secure session...</div>) : !isAdmin ? (
           <div className="web-card text-center py-16 max-w-lg mx-auto space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
             <Lock className="w-16 h-16 text-redPrimary mx-auto" />
@@ -766,7 +872,7 @@ export default function AdminControlPanelPage() {
           </div>
         ) : (
           <>
-            {/* Top Admin Header Banner */}
+            {/* Top Admin Header Banner with Manual Refresh Sync Button */}
             <div className="web-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-redPrimary/20 via-slate-100 dark:via-neutral-900 to-transparent border border-redPrimary/30 p-5 rounded-2xl sm:rounded-3xl shadow-xl">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-redPrimary/20 text-redPrimary shrink-0">
@@ -779,6 +885,17 @@ export default function AdminControlPanelPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleManualRefresh}
+                  disabled={isRefreshing}
+                  className="btn-primary bg-blue-600 hover:bg-blue-700 text-xs py-2.5 px-4 shadow-lg w-full sm:w-auto text-center justify-center flex items-center gap-1.5 cursor-pointer"
+                  title="Manual Sync Realtime Database"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Syncing...' : 'Refresh Live Data'}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setIsCreateSubAdminOpen(true)}

@@ -12,7 +12,8 @@ import { Search, Star, Wrench, ArrowRight, ShieldCheck, Flame } from 'lucide-rea
 
 export default function ServicesPage() {
   const router = useRouter();
-  const [isDark, setIsDark] = useState(true);
+  // Default Website Theme is Light Mode
+  const [isDark, setIsDark] = useState(false);
   const [query, setQuery] = useState('');
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
@@ -23,19 +24,34 @@ export default function ServicesPage() {
 
   const { currentUser, isAuthLoaded } = useAuth();
 
-  // Automatic Theme Synchronization Effect
+  // Theme Sync Effect
   useEffect(() => {
-    if (isDark) {
+    const savedTheme = localStorage.getItem('himistri_theme') || 'light';
+    const isDarkTheme = savedTheme === 'dark';
+    setIsDark(isDarkTheme);
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
-  }, [isDark]);
+  }, []);
 
   const toggleTheme = () => {
-    setIsDark(prev => !prev);
+    setIsDark(prev => {
+      const nextDark = !prev;
+      if (nextDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('himistri_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('himistri_theme', 'light');
+      }
+      return nextDark;
+    });
   };
 
   useEffect(() => {

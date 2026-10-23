@@ -15,7 +15,8 @@ import {
 import { DEFAULT_CATEGORIES, DEFAULT_COUPONS } from '../../lib/defaultData';
 
 export default function AdminControlPanelPage() {
-  const [isDark, setIsDark] = useState(true);
+  // Default Website Theme is Light Mode
+  const [isDark, setIsDark] = useState(false);
   const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs, 11=Notifications, 12=Coupons
 
   // Slider Index States for Admin Tabs
@@ -118,19 +119,34 @@ export default function AdminControlPanelPage() {
   const [adminPhone, setAdminPhone] = useState('+919563213089');
   const [adminEmail, setAdminEmail] = useState('sahrahul77@gmail.com');
 
-  // Automatic Theme Synchronization Effect
+  // Theme Sync Effect
   useEffect(() => {
-    if (isDark) {
+    const savedTheme = localStorage.getItem('himistri_theme') || 'light';
+    const isDarkTheme = savedTheme === 'dark';
+    setIsDark(isDarkTheme);
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
-  }, [isDark]);
+  }, []);
 
   const toggleTheme = () => {
-    setIsDark(prev => !prev);
+    setIsDark(prev => {
+      const nextDark = !prev;
+      if (nextDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('himistri_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('himistri_theme', 'light');
+      }
+      return nextDark;
+    });
   };
 
   // HTML5 Canvas 100% Native High-Definition File Preserver

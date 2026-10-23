@@ -9,7 +9,8 @@ import { Bell, ShoppingBag, Trash2, ArrowLeft, Lock, LogIn, CheckCircle2, Tag, C
 import Link from 'next/link';
 
 export default function NotificationsPage() {
-  const [isDark, setIsDark] = useState(true);
+  // Default Website Theme is Light Mode
+  const [isDark, setIsDark] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [clearedNotifMap, setClearedNotifMap] = useState({});
   const [activeTab, setActiveTab] = useState(0); // 0=All, 1=Order Updates, 2=Offers & Promos
@@ -20,15 +21,34 @@ export default function NotificationsPage() {
 
   const { currentUser, isAuthLoaded } = useAuth();
 
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    if (!isDark) {
+  // Theme Sync Effect
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('himistri_theme') || 'light';
+    const isDarkTheme = savedTheme === 'dark';
+    setIsDark(isDarkTheme);
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDark(prev => {
+      const nextDark = !prev;
+      if (nextDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('himistri_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('himistri_theme', 'light');
+      }
+      return nextDark;
+    });
   };
 
   // Robust Date Formatter

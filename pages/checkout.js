@@ -13,7 +13,8 @@ import { DEFAULT_COUPONS } from '../lib/defaultData';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [isDark, setIsDark] = useState(true);
+  // Default Website Theme is Light Mode
+  const [isDark, setIsDark] = useState(false);
   const { currentUser, isAuthLoaded } = useAuth();
 
   const [quantity, setQuantity] = useState(1);
@@ -28,66 +29,84 @@ export default function CheckoutPage() {
   const [savedAddressesList, setSavedAddressesList] = useState([]);
   const [selectedSavedAddr, setSelectedSavedAddr] = useState('new');
   const [newAddrType, setNewAddrType] = useState('Home');
-  const [houseNo, setHouseNo] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [locality, setLocality] = useState('');
-  const [city, setCity] = useState('Gangtok');
-  const [state, setState] = useState('Sikkim');
-  const [pincode, setPincode] = useState('737101');
+  const [newHouseNo, setNewHouseNo] = useState('');
+  const [newStreet, setNewStreet] = useState('');
+  const [newLocality, setNewLocality] = useState('');
+  const [newCity, setNewCity] = useState('Gangtok');
+  const [newState, setNewState] = useState('Sikkim');
+  const [newPincode, setNewPincode] = useState('737101');
 
-  // Promo Code States
-  const [promoInput, setPromoInput] = useState('');
+  // Promo Code / Discount Coupon States
+  const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
   const [couponsList, setCouponsList] = useState(DEFAULT_COUPONS);
-  const [promoError, setPromoError] = useState('');
 
+  // Payment Method State
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [service, setService] = useState(null);
 
   // Dynamic Popup Modal State
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
-  const [service, setService] = useState(null);
-
-  // Automatic Theme Synchronization Effect
+  // Theme Sync Effect
   useEffect(() => {
-    if (isDark) {
+    const savedTheme = localStorage.getItem('himistri_theme') || 'light';
+    const isDarkTheme = savedTheme === 'dark';
+    setIsDark(isDarkTheme);
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
-  }, [isDark]);
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDark(prev => {
+      const nextDark = !prev;
+      if (nextDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('himistri_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('himistri_theme', 'light');
+      }
+      return nextDark;
+    });
+  };
 
   useEffect(() => {
-    try {
-      const storedSrv = localStorage.getItem('himistri_checkout_service');
-      if (storedSrv) setService(JSON.parse(storedSrv));
-    } catch (e) {}
-
-    const tmrw = new Date();
-    tmrw.setDate(tmrw.getDate() + 1);
-    setDate(tmrw.toISOString().split('T')[0]);
-    setSlot('09:00');
-
-    if (currentUser) {
-      const userRef = ref(rtdb, `users/${currentUser.id}`);
-      onValue(userRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          if (data.addresses) {
-            const addrs = Object.keys(data.addresses).map(k => ({
-              id: k,
-              ...data.addresses[k]
-            }));
-            setSavedAddressesList(addrs);
-          }
-        }
-      });
+    const stored = localStorage.getItem('himistri_checkout_service');
+    if (stored) {
+      try {
+        setService(JSON.parse(stored));
+      } catch (e) {
+        console.error("Could not parse checkout service:", e);
+      }
     }
+  }, []);
 
-    // Fetch Live Coupons from Firebase Realtime Database
+  useEffect(() => {
+    if (!currentUser) return;
+    const userAddressesRef = ref(rtdb, `users/${currentUser.id}/addresses`);
+    const unsubscribe = onValue(userAddressesRef, (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
+      }
+      setSavedAddressesList(list);
+      if (list.length > 0) {
+        setSelectedSavedAddr(list[0].id);
+      }
+    });
+
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
@@ -98,210 +117,214 @@ export default function CheckoutPage() {
           });
         }
       }
-      setCouponsList(list.length > 0 ? list : DEFAULT_COUPONS);
+      if (list.length > 0) setCouponsList(list);
     });
 
-    return () => unsubCoupons();
+    return () => { unsubscribe(); unsubCoupons(); };
   }, [currentUser]);
 
-  // Dynamic Duration Price & Promo Discount Calculation
-  const basePrice = service ? (service.discountedPrice || service.originalPrice || 800) : 800;
-  const singleUnitDurationPrice = calculateDurationPrice(basePrice, bookingPlan, durationValue);
-  const subtotalPrice = singleUnitDurationPrice * quantity;
-  const durationText = getDurationUnitText(bookingPlan, durationValue);
-  const durationOptions = getDurationOptions(bookingPlan);
+  if (!isAuthLoaded) {
+    return <div className="min-h-screen bg-slate-50 dark:bg-[#0F0F0F] flex items-center justify-center text-slate-500 font-bold">Verifying Session...</div>;
+  }
 
-  // Promo Discount Logic
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
+        <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={null} />
+        <main className="web-container py-16 flex-1 flex items-center justify-center">
+          <div className="web-card text-center py-12 px-6 max-w-md w-full space-y-4 shadow-xl">
+            <Lock className="w-16 h-16 text-redPrimary mx-auto" />
+            <h2 className="text-2xl font-black">Login Required</h2>
+            <p className="text-xs text-slate-500">Please sign in or register an account to complete your doorstep booking.</p>
+            <Link href="/auth?redirect=checkout" className="btn-primary w-full py-3.5 text-xs font-black shadow-lg">
+              <LogIn className="w-4 h-4 inline mr-1" /> Sign In / Register
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!service) {
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
+        <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
+        <main className="web-container py-16 flex-1 flex items-center justify-center">
+          <div className="web-card text-center py-12 px-6 max-w-md w-full space-y-4 shadow-xl">
+            <ShoppingBag className="w-16 h-16 text-slate-400 mx-auto" />
+            <h2 className="text-2xl font-black">No Service Selected</h2>
+            <p className="text-xs text-slate-500">Please select a service from our catalog to proceed with checkout.</p>
+            <Link href="/services" className="btn-primary w-full py-3.5 text-xs font-black shadow-lg">
+              Explore Services Catalog
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Calculate Subtotal & Duration Price
+  const baseUnitPrice = service.discountedPrice || 800;
+  const durationMultiplier = calculateDurationPrice(bookingPlan, durationValue, baseUnitPrice);
+  const rawSubtotal = durationMultiplier * quantity;
+
+  // Apply Coupon Discount Calculation
   let discountAmount = 0;
   if (appliedCoupon) {
-    const discVal = parseFloat(appliedCoupon.discountValue) || 0;
     if (appliedCoupon.discountType === 'PERCENTAGE') {
-      discountAmount = Math.round(subtotalPrice * (discVal / 100));
+      discountAmount = Math.round((rawSubtotal * appliedCoupon.discountValue) / 100);
     } else {
-      discountAmount = Math.min(subtotalPrice, discVal);
+      discountAmount = appliedCoupon.discountValue;
     }
   }
 
-  const finalTotalPrice = Math.max(0, subtotalPrice - discountAmount);
+  const finalTotalAmount = Math.max(0, rawSubtotal - discountAmount);
 
-  const toggleTheme = () => {
-    setIsDark(prev => !prev);
-  };
-
-  const handlePlanChange = (planId) => {
-    setBookingPlan(planId);
-    setDurationValue(1);
-  };
-
-  const handleSavedAddressChange = (e) => {
-    const val = e.target.value;
-    setSelectedSavedAddr(val);
-
-    if (val === 'new') {
-      setHouseNo('');
-      setStreetAddress('');
-      setLocality('');
-      setCity('Gangtok');
-      setState('Sikkim');
-      setPincode('737101');
-    } else {
-      const matchedAddr = savedAddressesList.find(a => a.id === val || a.fullAddress === val);
-      if (matchedAddr) {
-        setNewAddrType(matchedAddr.title || 'Home');
-        setHouseNo(matchedAddr.houseNo || '');
-        setStreetAddress(matchedAddr.streetAddress || matchedAddr.fullAddress || '');
-        setLocality(matchedAddr.locality || '');
-        setCity(matchedAddr.city || 'Gangtok');
-        setState('Sikkim');
-        setPincode(matchedAddr.pincode || '737101');
-      }
-    }
-  };
-
-  // Promo Code Handlers
+  // Apply Promo Code Handler
   const handleApplyPromoCode = (e) => {
     e.preventDefault();
-    setPromoError('');
-    const codeClean = promoInput.trim().toUpperCase();
+    setCouponError('');
+    const cleanCode = promoCodeInput.trim().toUpperCase();
 
-    if (!codeClean) {
-      setPromoError('Please enter a promo code.');
+    if (!cleanCode) {
+      setCouponError('Please enter a promo code string.');
       return;
     }
 
-    const activeCoupons = couponsList.length > 0 ? couponsList : DEFAULT_COUPONS;
-    const foundCoupon = activeCoupons.find(c => (c.code || '').toUpperCase() === codeClean && (c.isActive !== false));
+    const matchedCoupon = couponsList.find(c => (c.code || '').toUpperCase() === cleanCode && c.isActive !== false);
 
-    if (!foundCoupon) {
-      setPromoError('Invalid or expired promo code.');
+    if (!matchedCoupon) {
+      setCouponError(`Invalid or expired promo code '${cleanCode}'.`);
+      setAppliedCoupon(null);
       return;
     }
 
-    const minAmount = parseFloat(foundCoupon.minOrderAmount) || 0;
-    if (subtotalPrice < minAmount) {
-      setPromoError(`Code requires a minimum subtotal order of ₹${minAmount}.`);
+    if (matchedCoupon.minOrderAmount && rawSubtotal < matchedCoupon.minOrderAmount) {
+      setCouponError(`Minimum subtotal requirement of ₹${matchedCoupon.minOrderAmount} not met for this coupon.`);
+      setAppliedCoupon(null);
       return;
     }
 
-    setAppliedCoupon(foundCoupon);
-    setPromoError('');
-    setPopupState({
-      isOpen: true,
-      title: 'Promo Code Applied! 🎉',
-      message: `Code '${foundCoupon.code}' applied successfully!\nDiscount: ${foundCoupon.discountType === 'PERCENTAGE' ? foundCoupon.discountValue + '% OFF' : 'Flat ₹' + foundCoupon.discountValue + ' OFF'}`,
-      type: 'success'
-    });
+    setAppliedCoupon(matchedCoupon);
+    setCouponError('');
   };
 
-  const handleRemovePromoCode = () => {
-    setAppliedCoupon(null);
-    setPromoInput('');
-    setPromoError('');
-  };
-
-  const handleSubmit = async (e) => {
+  // Form Submit Handler
+  const handleConfirmBooking = async (e) => {
     e.preventDefault();
-    if (!currentUser) return;
-    if (!service) {
-      setPopupState({
-        isOpen: true,
-        title: 'Cart is Empty',
-        message: 'No service selected for checkout. Please browse the catalog.',
-        type: 'error'
-      });
-      return;
-    }
-
-    if (!streetAddress) {
-      setPopupState({
-        isOpen: true,
-        title: 'Address Required',
-        message: 'Please enter Address (Building, Street, Area).',
-        type: 'error'
-      });
-      return;
-    }
 
     if (!date || !slot) {
       setPopupState({
         isOpen: true,
-        title: 'Schedule Required',
-        message: 'Please select a valid Custom Service Date and Arrival Time.',
+        title: 'Date & Slot Required',
+        message: 'Please select your preferred scheduled date and time slot.',
         type: 'error'
       });
       return;
     }
 
-    setIsSubmitting(true);
+    // Build Final Structured Address
+    let finalAddressString = '';
+    let addressObj = null;
 
-    const bookingRef = 'HM-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.floor(100 + Math.random() * 900);
-    const bookingId = 'bk_' + Math.random().toString(36).substring(2, 10);
-    const fullAddrString = `${houseNo ? houseNo + ', ' : ''}${streetAddress}, ${locality ? locality + ', ' : ''}${city || 'Gangtok'}, Sikkim. PIN: ${pincode || '737101'}`;
-
-    if (selectedSavedAddr === 'new' && currentUser) {
-      try {
-        const userAddrRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
-        await set(userAddrRef, {
-          title: newAddrType,
-          houseNo: houseNo,
-          streetAddress: streetAddress,
-          locality: locality,
-          city: city || 'Gangtok',
-          state: 'Sikkim',
-          pincode: pincode || '737101',
-          fullAddress: fullAddrString,
-          createdAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error("Could not save address to user profile:", err);
+    if (selectedSavedAddr !== 'new') {
+      const matchedAddr = savedAddressesList.find(a => a.id === selectedSavedAddr);
+      if (matchedAddr) {
+        finalAddressString = `${matchedAddr.type || 'Home'}: ${matchedAddr.houseNo || ''}, ${matchedAddr.street || ''}, ${matchedAddr.locality || ''}, ${matchedAddr.city || 'Gangtok'}, ${matchedAddr.state || 'Sikkim'} - ${matchedAddr.pincode || '737101'}`;
+        addressObj = matchedAddr;
       }
     }
 
-    // Save Complete Booking object with Promo Code & Final Price
+    if (!finalAddressString) {
+      if (!newHouseNo || !newStreet || !newLocality) {
+        setPopupState({
+          isOpen: true,
+          title: 'Address Fields Required',
+          message: 'House No/Building Name, Street/Area, and Locality are required for doorstep dispatch.',
+          type: 'error'
+        });
+        return;
+      }
+
+      finalAddressString = `${newAddrType}: ${newHouseNo}, ${newStreet}, ${newLocality}, ${newCity}, ${newState} - ${newPincode}`;
+      addressObj = {
+        type: newAddrType,
+        houseNo: newHouseNo,
+        street: newStreet,
+        locality: newLocality,
+        city: newCity,
+        state: newState,
+        pincode: newPincode
+      };
+
+      // Save new structured address to user profile if logged in
+      if (currentUser) {
+        try {
+          const newAddrRef = push(ref(rtdb, `users/${currentUser.id}/addresses`));
+          await set(newAddrRef, { ...addressObj, id: newAddrRef.key });
+        } catch (addrErr) {
+          console.error("Could not save address to profile:", addrErr);
+        }
+      }
+    }
+
+    setIsSubmitting(true);
+
+    const bookingRefId = 'HM-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.floor(100 + Math.random() * 900);
+    const newBookingKey = push(ref(rtdb, 'bookings')).key;
+
+    const durationUnitText = getDurationUnitText(bookingPlan, durationValue);
+
     const bookingData = {
-      id: bookingId,
-      bookingRef: bookingRef,
+      id: newBookingKey,
+      bookingRef: bookingRefId,
+      serviceId: service.id || 'srv_gen',
+      serviceTitle: service.title || 'Doorstep Technical Service',
+      serviceCategory: service.categoryName || 'General Services',
+      quantity: quantity,
+      bookingPlan: bookingPlan,
+      durationValue: durationValue,
+      durationUnitText: durationUnitText,
+      unitPrice: baseUnitPrice,
+      subtotalAmount: rawSubtotal,
+      appliedPromoCode: appliedCoupon ? appliedCoupon.code : 'NONE',
+      discountAmount: discountAmount,
+      totalAmount: finalTotalAmount,
+      scheduledDate: date,
+      scheduledTimeSlot: slot,
+      address: finalAddressString,
+      addressDetails: addressObj,
+      paymentMethod: paymentMethod,
       userId: currentUser.id,
       userName: currentUser.fullName,
       userPhone: currentUser.phoneNumber,
       customerPhone: currentUser.phoneNumber,
-      serviceId: service.id,
-      serviceTitle: service.title,
-      serviceCategory: service.categoryName || 'General',
-      quantity: quantity,
-      bookingPlan: bookingPlan, // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
-      durationValue: durationValue,
-      durationUnitText: durationText, // e.g. "3 Hours", "2 Days", "1 Week"
-      subtotalAmount: subtotalPrice,
-      appliedPromoCode: appliedCoupon ? appliedCoupon.code : 'NONE',
-      discountAmount: discountAmount,
-      totalAmount: finalTotalPrice,
-      scheduledDate: date,
-      scheduledTimeSlot: slot,
-      address: fullAddrString,
-      paymentMethod: paymentMethod,
+      userEmail: currentUser.email,
       status: 'PENDING',
       trackingStatus: 'Order Placed by Customer',
       createdAt: new Date().toISOString()
     };
 
     try {
-      await set(ref(rtdb, `bookings/${bookingId}`), bookingData);
-      localStorage.removeItem('himistri_checkout_service');
+      await set(ref(rtdb, `bookings/${newBookingKey}`), bookingData);
+
       setIsSubmitting(false);
+      localStorage.removeItem('himistri_checkout_service');
 
       setPopupState({
         isOpen: true,
-        title: 'Order Confirmed!',
-        message: `Booking Ref: ${bookingRef}\nDuration: ${durationText}\nTotal: ₹${finalTotalPrice}${discountAmount > 0 ? ' (Saved ₹' + discountAmount + ')' : ''}\n\nOur verified technician is dispatched!`,
+        title: 'Booking Confirmed! 🎉',
+        message: `Your booking (${bookingRefId}) for ${service.title} has been placed successfully!\nScheduled for ${date} (${slot}).`,
         type: 'success',
-        onAction: () => router.push(`/tracking?ref=${bookingRef}`)
+        onAction: () => router.push('/tracking')
       });
     } catch (err) {
       setIsSubmitting(false);
       setPopupState({
         isOpen: true,
-        title: 'Order Placement Failed',
+        title: 'Booking Failed',
         message: err.message,
         type: 'error'
       });
@@ -312,380 +335,310 @@ export default function CheckoutPage() {
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      <main className="web-container py-6 sm:py-10 flex-1 max-w-5xl mx-auto px-4 sm:px-6 w-full">
-        {!isAuthLoaded ? (
-          <div className="web-card text-center py-16 text-slate-500">Verifying session...</div>
-        ) : !currentUser ? (
-          <div className="web-card text-center py-16 space-y-4 max-w-md mx-auto bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
-            <Lock className="w-16 h-16 text-redPrimary mx-auto" />
-            <h2 className="text-2xl font-black">Sign In Required</h2>
-            <p className="text-xs text-slate-500">Please sign in to place a doorstep service booking in Gangtok.</p>
-            <Link href="/auth?redirect=checkout" className="btn-primary inline-flex">
-              <LogIn className="w-4 h-4" /> Sign In to Proceed
-            </Link>
+      <main className="web-container py-6 sm:py-10 flex-1 max-w-6xl mx-auto px-4 sm:px-6 w-full space-y-6">
+
+        {/* Top Header Banner */}
+        <div className="bg-gradient-to-r from-redPrimary via-orangeSecondary to-redDark text-white p-5 rounded-2xl shadow-xl flex justify-between items-center">
+          <div>
+            <span className="text-[10px] font-black uppercase text-amber-300 tracking-wider">Fast Dispatch</span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-wide">Checkout & Confirm Booking</h1>
           </div>
-        ) : !service ? (
-          <div className="web-card text-center py-16 space-y-4 max-w-md mx-auto bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333]">
-            <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto" />
-            <h2 className="text-2xl font-black">Your Cart is Empty</h2>
-            <p className="text-xs text-slate-500">Browse our services catalog and select a service to hire.</p>
-            <Link href="/services" className="btn-primary inline-flex">
-              Browse Services
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-redPrimary/10 text-redPrimary">
-                <ShoppingBag className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black">Complete Your Doorstep Booking</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Select duration dropdowns, promo code & address in Gangtok, Sikkim</p>
+          <span className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full">
+            {currentUser.fullName}
+          </span>
+        </div>
+
+        <form onSubmit={handleConfirmBooking} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Left Columns: Address & Schedule & Plan (2 Cols on Desktop) */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Service Details Brief Card */}
+            <div className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md space-y-3">
+              <span className="text-[10px] font-black uppercase text-redPrimary tracking-wider">Selected Service</span>
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">{service.title}</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{service.categoryName || 'General Technical Services'}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-lg font-black text-redPrimary">₹{baseUnitPrice}</span>
+                  <span className="text-[10px] text-slate-400 block line-through">₹{service.originalPrice || 1000}</span>
+                </div>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Booking Duration Plan Dropdown Box */}
+            <div className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md space-y-4">
+              <div className="flex items-center gap-2 text-redPrimary">
+                <Timer className="w-5 h-5 text-redPrimary" />
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Booking Duration & Plan Basis</h3>
+              </div>
 
-              {/* Left 2 Columns: Order Form & Duration Dropdowns */}
-              <div className="lg:col-span-2 space-y-6">
-
-                {/* Selected Service Card */}
-                <div className="web-card p-5 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <img src={service.imageUrl} alt="" className="w-16 h-16 object-contain rounded-xl bg-neutral-800 p-1" />
-                    <div>
-                      <span className="text-[10px] font-black text-redPrimary uppercase">{service.categoryName || 'General'}</span>
-                      <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">{service.title}</h3>
-                      <p className="text-xs text-redPrimary font-black">Base Rate: ₹{basePrice}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-slate-100 dark:bg-neutral-800 p-1.5 rounded-xl border border-slate-200 dark:border-neutral-700">
-                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-700 dark:text-white"><Minus className="w-3.5 h-3.5" /></button>
-                    <span className="text-xs font-black px-2">{quantity}</span>
-                    <button type="button" onClick={() => setQuantity(quantity + 1)} className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-neutral-700 text-slate-700 dark:text-white"><Plus className="w-3.5 h-3.5" /></button>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Select Booking Basis Plan *</label>
+                  <select
+                    value={bookingPlan}
+                    onChange={(e) => {
+                      setBookingPlan(e.target.value);
+                      setDurationValue(1);
+                    }}
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                  >
+                    {DURATION_PLANS.map((plan) => (
+                      <option key={plan.id} value={plan.id}>{plan.label}</option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* DURATION PLAN DROPDOWNS */}
-                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
-                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
-                    <Timer className="w-5 h-5" /> Select Booking Duration Basis
-                  </h3>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                    Select Duration ({getDurationUnitText(bookingPlan, durationValue)}) *
+                  </label>
+                  <select
+                    value={durationValue}
+                    onChange={(e) => setDurationValue(parseInt(e.target.value))}
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                  >
+                    {getDurationOptions(bookingPlan).map((num) => (
+                      <option key={num} value={num}>{num} {getDurationUnitText(bookingPlan, num)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-neutral-900 p-4 rounded-xl border border-slate-200 dark:border-neutral-800">
+              {/* Quantity Counter */}
+              <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-neutral-800">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Number of Craftsmen Needed:</span>
+                <div className="flex items-center gap-3 bg-slate-100 dark:bg-neutral-900 p-1.5 rounded-xl border border-slate-200 dark:border-neutral-800">
+                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-1 rounded-lg bg-white dark:bg-neutral-800 hover:text-redPrimary"><Minus className="w-4 h-4" /></button>
+                  <span className="text-xs font-black text-slate-900 dark:text-white w-6 text-center">{quantity}</span>
+                  <button type="button" onClick={() => setQuantity(quantity + 1)} className="p-1 rounded-lg bg-white dark:bg-neutral-800 hover:text-redPrimary"><Plus className="w-4 h-4" /></button>
+                </div>
+              </div>
+            </div>
 
-                    {/* Dropdown 1: Duration Plan Basis */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 flex items-center gap-1.5">
-                        <Timer className="w-4 h-4 text-redPrimary" /> 1. Duration Basis Plan *
+            {/* Schedule Date & Slot Box */}
+            <div className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md space-y-4">
+              <div className="flex items-center gap-2 text-redPrimary">
+                <Calendar className="w-5 h-5 text-redPrimary" />
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Schedule Doorstep Service</h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Preferred Date *</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Time Slot *</label>
+                  <select
+                    value={slot}
+                    onChange={(e) => setSlot(e.target.value)}
+                    required
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                  >
+                    <option value="">Select Time Slot...</option>
+                    <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM (Morning Slot)</option>
+                    <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM (Midday Slot)</option>
+                    <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM (Afternoon Slot)</option>
+                    <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM (Evening Slot)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Address Selection / New Address Form */}
+            <div className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md space-y-4">
+              <div className="flex items-center gap-2 text-redPrimary">
+                <MapPin className="w-5 h-5 text-redPrimary" />
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Service Address in Sikkim</h3>
+              </div>
+
+              {/* Saved Address Chooser if available */}
+              {savedAddressesList.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block">Choose Saved Address:</label>
+                  <div className="space-y-2">
+                    {savedAddressesList.map((addr) => (
+                      <label key={addr.id} className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${selectedSavedAddr === addr.id ? 'border-redPrimary bg-redPrimary/5' : 'border-slate-200 dark:border-neutral-800'}`}>
+                        <input type="radio" name="addressChoice" checked={selectedSavedAddr === addr.id} onChange={() => setSelectedSavedAddr(addr.id)} className="mt-1 text-redPrimary" />
+                        <div className="text-xs space-y-0.5">
+                          <strong className="text-slate-900 dark:text-white font-extrabold block">{addr.type || 'Home'}</strong>
+                          <p className="text-slate-600 dark:text-slate-400">{addr.houseNo}, {addr.street}, {addr.locality}, {addr.city}, {addr.state} - {addr.pincode}</p>
+                        </div>
                       </label>
-                      <select
-                        value={bookingPlan}
-                        onChange={(e) => handlePlanChange(e.target.value)}
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary shadow-sm cursor-pointer"
+                    ))}
+                    <label className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition ${selectedSavedAddr === 'new' ? 'border-redPrimary bg-redPrimary/5' : 'border-slate-200 dark:border-neutral-800'}`}>
+                      <input type="radio" name="addressChoice" checked={selectedSavedAddr === 'new'} onChange={() => setSelectedSavedAddr('new')} className="text-redPrimary" />
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">+ Enter A New Address</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Structured Address Form for New Address */}
+              {(selectedSavedAddr === 'new' || savedAddressesList.length === 0) && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex gap-2">
+                    {['Home', 'Office', 'Other'].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setNewAddrType(type)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${newAddrType === type ? 'bg-redPrimary text-white border-redPrimary' : 'bg-slate-50 dark:bg-neutral-900 border-slate-200 dark:border-neutral-800'}`}
                       >
-                        {DURATION_PLANS.map((plan) => (
-                          <option key={plan.id} value={plan.id}>
-                            {plan.label} ({plan.desc})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Dropdown 2: Duration Units */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-redPrimary" /> 2. Duration Units (<strong className="text-redPrimary">{durationText}</strong>) *
-                      </label>
-                      <select
-                        value={durationValue}
-                        onChange={(e) => setDurationValue(parseInt(e.target.value, 10))}
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary shadow-sm cursor-pointer"
-                      >
-                        {durationOptions.map((unit) => (
-                          <option key={unit} value={unit}>
-                            {unit} {bookingPlan === 'HOURLY' ? (unit === 1 ? 'Hour' : 'Hours') : bookingPlan === 'DAILY' ? (unit === 1 ? 'Day' : 'Days') : bookingPlan === 'WEEKLY' ? (unit === 1 ? 'Week' : 'Weeks') : bookingPlan === 'MONTHLY' ? (unit === 1 ? 'Month' : 'Months') : (unit === 1 ? 'Year' : 'Years')}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
+                        {type}
+                      </button>
+                    ))}
                   </div>
-                </div>
-
-                {/* Schedule Date & Arrival Time */}
-                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
-                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
-                    <Calendar className="w-5 h-5" /> Service Schedule & Arrival Time
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Service Start Date *</label>
-                      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Arrival Time *</label>
-                      <input type="time" value={slot} onChange={(e) => setSlot(e.target.value)} required className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Complete Structured Address Details matching Blueprint 100% */}
-                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-4">
-                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
-                    <MapPin className="w-5 h-5" /> Doorstep Service Address in Gangtok
-                  </h3>
-
-                  {savedAddressesList.length > 0 && (
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Saved Addresses</label>
-                      <select value={selectedSavedAddr} onChange={handleSavedAddressChange} className="w-full p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary">
-                        <option value="new">+ Enter New Doorstep Address</option>
-                        {savedAddressesList.map(a => <option key={a.id} value={a.id}>{a.title || 'Address'}: {a.fullAddress}</option>)}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-neutral-900 p-4 rounded-2xl border border-slate-200 dark:border-neutral-800">
-
-                    {/* Address Type Tag Selector */}
-                    <div className="sm:col-span-2 mb-1">
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Type of Address *</label>
-                      <div className="flex gap-2">
-                        {['Home', 'Work', 'Office', 'Other'].map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setNewAddrType(t)}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold border transition ${
-                              newAddrType === t ? 'bg-redPrimary text-white border-redPrimary shadow-md' : 'bg-white dark:bg-neutral-800 text-slate-400 border-slate-200 dark:border-neutral-700'
-                            }`}
-                          >
-                            {t === 'Home' ? '🏡 Home' : t === 'Work' ? '🏢 Work' : t === 'Office' ? '💼 Office' : '📍 Other'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Row 1 Left: House No. / Tower / Block */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">House No. / Tower / Block</label>
-                      <input
-                        type="text"
-                        value={houseNo}
-                        onChange={(e) => setHouseNo(e.target.value)}
-                        placeholder="e.g. Flat 4B / Block C"
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
-                      />
-                    </div>
-
-                    {/* Row 1 Right: Address (Building, Street, Area) * */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Address (Building, Street, Area) *</label>
-                      <input
-                        type="text"
-                        value={streetAddress}
-                        onChange={(e) => setStreetAddress(e.target.value)}
-                        placeholder="e.g. Upper Syari, Deorali-Bazar *"
-                        required
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
-                      />
-                    </div>
-
-                    {/* Row 2 Left: Locality / Town */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Locality / Town</label>
-                      <input
-                        type="text"
-                        value={locality}
-                        onChange={(e) => setLocality(e.target.value)}
-                        placeholder="e.g. Near ICDS Center"
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
-                      />
-                    </div>
-
-                    {/* Row 2 Right: City / District */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">City / District</label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="Gangtok"
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
-                      />
-                    </div>
-
-                    {/* Row 3 Left: State (Default Fixed) */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">State (Default Fixed)</label>
-                      <input
-                        type="text"
-                        value="Sikkim"
-                        disabled
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-200 dark:bg-neutral-950 text-slate-500 text-xs font-bold cursor-not-allowed"
-                      />
-                    </div>
-
-                    {/* Row 3 Right: Pincode (Default: 737101) */}
-                    <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Pincode (Default: 737101)</label>
-                      <input
-                        type="text"
-                        value={pincode}
-                        onChange={(e) => setPincode(e.target.value)}
-                        placeholder="737101"
-                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
-                      />
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div className="web-card p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-md space-y-3">
-                  <h3 className="text-base font-extrabold text-redPrimary flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" /> Payment Method
-                  </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'CASH_ON_DELIVERY' ? 'border-redPrimary bg-redPrimary/10' : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900'}`}>
-                      <input type="radio" name="pay" checked={paymentMethod === 'CASH_ON_DELIVERY'} onChange={() => setPaymentMethod('CASH_ON_DELIVERY')} className="accent-redPrimary" />
-                      <div>
-                        <strong className="text-xs block text-slate-900 dark:text-white font-extrabold">Cash on Service (COD)</strong>
-                        <span className="text-[10px] text-slate-500">Pay directly to mistri after work</span>
-                      </div>
-                    </label>
-
-                    <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'ONLINE_UPI' ? 'border-redPrimary bg-redPrimary/10' : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900'}`}>
-                      <input type="radio" name="pay" checked={paymentMethod === 'ONLINE_UPI'} onChange={() => setPaymentMethod('ONLINE_UPI')} className="accent-redPrimary" />
-                      <div>
-                        <strong className="text-xs block text-slate-900 dark:text-white font-extrabold">Online UPI / GPay / PhonePe</strong>
-                        <span className="text-[10px] text-slate-500">Instant QR Code payment</span>
-                      </div>
-                    </label>
+                    <input type="text" value={newHouseNo} onChange={(e) => setNewHouseNo(e.target.value)} placeholder="House / Flat / Building Name *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newStreet} onChange={(e) => setNewStreet(e.target.value)} placeholder="Street / Area Name *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newLocality} onChange={(e) => setNewLocality(e.target.value)} placeholder="Locality / Landmark (e.g. Upper Syari) *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newCity} onChange={(e) => setNewCity(e.target.value)} placeholder="City / Town *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newState} onChange={(e) => setNewState(e.target.value)} placeholder="State *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newPincode} onChange={(e) => setNewPincode(e.target.value)} placeholder="PIN Code *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
                   </div>
                 </div>
+              )}
+            </div>
 
+            {/* Payment Method Selector */}
+            <div className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center gap-2 text-redPrimary">
+                <CreditCard className="w-5 h-5 text-redPrimary" />
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Payment Method</h3>
               </div>
 
-              {/* Right Column: Dynamic Price Summary with Clean Promo Code Field */}
-              <div className="space-y-6">
-                <div className="web-card p-6 rounded-2xl bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] shadow-xl space-y-4 sticky top-24">
-                  <h3 className="text-base font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-800 pb-3">Booking Price Summary</h3>
-
-                  <div className="space-y-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    <div className="flex justify-between">
-                      <span>Service Item:</span>
-                      <span className="text-slate-900 dark:text-white font-bold">{service.title}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Duration Plan:</span>
-                      <span className="text-redPrimary font-bold">{bookingPlan}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Duration Units:</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{durationText}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Unit Duration Cost:</span>
-                      <span>₹{singleUnitDurationPrice}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Quantity:</span>
-                      <span>x {quantity}</span>
-                    </div>
-
-                    <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200 pt-1">
-                      <span>Subtotal Amount:</span>
-                      <span>₹{subtotalPrice}</span>
-                    </div>
-
-                    {appliedCoupon && (
-                      <div className="flex justify-between text-emerald-500 font-black">
-                        <span>Promo Discount ({appliedCoupon.code}):</span>
-                        <span>-₹{discountAmount}</span>
-                      </div>
-                    )}
-
-                    {/* CLEAN PROMO CODE INPUT BOX (NO e.g. SIKKIM10 LABEL) */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-2">
-                      <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block flex items-center gap-1">
-                        <Tag className="w-3.5 h-3.5 text-redPrimary" /> Apply Promo Code / Coupon
-                      </label>
-
-                      {appliedCoupon ? (
-                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-                          <div>
-                            <strong className="text-xs font-black text-emerald-500 block">✓ {appliedCoupon.code} Applied</strong>
-                            <span className="text-[10px] text-slate-400">
-                              {appliedCoupon.discountType === 'PERCENTAGE' ? `${appliedCoupon.discountValue}% OFF` : `Flat ₹${appliedCoupon.discountValue} OFF`}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleRemovePromoCode}
-                            className="text-xs font-extrabold text-rose-500 hover:underline"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={promoInput}
-                            onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(''); }}
-                            placeholder="Enter Promo Code"
-                            className="flex-1 p-2.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:border-redPrimary"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleApplyPromoCode}
-                            className="px-4 py-2.5 rounded-xl bg-redPrimary hover:bg-redDark text-white text-xs font-extrabold transition shadow-md shrink-0 cursor-pointer"
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      )}
-
-                      {promoError && (
-                        <p className="text-[11px] font-bold text-rose-500 mt-1">{promoError}</p>
-                      )}
-                    </div>
-
-                    <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-neutral-800 text-base font-black text-redPrimary">
-                      <span>Total Amount:</span>
-                      <span>₹{finalTotalPrice}</span>
-                    </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'CASH_ON_DELIVERY' ? 'border-redPrimary bg-redPrimary/5' : 'border-slate-200 dark:border-neutral-800'}`}>
+                  <input type="radio" name="payMethod" checked={paymentMethod === 'CASH_ON_DELIVERY'} onChange={() => setPaymentMethod('CASH_ON_DELIVERY')} className="text-redPrimary" />
+                  <div>
+                    <strong className="text-xs font-extrabold block text-slate-900 dark:text-white">Cash on Service (COD)</strong>
+                    <span className="text-[10px] text-slate-500">Pay after completion to technician</span>
                   </div>
+                </label>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="btn-primary w-full py-4 text-sm font-black shadow-lg rounded-xl bg-redPrimary hover:bg-redDark text-white transition cursor-pointer"
-                  >
-                    <CheckCircle className="w-4 h-4 inline mr-1" />
-                    {isSubmitting ? 'Placing Booking...' : `Confirm & Book (${durationText} • ₹${finalTotalPrice})`}
-                  </button>
-
-                  <p className="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> 100% Verified Technical Manpower in Gangtok
-                  </p>
-                </div>
+                <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'ONLINE_UPI' ? 'border-redPrimary bg-redPrimary/5' : 'border-slate-200 dark:border-neutral-800'}`}>
+                  <input type="radio" name="payMethod" checked={paymentMethod === 'ONLINE_UPI'} onChange={() => setPaymentMethod('ONLINE_UPI')} className="text-redPrimary" />
+                  <div>
+                    <strong className="text-xs font-extrabold block text-slate-900 dark:text-white">Online UPI / GPay / PhonePe</strong>
+                    <span className="text-[10px] text-slate-500">Scan QR or pay online</span>
+                  </div>
+                </label>
               </div>
+            </div>
 
-            </form>
           </div>
-        )}
+
+          {/* Right Column: Order Price Summary & Promo Code Box */}
+          <div className="space-y-6">
+
+            {/* Promo Code Box */}
+            <div className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center gap-2 text-redPrimary">
+                <Tag className="w-4 h-4 text-redPrimary" />
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Promo Code / Coupon</h3>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                  placeholder="Enter Promo Code (e.g. SIKKIM10)"
+                  className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white uppercase flex-1 outline-none focus:border-redPrimary"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyPromoCode}
+                  className="btn-primary py-2.5 px-4 text-xs font-bold shadow-md shrink-0 cursor-pointer"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {couponError && <p className="text-[11px] font-bold text-rose-500">{couponError}</p>}
+
+              {appliedCoupon && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-500 flex justify-between items-center">
+                  <span>✓ Code '{appliedCoupon.code}' Applied! (-₹{discountAmount})</span>
+                  <button type="button" onClick={() => setAppliedCoupon(null)} className="text-rose-500 hover:underline">Remove</button>
+                </div>
+              )}
+            </div>
+
+            {/* Final Order Price Breakdown Card */}
+            <div className="web-card p-6 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-xl space-y-4 sticky top-24">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-800 pb-3">Payment Summary</h3>
+
+              <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
+                <div className="flex justify-between">
+                  <span>Service Unit Rate:</span>
+                  <strong className="text-slate-900 dark:text-white font-extrabold">₹{baseUnitPrice}</strong>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Plan Basis:</span>
+                  <strong className="text-slate-900 dark:text-white font-extrabold">{bookingPlan} ({durationValue} {getDurationUnitText(bookingPlan, durationValue)})</strong>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Quantity:</span>
+                  <strong className="text-slate-900 dark:text-white font-extrabold">{quantity} Specialist(s)</strong>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <strong className="text-slate-900 dark:text-white font-extrabold">₹{rawSubtotal}</strong>
+                </div>
+
+                {appliedCoupon && (
+                  <div className="flex justify-between text-emerald-500 font-extrabold">
+                    <span>Discount ({appliedCoupon.code}):</span>
+                    <span>-₹{discountAmount}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-slate-500 text-[11px]">
+                  <span>Visiting Fee & Taxes:</span>
+                  <span className="text-emerald-500 font-bold">FREE (₹0)</span>
+                </div>
+
+                <div className="border-t border-slate-200 dark:border-neutral-800 pt-3 flex justify-between items-center text-base font-black text-slate-900 dark:text-white">
+                  <span>Total Amount Payable:</span>
+                  <span className="text-2xl font-black text-redPrimary">₹{finalTotalAmount}</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-primary w-full py-4 text-xs font-black shadow-xl bg-redPrimary hover:bg-redDark text-white transition cursor-pointer rounded-xl flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {isSubmitting ? 'Placing Booking...' : `Confirm & Place Order (₹${finalTotalAmount})`}
+              </button>
+
+              <p className="text-[10px] text-slate-400 text-center flex items-center justify-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 inline" /> 100% Secure & Verified Doorstep Dispatch in Sikkim
+              </p>
+            </div>
+
+          </div>
+
+        </form>
       </main>
 
       <PopupModal
@@ -694,7 +647,7 @@ export default function CheckoutPage() {
         title={popupState.title}
         message={popupState.message}
         type={popupState.type}
-        actionText="Track Order"
+        actionText="View Booking Status"
         onAction={popupState.onAction}
       />
 

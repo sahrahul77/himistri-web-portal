@@ -30,7 +30,7 @@ export default function NotificationsPage() {
     }
   };
 
-  // Robust Date Formatter handling ISO strings, numeric timestamps, and date strings
+  // Robust Date Formatter
   const formatNotifDate = (notif) => {
     const rawDate = notif.createdAt || notif.date || notif.timestamp || notif.sentAt || notif.time;
     if (!rawDate) return new Date().toISOString().slice(0, 16).replace('T', ' ');
@@ -56,7 +56,6 @@ export default function NotificationsPage() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
   };
 
-  // Parallel Realtime Listener to optimize notification retrieval speed
   useEffect(() => {
     if (!currentUser) return;
 
@@ -94,20 +93,26 @@ export default function NotificationsPage() {
     });
 
     function updateUserNotifs() {
-      const isCustomer = !currentUser?.role || currentUser?.role === 'CUSTOMER';
+      const userRole = (currentUser?.role || 'CUSTOMER').toUpperCase().trim();
+      const isCustomer = userRole === 'CUSTOMER' || userRole === 'USER';
 
       const userVisibleNotifs = rawNotifList.filter(n => {
         if (userClearedMap[n.id]) return false;
+
         const target = (n.targetAudience || '').toUpperCase().trim();
-        if (isCustomer && (target === 'PARTNERS' || target === 'SERVICE_PARTNERS')) {
+        const isPartnerNotice = target.includes('PARTNER');
+
+        // Strictly exclude PARTNERS / SERVICE PARTNERS notices from customer accounts!
+        if (isCustomer && isPartnerNotice) {
           return false;
         }
+
         return true;
       });
 
       setNotifications(userVisibleNotifs);
 
-      // Automatically mark visible notifications as read
+      // Automatically mark visible notifications as READ for this user
       if (userVisibleNotifs.length > 0) {
         const readUpdates = {};
         userVisibleNotifs.forEach((n) => {

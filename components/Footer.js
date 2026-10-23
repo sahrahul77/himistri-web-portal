@@ -57,16 +57,16 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-neutral-800 mt-20 relative overflow-hidden transition-colors duration-200">
+    <footer className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-neutral-800 mt-14 sm:mt-20 relative overflow-hidden transition-colors duration-200">
       {/* Background Subtle Red Glow */}
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-redPrimary/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Newsletter Subscription Banner */}
-      <div className="border-b border-slate-200 dark:border-neutral-800 py-10 bg-white/80 dark:bg-neutral-900/50 backdrop-blur-md">
-        <div className="web-container flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="border-b border-slate-200 dark:border-neutral-800 py-8 sm:py-10 bg-white/80 dark:bg-neutral-900/50 backdrop-blur-md">
+        <div className="web-container flex flex-col md:flex-row justify-between items-center gap-5 sm:gap-6">
           <div className="text-center md:text-left">
             <span className="text-xs font-black uppercase text-redPrimary tracking-wider">Stay Connected</span>
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">Subscribe to Sikkim Service Alerts</h3>
+            <h3 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">Subscribe to Sikkim Service Alerts</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Get instant doorstep discount offers & technician availability updates in Gangtok</p>
           </div>
 
@@ -76,9 +76,9 @@ export default function Footer() {
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
               placeholder="Enter your email address"
-              className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-neutral-800 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white text-xs outline-none focus:border-redPrimary min-w-[240px] sm:min-w-[280px]"
+              className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-neutral-800 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white text-xs outline-none focus:border-redPrimary w-full sm:min-w-[280px]"
             />
-            <button type="submit" className="btn-primary text-xs py-3 px-6 whitespace-nowrap justify-center cursor-pointer">
+            <button type="submit" className="btn-primary text-xs py-3 px-6 whitespace-nowrap justify-center cursor-pointer w-full sm:w-auto">
               {subscribed ? <CheckCircle2 className="w-4 h-4 text-emerald-400 inline mr-1" /> : <Send className="w-4 h-4 inline mr-1" />}
               {subscribed ? 'Subscribed!' : 'Subscribe'}
             </button>
@@ -87,10 +87,10 @@ export default function Footer() {
       </div>
 
       {/* Main Footer Links & Information */}
-      <div className="web-container py-12 sm:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
+      <div className="web-container py-10 sm:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
 
         {/* Brand Information */}
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           <div className="flex items-center gap-2">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white">HiMistri</h3>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-redPrimary text-white">SIKKIM</span>
@@ -106,7 +106,7 @@ export default function Footer() {
 
         {/* Quick Navigation */}
         <div>
-          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Quick Navigation</h4>
+          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-3.5 border-l-2 border-redPrimary pl-2">Quick Navigation</h4>
           <ul className="space-y-2.5 text-xs font-semibold">
             <li><Link href="/" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Home Portal</Link></li>
             <li><Link href="/categories" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Explore Categories</Link></li>
@@ -118,7 +118,7 @@ export default function Footer() {
 
         {/* Customer Account & Portal Links */}
         <div>
-          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Portal Access</h4>
+          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-3.5 border-l-2 border-redPrimary pl-2">Portal Access</h4>
           <ul className="space-y-2.5 text-xs font-semibold">
             <li><Link href="/auth" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Customer Sign In / Register</Link></li>
             <li><Link href="/partner" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Service Partner Dashboard</Link></li>
@@ -128,7 +128,7 @@ export default function Footer() {
 
         {/* Sikkim Head Office Contact Info */}
         <div className="space-y-3">
-          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-l-2 border-redPrimary pl-2">Sikkim Head Office</h4>
+          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-3.5 border-l-2 border-redPrimary pl-2">Sikkim Head Office</h4>
           <p className="text-xs flex items-start gap-2.5 text-slate-600 dark:text-slate-300 leading-relaxed">
             <MapPin className="w-4 h-4 text-redPrimary shrink-0 mt-0.5" />
             <span>Upper Syari Near ICDS center, Dothapu, Near Deorali-Bazar, Gangtok, East Sikkim 737102</span>
@@ -179,10 +179,10 @@ export default function Footer() {
         <button
           type="button"
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-[9999] p-3.5 rounded-2xl bg-redPrimary hover:bg-redDark text-white shadow-2xl transition-all duration-300 scale-100 hover:scale-110 flex items-center justify-center border border-white/30 cursor-pointer"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] p-3 sm:p-3.5 rounded-2xl bg-redPrimary hover:bg-redDark text-white shadow-2xl transition-all duration-300 scale-100 hover:scale-110 flex items-center justify-center border border-white/30 cursor-pointer"
           title="Scroll to Top"
         >
-          <ChevronUp className="w-6 h-6 text-white" />
+          <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
         </button>
       )}
     </footer>

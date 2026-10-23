@@ -59,7 +59,6 @@ export default function Header({ isDark, onToggleTheme }) {
 
         const isCustomer = !currentUser?.role || currentUser?.role === 'CUSTOMER';
 
-        // Count notifications that are NEITHER cleared NOR read by THIS user (excluding partner-only notices for customers)
         const unreadList = allNotifs.filter(n => {
           if (clearedMap[n.id] || readMap[n.id]) return false;
           const target = (n.targetAudience || '').toUpperCase().trim();
@@ -91,51 +90,51 @@ export default function Header({ isDark, onToggleTheme }) {
   return (
     <header className="sticky top-0 z-50 shadow-2xl">
       {/* Top Black Official Bar */}
-      <div className="bg-black text-slate-400 text-[10px] sm:text-xs px-4 sm:px-6 py-1.5 flex justify-between items-center border-b border-neutral-800">
+      <div className="bg-black text-slate-400 text-[10px] sm:text-xs px-3 sm:px-6 py-1.5 flex justify-between items-center border-b border-neutral-800">
         <span className="font-semibold text-slate-300 truncate">Official Web Portal: <strong className="text-white">himistri.in</strong></span>
         <span className="hidden md:inline shrink-0">100% Background Verified Local Craftsmen in Sikkim</span>
       </div>
 
       {/* Main Red Brand Header Bar */}
-      <div className="header-bar text-white px-4 sm:px-6 py-3.5 flex justify-between items-center">
+      <div className="header-bar text-white px-3 sm:px-6 py-2.5 sm:py-3.5 flex justify-between items-center">
 
         {/* Brand Logo & Title */}
-        <Link href={isAdmin ? "/admin" : isPartner ? "/partner" : "/"} className="flex items-center gap-2.5 shrink-0">
+        <Link href={isAdmin ? "/admin" : isPartner ? "/partner" : "/"} className="flex items-center gap-2 shrink-0">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-wide leading-tight">HiMistri</h1>
-            <p className="text-[10px] sm:text-xs font-medium text-white/90">Sikkim's #1 Doorstep Services</p>
+            <h1 className="text-lg sm:text-2xl font-black tracking-wide leading-tight">HiMistri</h1>
+            <p className="text-[9px] sm:text-xs font-medium text-white/90">Sikkim's #1 Doorstep Services</p>
           </div>
         </Link>
 
         {/* Desktop Navigation Links based on User Role */}
         {isAdmin ? (
-          <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm font-bold">
+          <nav className="hidden lg:flex items-center gap-6 text-xs sm:text-sm font-bold">
             <Link href="/admin" className="underline underline-offset-4 text-amber-300 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-amber-300" /> Admin Control Panel
             </Link>
           </nav>
         ) : isPartner ? (
-          <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm font-bold">
+          <nav className="hidden lg:flex items-center gap-6 text-xs sm:text-sm font-bold">
             <Link href="/partner" className="underline underline-offset-4 text-amber-300 flex items-center gap-1.5">
               <HardHat className="w-4 h-4 text-amber-300" /> Partner Dashboard
             </Link>
           </nav>
         ) : (
-          <nav className="hidden md:flex items-center gap-8 text-xs sm:text-sm font-bold">
+          <nav className="hidden lg:flex items-center gap-8 text-xs sm:text-sm font-bold">
             <Link href="/" className={`hover:text-amber-200 transition ${router.pathname === '/' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Home</Link>
             <Link href="/categories" className={`hover:text-amber-200 transition ${router.pathname === '/categories' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Categories</Link>
             <Link href="/services" className={`hover:text-amber-200 transition ${router.pathname === '/services' ? 'underline underline-offset-4 text-amber-300' : ''}`}>Services</Link>
           </nav>
         )}
 
-        {/* Right Action Icons (Notifications Bell for Customers, Theme, Phone, Account, Mobile Hamburger) */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Right Action Icons */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
 
-          {/* Notification Bell Icon - ONLY VISIBLE FOR CUSTOMERS (HIDDEN FOR ADMIN & PARTNER) */}
+          {/* Notification Bell Icon */}
           {!isAdmin && !isPartner && (
             <Link
               href="/notifications"
-              className="relative bg-white/20 hover:bg-white/30 text-white p-2 rounded-full flex items-center justify-center transition cursor-pointer"
+              className="relative bg-white/20 hover:bg-white/30 text-white p-2 sm:p-2.5 rounded-full flex items-center justify-center transition cursor-pointer shrink-0"
               title="View Notifications"
             >
               <Bell className="w-4 h-4 text-white" />
@@ -148,27 +147,27 @@ export default function Header({ isDark, onToggleTheme }) {
           )}
 
           {/* Theme Toggle Button */}
-          <button onClick={onToggleTheme} className="bg-white/20 hover:bg-white/30 text-white p-2 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition">
+          <button onClick={onToggleTheme} className="bg-white/20 hover:bg-white/30 text-white p-2 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition shrink-0">
             {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-slate-100" />}
             <span className="hidden sm:inline">Theme</span>
           </button>
 
           {/* Helpline Phone Button */}
-          <a href="tel:+917430887960" className="bg-white/20 hover:bg-white/30 text-white p-2 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition">
+          <a href="tel:+917430887960" className="bg-white/20 hover:bg-white/30 text-white p-2 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition shrink-0">
             <Phone className="w-4 h-4 text-emerald-300" />
             <span className="hidden sm:inline">Call Support</span>
           </a>
 
           {/* User Account / Profile Dropdown */}
           {isAuthLoaded && currentUser ? (
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative shrink-0" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="bg-white text-redPrimary hover:bg-slate-100 px-3 sm:px-4 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition shadow-md"
+                className="bg-white text-redPrimary hover:bg-slate-100 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1 transition shadow-md"
               >
-                <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="max-w-[70px] sm:max-w-[100px] truncate">{currentUser.fullName.split(' ')[0]}</span>
-                <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <User className="w-3.5 h-3.5" />
+                <span className="max-w-[65px] sm:max-w-[100px] truncate">{currentUser.fullName.split(' ')[0]}</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Account Dropdown Menu */}
@@ -212,33 +211,33 @@ export default function Header({ isDark, onToggleTheme }) {
               )}
             </div>
           ) : isAuthLoaded && (
-            <Link href="/auth" className="bg-white text-redPrimary hover:bg-slate-100 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-extrabold transition shadow-md shrink-0">
+            <Link href="/auth" className="bg-white text-redPrimary hover:bg-slate-100 px-3.5 py-1.5 rounded-full text-xs font-extrabold transition shadow-md shrink-0">
               Sign In
             </Link>
           )}
 
-          {/* Mobile Hamburger Toggle Button */}
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-1.5 rounded-xl hover:bg-white/20 transition">
+          {/* Mobile & Tablet Hamburger Toggle Button */}
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-1.5 rounded-xl hover:bg-white/20 transition shrink-0">
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Sub-Header Bar: GPS Location & Quick Search Strip */}
-      <div className="bg-white dark:bg-darkSurface border-b border-slate-200 dark:border-neutral-800 px-4 sm:px-6 py-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
-        <div className="flex items-center gap-2 truncate max-w-full">
+      {/* Sub-Header Bar: GPS Location Strip */}
+      <div className="bg-white dark:bg-darkSurface border-b border-slate-200 dark:border-neutral-800 px-3 sm:px-6 py-2 flex justify-between items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
+        <div className="flex items-center gap-1.5 truncate">
           <MapPin className="w-3.5 h-3.5 text-redPrimary shrink-0" />
-          <span className="font-extrabold text-slate-900 dark:text-white truncate">{gpsText}</span>
+          <span className="font-extrabold text-slate-900 dark:text-white text-[11px] sm:text-xs truncate">{gpsText}</span>
         </div>
 
-        <button onClick={refreshGps} className="text-redPrimary hover:underline font-bold text-[11px] shrink-0 self-end sm:self-auto">
+        <button onClick={refreshGps} className="text-redPrimary hover:underline font-bold text-[11px] shrink-0">
           Refresh GPS
         </button>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile & Tablet Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-darkSurface border-b border-slate-200 dark:border-neutral-800 px-4 py-4 space-y-3 font-bold text-xs shadow-2xl text-slate-800 dark:text-slate-200">
+        <div className="lg:hidden bg-white/95 dark:bg-darkSurface/95 backdrop-blur-md border-b border-slate-200 dark:border-neutral-800 px-4 py-4 space-y-3 font-bold text-xs shadow-2xl text-slate-800 dark:text-slate-200 animate-in fade-in slide-in-from-top-2 duration-200">
           <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Home className="w-4 h-4 text-redPrimary" /> Home</Link>
           <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Layers className="w-4 h-4 text-redPrimary" /> Explore Categories</Link>
           <Link href="/services" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 hover:text-redPrimary flex items-center gap-2"><Wrench className="w-4 h-4 text-redPrimary" /> Doorstep Services</Link>

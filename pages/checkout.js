@@ -384,10 +384,10 @@ export default function CheckoutPage() {
                       setBookingPlan(e.target.value);
                       setDurationValue(1);
                     }}
-                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
                   >
                     {DURATION_PLANS.map((plan) => (
-                      <option key={plan.id} value={plan.id}>{plan.label}</option>
+                      <option key={plan.id} value={plan.id} className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">{plan.label}</option>
                     ))}
                   </select>
                 </div>
@@ -399,10 +399,10 @@ export default function CheckoutPage() {
                   <select
                     value={durationValue}
                     onChange={(e) => setDurationValue(parseInt(e.target.value))}
-                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
                   >
                     {getDurationOptions(bookingPlan).map((num) => (
-                      <option key={num} value={num}>{num} {getDurationUnitText(bookingPlan, num)}</option>
+                      <option key={num} value={num} className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">{num} {getDurationUnitText(bookingPlan, num)}</option>
                     ))}
                   </select>
                 </div>
@@ -435,7 +435,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     required
-                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                   />
                 </div>
 
@@ -445,13 +445,13 @@ export default function CheckoutPage() {
                     value={slot}
                     onChange={(e) => setSlot(e.target.value)}
                     required
-                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
+                    className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
                   >
-                    <option value="">Select Time Slot...</option>
-                    <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM (Morning Slot)</option>
-                    <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM (Midday Slot)</option>
-                    <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM (Afternoon Slot)</option>
-                    <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM (Evening Slot)</option>
+                    <option value="" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">Select Time Slot...</option>
+                    <option value="09:00 AM - 11:00 AM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">09:00 AM - 11:00 AM (Morning Slot)</option>
+                    <option value="11:00 AM - 01:00 PM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">11:00 AM - 01:00 PM (Midday Slot)</option>
+                    <option value="02:00 PM - 04:00 PM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">02:00 PM - 04:00 PM (Afternoon Slot)</option>
+                    <option value="04:00 PM - 06:00 PM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">04:00 PM - 06:00 PM (Evening Slot)</option>
                   </select>
                 </div>
               </div>
@@ -503,12 +503,12 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input type="text" value={newHouseNo} onChange={(e) => setNewHouseNo(e.target.value)} placeholder="House / Flat / Building Name *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newStreet} onChange={(e) => setNewStreet(e.target.value)} placeholder="Street / Area Name *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newLocality} onChange={(e) => setNewLocality(e.target.value)} placeholder="Locality / Landmark (e.g. Upper Syari) *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newCity} onChange={(e) => setNewCity(e.target.value)} placeholder="City / Town *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newState} onChange={(e) => setNewState(e.target.value)} placeholder="State *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-                    <input type="text" value={newPincode} onChange={(e) => setNewPincode(e.target.value)} placeholder="PIN Code *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newHouseNo} onChange={(e) => setNewHouseNo(e.target.value)} placeholder="House / Flat / Building Name *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newStreet} onChange={(e) => setNewStreet(e.target.value)} placeholder="Street / Area Name *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newLocality} onChange={(e) => setNewLocality(e.target.value)} placeholder="Locality / Landmark (e.g. Upper Syari) *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newCity} onChange={(e) => setNewCity(e.target.value)} placeholder="City / Town *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newState} onChange={(e) => setNewState(e.target.value)} placeholder="State *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+                    <input type="text" value={newPincode} onChange={(e) => setNewPincode(e.target.value)} placeholder="PIN Code *" required className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
                   </div>
                 </div>
               )}
@@ -558,7 +558,7 @@ export default function CheckoutPage() {
                   value={promoCodeInput}
                   onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
                   placeholder="Enter Promo Code (e.g. SIKKIM10)"
-                  className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white uppercase flex-1 outline-none focus:border-redPrimary"
+                  className="p-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white uppercase flex-1 outline-none focus:border-redPrimary"
                 />
                 <button
                   type="button"

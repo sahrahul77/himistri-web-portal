@@ -604,7 +604,7 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between">
                   <span>Plan Basis:</span>
-                  <strong className="text-slate-900 dark:text-white font-extrabold">{bookingPlan} ({durationValue} {getDurationUnitText(bookingPlan, durationValue)})</strong>
+                  <strong className="text-slate-900 dark:text-white font-extrabold">{bookingPlan} ({getDurationUnitText(bookingPlan, durationValue)})</strong>
                 </div>
 
                 <div className="flex justify-between">

@@ -13,6 +13,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [clearedNotifMap, setClearedNotifMap] = useState({});
   const [activeTab, setActiveTab] = useState(0); // 0=All, 1=Order Updates, 2=Offers & Promos
+  const [isLoadingNotifs, setIsLoadingNotifs] = useState(true);
 
   // Dynamic Popup Modal State
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
@@ -57,8 +58,12 @@ export default function NotificationsPage() {
   };
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setIsLoadingNotifs(false);
+      return;
+    }
 
+    setIsLoadingNotifs(true);
     let rawNotifList = [];
     let userClearedMap = {};
 
@@ -102,7 +107,7 @@ export default function NotificationsPage() {
         const target = (n.targetAudience || '').toUpperCase().trim();
         const isPartnerNotice = target.includes('PARTNER');
 
-        // Strictly exclude PARTNERS / SERVICE PARTNERS notices from customer accounts!
+        // Strictly exclude PARTNERS / SERVICE PARTNERS notices from customer accounts
         if (isCustomer && isPartnerNotice) {
           return false;
         }
@@ -111,6 +116,7 @@ export default function NotificationsPage() {
       });
 
       setNotifications(userVisibleNotifs);
+      setIsLoadingNotifs(false);
 
       // Automatically mark visible notifications as READ for this user
       if (userVisibleNotifs.length > 0) {
@@ -260,8 +266,21 @@ export default function NotificationsPage() {
               </button>
             </div>
 
-            {/* Notifications Cards Feed */}
-            {displayedNotifs.length === 0 ? (
+            {/* Notifications Cards Feed with Shimmer Skeleton Loading State */}
+            {isLoadingNotifs ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl animate-pulse flex items-start gap-4 shadow-md">
+                    <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-neutral-800 shrink-0" />
+                    <div className="space-y-2.5 flex-1">
+                      <div className="h-4 bg-slate-200 dark:bg-neutral-800 rounded-md w-1/3" />
+                      <div className="h-3 bg-slate-200 dark:bg-neutral-800 rounded-md w-3/4" />
+                      <div className="h-2.5 bg-slate-200 dark:bg-neutral-800 rounded-md w-1/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : displayedNotifs.length === 0 ? (
               <div className="web-card py-20 text-center text-slate-500 space-y-2 border-dashed bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl">
                 <Bell className="w-12 h-12 mx-auto text-slate-400 opacity-40 mb-2" />
                 <p className="text-sm font-bold">No active notifications in this section.</p>

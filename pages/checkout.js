@@ -167,7 +167,7 @@ export default function CheckoutPage() {
 
   // Calculate Subtotal & Duration Price
   const baseUnitPrice = service.discountedPrice || 800;
-  const durationMultiplier = calculateDurationPrice(bookingPlan, durationValue, baseUnitPrice);
+  const durationMultiplier = calculateDurationPrice(baseUnitPrice, bookingPlan, durationValue);
   const rawSubtotal = durationMultiplier * quantity;
 
   // Apply Coupon Discount Calculation
@@ -387,7 +387,7 @@ export default function CheckoutPage() {
                     className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
                   >
                     {DURATION_PLANS.map((plan) => (
-                      <option key={plan.id} value={plan.id} className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">{plan.label}</option>
+                      <option key={plan.id} value={plan.id}>{plan.label}</option>
                     ))}
                   </select>
                 </div>
@@ -402,7 +402,7 @@ export default function CheckoutPage() {
                     className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
                   >
                     {getDurationOptions(bookingPlan).map((num) => (
-                      <option key={num} value={num} className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">{num} {getDurationUnitText(bookingPlan, num)}</option>
+                      <option key={num} value={num}>{getDurationUnitText(bookingPlan, num)}</option>
                     ))}
                   </select>
                 </div>
@@ -447,11 +447,11 @@ export default function CheckoutPage() {
                     required
                     className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-extrabold text-slate-900 dark:text-white outline-none focus:border-redPrimary cursor-pointer"
                   >
-                    <option value="" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">Select Time Slot...</option>
-                    <option value="09:00 AM - 11:00 AM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">09:00 AM - 11:00 AM (Morning Slot)</option>
-                    <option value="11:00 AM - 01:00 PM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">11:00 AM - 01:00 PM (Midday Slot)</option>
-                    <option value="02:00 PM - 04:00 PM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">02:00 PM - 04:00 PM (Afternoon Slot)</option>
-                    <option value="04:00 PM - 06:00 PM" className="text-slate-900 dark:text-white bg-white dark:bg-neutral-900">04:00 PM - 06:00 PM (Evening Slot)</option>
+                    <option value="">Select Time Slot...</option>
+                    <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM (Morning Slot)</option>
+                    <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM (Midday Slot)</option>
+                    <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM (Afternoon Slot)</option>
+                    <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM (Evening Slot)</option>
                   </select>
                 </div>
               </div>

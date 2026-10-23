@@ -11,7 +11,7 @@ import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, FALLBACK_ICON } 
 import { ref, onValue, remove } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign } from 'lucide-react';
+import { Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign, Sparkles, Zap, Heart, UserCheck, Flame } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
@@ -133,38 +133,49 @@ export default function HomePage() {
   });
 
   const displayCategories = categories;
-  const popularServices = filteredServices.slice(0, 10);
+  const popularServices = filteredServices.slice(0, 12);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      <main className="web-container py-6 sm:py-8 flex-1 space-y-8 sm:space-y-12 max-w-7xl mx-auto px-4 sm:px-6 w-full">
+      <main className="web-container py-6 sm:py-10 flex-1 space-y-10 sm:space-y-14 max-w-7xl mx-auto px-4 sm:px-6 w-full">
 
-        {/* 1. Search Bar */}
-        <div className="relative max-w-3xl mx-auto w-full">
-          <Search className="w-4 h-4 sm:w-5 sm:h-5 absolute left-3.5 sm:left-4 top-3.5 sm:top-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search services (e.g. Plumber, Electrician, Tutor)..."
-            className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-darkSurface text-xs sm:text-sm font-medium focus:outline-none focus:border-redPrimary shadow-lg text-slate-900 dark:text-white"
-          />
+        {/* 1. Eye-Catching Glassmorphism Hero Search Bar */}
+        <div className="relative max-w-3xl mx-auto w-full group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-redPrimary via-orangeSecondary to-amber-500 rounded-3xl blur opacity-25 group-hover:opacity-60 transition duration-300" />
+          <div className="relative flex items-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl p-1.5 sm:p-2">
+            <Search className="w-5 h-5 sm:w-6 sm:h-6 ml-3 text-redPrimary shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search doorstep services (e.g. Plumber, Electrician, Tutor, Barber)..."
+              className="w-full px-3 py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm font-semibold text-slate-900 dark:text-white outline-none placeholder:text-slate-400"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-neutral-800 text-slate-500 text-xs font-bold hover:text-redPrimary transition"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* 2. Interactive Quick Filter Chips Row */}
-        <div className="flex gap-2 overflow-x-auto pb-2 justify-start sm:justify-center -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
+        {/* 2. Interactive Quick Filter Category Pill Chips */}
+        <div className="flex gap-2.5 overflow-x-auto pb-2 justify-start sm:justify-center -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveChip('ALL')}
-            className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all cursor-pointer shrink-0 ${
+            className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-black whitespace-nowrap border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeChip === 'ALL'
                 ? 'bg-redPrimary text-white border-redPrimary shadow-lg scale-105'
-                : 'bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-transparent hover:border-redPrimary'
+                : 'bg-white dark:bg-neutral-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-neutral-800 hover:border-redPrimary/50'
             }`}
           >
-            ⚡ All Services
+            <Flame className="w-3.5 h-3.5 text-amber-300" /> All Services
           </button>
 
           {categories.map((c) => {
@@ -174,50 +185,56 @@ export default function HomePage() {
                 key={c.id}
                 type="button"
                 onClick={() => setActiveChip(isSelected ? 'ALL' : c.name)}
-                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all cursor-pointer shrink-0 ${
+                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap border transition-all cursor-pointer shrink-0 flex items-center gap-2 ${
                   isSelected
                     ? 'bg-redPrimary text-white border-redPrimary shadow-lg scale-105'
-                    : 'bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-transparent hover:border-redPrimary'
+                    : 'bg-white dark:bg-neutral-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-neutral-800 hover:border-redPrimary/50'
                 }`}
               >
-                ⚡ {c.name}
+                <img src={c.iconUrl || FALLBACK_ICON} alt="" className="w-4 h-4 object-contain" />
+                {c.name}
               </button>
             );
           })}
         </div>
 
-        {/* 3. Hero Banner Carousel */}
+        {/* 3. Ultra-Modern Hero Banner Showcase Carousel */}
         <HeroBanner banners={banners} />
 
         {/* 4. Explore Manpower Categories Grid */}
         {displayCategories.length > 0 && (
-          <div>
-            <div className="flex justify-between items-baseline mb-4 sm:mb-6">
+          <div className="space-y-6">
+            <div className="flex justify-between items-end border-b border-slate-200 dark:border-neutral-800 pb-3">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Explore Manpower Categories</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Verified Himistri Manpower Categories in Gangtok</p>
+                <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Specialized Workforce</span>
+                <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">Explore Manpower Categories</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Verified HiMistri craftsmen & technical specialists in Gangtok</p>
               </div>
-              <Link href="/categories" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3 sm:px-3.5 py-1.5 rounded-full shrink-0">
-                See All ({categories.length})
+              <Link href="/categories" className="btn-primary text-xs py-2 px-4 shadow-md shrink-0 rounded-xl">
+                See All ({categories.length}) <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-5">
               {displayCategories.map((c) => (
                 <Link href={`/categories?id=${c.id}`} key={c.id}>
                   <motion.div
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    className="web-card text-center p-4 sm:p-5 cursor-pointer shadow-md flex flex-col justify-center items-center h-full bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl"
+                    whileHover={{ y: -6, scale: 1.03 }}
+                    transition={{ duration: 0.2 }}
+                    className="web-card text-center p-4 sm:p-5 cursor-pointer shadow-xl flex flex-col justify-center items-center h-full bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] hover:border-redPrimary rounded-2xl group relative overflow-hidden"
                   >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-redPrimary/10 flex items-center justify-center mb-2.5 sm:mb-3 shrink-0 p-2">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-redPrimary/5 rounded-bl-full group-hover:bg-redPrimary/15 transition" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-redPrimary/10 group-hover:bg-redPrimary/20 flex items-center justify-center mb-3 shrink-0 p-2.5 transition shadow-inner">
                       <img
                         src={c.iconUrl || FALLBACK_ICON}
                         alt={c.name}
                         onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
-                    <strong className="text-xs sm:text-sm font-extrabold block text-slate-900 dark:text-white leading-tight">{c.name}</strong>
+                    <strong className="text-xs sm:text-sm font-extrabold block text-slate-900 dark:text-white leading-tight group-hover:text-redPrimary transition">
+                      {c.name}
+                    </strong>
                   </motion.div>
                 </Link>
               ))}
@@ -225,24 +242,25 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. Popular Services in Gangtok */}
-        <div>
-          <div className="flex justify-between items-baseline mb-4 sm:mb-6">
+        {/* 5. Popular Doorstep Services Grid Showcase */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-end border-b border-slate-200 dark:border-neutral-800 pb-3">
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                {activeChip === 'ALL' ? 'Popular Services in Gangtok' : `${activeChip} Services in Gangtok`}
+              <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Top Requested</span>
+              <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">
+                {activeChip === 'ALL' ? 'Most Booked Doorstep Services in Sikkim' : `${activeChip} Services in Gangtok`}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Top rated doorstep solutions requested by Sikkim residents</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">High-demand technical solutions delivered by local craftsmen</p>
             </div>
-            <Link href="/services" className="text-xs font-bold text-redPrimary hover:underline bg-redPrimary/10 px-3 sm:px-3.5 py-1.5 rounded-full shrink-0">
-              View Catalog
+            <Link href="/services" className="btn-primary text-xs py-2 px-4 shadow-md shrink-0 rounded-xl">
+              View Catalog <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
             </Link>
           </div>
 
           {popularServices.length === 0 ? (
-            <div className="web-card text-center py-12 text-slate-500 space-y-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
-              <p className="font-bold text-sm">No services found matching "{activeChip}".</p>
-              <button onClick={() => setActiveChip('ALL')} className="btn-primary text-xs py-2 px-4 mt-2">
+            <div className="web-card text-center py-16 text-slate-500 space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-lg">
+              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{activeChip}".</p>
+              <button onClick={() => setActiveChip('ALL')} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
                 Reset Filter
               </button>
             </div>
@@ -257,49 +275,57 @@ export default function HomePage() {
                 return (
                   <motion.div
                     key={s.id}
-                    whileHover={{ y: -4 }}
-                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl overflow-hidden"
+                    whileHover={{ y: -6 }}
+                    transition={{ duration: 0.2 }}
+                    className="web-card flex flex-col justify-between shadow-xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl overflow-hidden group hover:border-redPrimary/60"
                   >
                     <div>
-                      {/* Image occupies ENTIRE top box */}
+                      {/* Image Box with Subtle Zoom Effect */}
                       <div className="relative w-full h-52 sm:h-60 overflow-hidden bg-slate-100 dark:bg-neutral-800">
                         <img
                           src={s.imageUrl || FALLBACK_ICON}
                           alt={s.title}
                           onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
 
                         {/* Discount Badge on Top Left */}
-                        <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-md shadow-md uppercase tracking-wider z-10">
+                        <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg uppercase tracking-wider z-10">
                           {discountPercent}% OFF
+                        </div>
+
+                        {/* Verified Pill Badge on Top Right */}
+                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-white/20 z-10 flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-emerald-400" /> Verified
                         </div>
                       </div>
 
-                      {/* Content Details with Padding */}
-                      <div className="p-4 sm:p-5 space-y-1">
-                        <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider">{s.categoryName || 'General'}</span>
+                      {/* Content Details */}
+                      <div className="p-4 sm:p-5 space-y-1.5">
+                        <span className="text-[11px] font-black text-redPrimary uppercase tracking-wider block">{s.categoryName || 'General'}</span>
 
-                        {/* Service Title with Rating placed at the end of service name */}
-                        <div className="flex justify-between items-center gap-2">
-                          <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">{s.title}</h3>
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-white leading-snug group-hover:text-redPrimary transition">
+                            {s.title}
+                          </h3>
 
-                          {/* Rating Badge at the end of service name */}
                           <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 text-xs font-black shrink-0 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
-                            <Star className="w-3.5 h-3.5 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" /> {rating}
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> {rating}
                           </div>
                         </div>
 
-                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{s.shortDescription || 'Doorstep expert technical service in Gangtok'}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                          {s.shortDescription || 'Doorstep expert technical service delivered by local craftsmen in Gangtok.'}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between bg-slate-50/50 dark:bg-black/20">
                       <div>
                         <span className="text-xl sm:text-2xl font-black text-redPrimary">₹{s.discountedPrice || 800}</span>
                         <span className="text-xs text-slate-400 line-through ml-2">₹{s.originalPrice || 1000}</span>
                       </div>
-                      <button onClick={() => handleHireNow(s)} className="btn-primary py-2 sm:py-2.5 px-4 sm:px-5 text-xs sm:text-sm">
+                      <button onClick={() => handleHireNow(s)} className="btn-primary py-2 sm:py-2.5 px-4 sm:px-5 text-xs sm:text-sm cursor-pointer shadow-md rounded-xl">
                         Hire Now <ArrowRight className="w-4 h-4 inline ml-1" />
                       </button>
                     </div>
@@ -310,97 +336,109 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 6. Why Choose HiMistri? */}
-        <div>
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Why Choose HiMistri?</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sikkim's premier doorstep technical manpower platform</p>
+        {/* 6. Why Choose HiMistri? (High-Contrast Grid Feature Cards) */}
+        <div className="space-y-6 pt-4">
+          <div className="border-b border-slate-200 dark:border-neutral-800 pb-3">
+            <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Sikkim Standard</span>
+            <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">Why Choose HiMistri?</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sikkim's premier doorstep technical manpower platform</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="web-card flex items-start gap-3.5 sm:gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-md">
-              <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
-                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 rounded-2xl shadow-xl hover:border-redPrimary/50 transition">
+              <div className="p-3.5 rounded-2xl bg-redPrimary/10 text-redPrimary shrink-0">
+                <ShieldCheck className="w-6 h-6 text-redPrimary" />
               </div>
               <div>
-                <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">100% Verified</h4>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Background checked mistris & technicians in Sikkim</p>
+                <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">100% Verified</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Background checked mistris & local artisans in Sikkim.</p>
               </div>
             </div>
 
-            <div className="web-card flex items-start gap-3.5 sm:gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-md">
-              <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
-                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 rounded-2xl shadow-xl hover:border-redPrimary/50 transition">
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-500 shrink-0">
+                <DollarSign className="w-6 h-6 text-emerald-500" />
               </div>
               <div>
-                <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Affordable Rates</h4>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Transparent upfront pricing with zero hidden fees</p>
+                <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">Fixed Rates</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Transparent upfront rate cards with zero hidden charges.</p>
               </div>
             </div>
 
-            <div className="web-card flex items-start gap-3.5 sm:gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-md">
-              <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 rounded-2xl shadow-xl hover:border-redPrimary/50 transition">
+              <div className="p-3.5 rounded-2xl bg-blue-500/10 text-blue-500 shrink-0">
+                <Clock className="w-6 h-6 text-blue-500" />
               </div>
               <div>
-                <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">On-Time Service</h4>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Doorstep arrival at your scheduled date & slot</p>
+                <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">On-Time Arrival</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Fast doorstep dispatch at your scheduled date & time slot.</p>
               </div>
             </div>
 
-            <div className="web-card flex items-start gap-3.5 sm:gap-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-md">
-              <div className="p-3 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
-                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className="web-card flex items-start gap-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 rounded-2xl shadow-xl hover:border-redPrimary/50 transition">
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 text-amber-500 shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-amber-500" />
               </div>
               <div>
-                <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">30-Day Guarantee</h4>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Service re-visit guarantee for total peace of mind</p>
+                <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">30-Day Guarantee</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Free re-visit work guarantee for complete peace of mind.</p>
               </div>
             </div>
+
           </div>
         </div>
 
-        {/* 7. 50+ Verified Service Partners Banner Card */}
-        <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 shadow-xl">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-lg">
-            <Handshake className="w-6 h-6 sm:w-7 sm:h-7" />
-          </div>
-          <div>
-            <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">50+ Verified Service Partners</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Skilled plumbers, electricians, tutors, drivers & craftsmen across Sikkim.</p>
-          </div>
-        </div>
-
-        {/* 8. About HiMistri Card */}
-        <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-5 sm:p-6 rounded-2xl space-y-3 shadow-xl">
-          <div className="flex items-center gap-2.5 text-redPrimary">
-            <Info className="w-5 h-5" />
-            <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">About HiMistri</h3>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            HiMistri is a Gangtok – based start-up company established in 2022 that provides different kinds of services in several categories to customers in and around Sikkim. Our main aim is to provide all basic needs required by an individual in different prospects of life in one single frame, providing technical manpower at minimum cost and maximum benefits.
-          </p>
-        </div>
-
-        {/* 9. 24x7 Support Hotline Card */}
-        <div className="web-card bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+        {/* 7. Service Partner Banner Card */}
+        <div className="web-card bg-gradient-to-r from-redPrimary/20 via-slate-100 dark:via-neutral-900 to-transparent border border-redPrimary/30 p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 shadow-2xl">
           <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-redPrimary/10 text-redPrimary shrink-0">
-              <Phone className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-lg">
+              <Handshake className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h4 className="font-extrabold text-base text-redPrimary">24x7 Support Hotline</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-300 font-bold mt-0.5">+91 7430887960</p>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">50+ Verified Local Craftsmen in Sikkim</h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">Join as a Service Partner or hire skilled plumbers, electricians, tutors, and technicians.</p>
             </div>
           </div>
 
-          <a href="tel:+917430887960" className="btn-primary py-3 px-8 text-xs sm:text-sm shadow-lg w-full sm:w-auto text-center justify-center">
-            Call Now
-          </a>
+          <Link href="/partner" className="btn-primary text-xs py-3.5 px-6 rounded-xl shadow-lg shrink-0 font-black">
+            Join as Service Partner
+          </Link>
         </div>
 
-        {/* 10. Customer Testimonials & FAQs Section */}
+        {/* 8. Customer Testimonials & Verified Reviews Section */}
         <TestimonialsSection />
+
+        {/* 9. About HiMistri & 24x7 Customer Support Hotline Card */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="md:col-span-2 web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl space-y-3 shadow-xl">
+            <div className="flex items-center gap-2.5 text-redPrimary">
+              <Info className="w-5 h-5 text-redPrimary" />
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">About HiMistri Sikkim</h3>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+              HiMistri is a Gangtok-based start-up company established in 2022 that provides different kinds of doorstep services across Sikkim. Our primary mission is to empower local craftsmen while connecting residents with background-verified technical manpower at minimum cost and maximum reliability.
+            </p>
+          </div>
+
+          <div className="web-card bg-gradient-to-br from-redPrimary via-redDark to-black text-white p-6 rounded-2xl space-y-4 shadow-2xl flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="p-3 rounded-2xl bg-white/20 text-white w-fit">
+                <Phone className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-black text-white">24x7 Support Helpline</h3>
+              <p className="text-xs text-white/80 leading-relaxed font-medium">Have questions or need emergency doorstep booking assistance in Gangtok?</p>
+            </div>
+
+            <a
+              href="tel:+917430887960"
+              className="bg-white text-redPrimary hover:bg-slate-100 py-3.5 px-4 rounded-xl text-xs font-black text-center shadow-lg transition flex items-center justify-center gap-2"
+            >
+              <Phone className="w-4 h-4 text-redPrimary" /> Call +91 7430887960
+            </a>
+          </div>
+        </div>
+
       </main>
 
       <CheckoutModal isOpen={!!checkoutService} onClose={() => setCheckoutService(null)} service={checkoutService} currentUser={currentUser} />

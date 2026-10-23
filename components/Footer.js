@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Phone, Mail, MapPin, ShieldCheck, Send, CheckCircle2, Heart, ExternalLink, ChevronRight, ChevronUp } from 'lucide-react';
+import { Phone, Mail, MapPin, ShieldCheck, Send, CheckCircle2, Heart, ExternalLink, ChevronRight, ChevronUp, Eye } from 'lucide-react';
+import { ref, onValue, runTransaction } from 'firebase/database';
+import { rtdb } from '../lib/firebase';
 
 export default function Footer() {
   const [emailInput, setEmailInput] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [showTopBtn, setShowTopBtn] = useState(false);
+  const [siteVisits, setSiteVisits] = useState(1240);
 
   // Monitor Scroll Position for Bottom-to-Top Button
   useEffect(() => {
@@ -18,6 +21,26 @@ export default function Footer() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Track & Increment Live Website Visits Counter in Firebase Realtime Database
+  useEffect(() => {
+    const visitsRef = ref(rtdb, 'stats/siteVisits');
+
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('himistri_visit_tracked')) {
+      sessionStorage.setItem('himistri_visit_tracked', 'true');
+      runTransaction(visitsRef, (curr) => {
+        return (curr || 1240) + 1;
+      }).catch((err) => console.error("Visit counter increment warning:", err));
+    }
+
+    const unsubVisits = onValue(visitsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setSiteVisits(snapshot.val());
+      }
+    });
+
+    return () => unsubVisits();
   }, []);
 
   const scrollToTop = () => {
@@ -129,11 +152,20 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Service Towns Footer Strip */}
+      {/* Service Towns Footer Strip & Live Website Visit Counter */}
       <div className="bg-slate-200/80 dark:bg-black/60 border-t border-slate-300 dark:border-neutral-800 py-3 text-[11px] text-slate-600 dark:text-slate-500 text-center">
         <div className="web-container flex flex-col sm:flex-row justify-between items-center gap-2">
           <span>Active Coverage: <strong className="text-slate-800 dark:text-slate-400">Gangtok (Upper Syari, Deorali, Chandmari, Burtuk), Singtam, Pakyong, Rangpo & Namchi</strong></span>
-          <span className="flex items-center gap-1">Crafted with <Heart className="w-3 h-3 text-redPrimary fill-redPrimary" /> for Sikkim</span>
+
+          <div className="flex items-center gap-3">
+            {/* Live Realtime Website Visit Badge */}
+            <span className="px-2.5 py-1 rounded-full bg-redPrimary/10 border border-redPrimary/20 text-redPrimary font-black flex items-center gap-1.5 shadow-sm">
+              <Eye className="w-3.5 h-3.5 text-redPrimary animate-pulse" />
+              <span>Live Visits: <strong className="text-slate-900 dark:text-white font-black">{siteVisits.toLocaleString()}</strong></span>
+            </span>
+
+            <span className="flex items-center gap-1">Crafted with <Heart className="w-3 h-3 text-redPrimary fill-redPrimary" /> for Sikkim</span>
+          </div>
         </div>
       </div>
 

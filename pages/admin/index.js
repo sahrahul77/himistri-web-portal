@@ -790,6 +790,11 @@ export default function AdminControlPanelPage() {
     return roleUpper === 'PARTNER' || roleUpper === 'SERVICE_PARTNER' || u.skillCategory;
   });
 
+  const totalCustomersCount = usersList.filter(u => {
+    const roleUpper = (u.role || '').toUpperCase();
+    return roleUpper === 'CUSTOMER' || roleUpper === 'USER' || !u.role;
+  }).length;
+
   const onlinePartnersCount = allPartnersList.filter(p => p.isOnline === true || p.isOnline === 'true').length;
 
   const isAdmin = currentUser && currentUser.role === 'ADMIN';
@@ -910,17 +915,22 @@ export default function AdminControlPanelPage() {
               </div>
             </div>
 
-            {/* Platform Realtime Analytics Banner with Green Partners Online Badge matching Mobile App 100% */}
+            {/* Platform Realtime Analytics Banner displaying both Customer Data and Partners Online Status */}
             <div className="web-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 sm:p-5 rounded-2xl shadow-md">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Platform Realtime Analytics</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Live revenue, active customer orders, and registered partner fleet status across Sikkim</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Live revenue, active customer orders, registered customer base & partner fleet status across Sikkim</p>
               </div>
 
-              {/* Green Pill Badge matching Mobile App Screenshot 100% */}
-              <div className="px-4 py-2 rounded-full text-xs font-black bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 border border-emerald-600/30 flex items-center gap-2 shrink-0 shadow-sm">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>🟢 {onlinePartnersCount} / {allPartnersList.length} Partners Online</span>
+              {/* Realtime Status Badges displaying both Customers Count & Partners Online Status matching Mobile App 100% */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3.5 py-1.5 rounded-full text-xs font-black bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-600/30 shrink-0 shadow-sm">
+                  👥 {totalCustomersCount} Registered Customers
+                </span>
+                <span className="px-3.5 py-1.5 rounded-full text-xs font-black bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 border border-emerald-600/30 flex items-center gap-1.5 shrink-0 shadow-sm">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>🟢 {onlinePartnersCount} / {allPartnersList.length} Partners Online</span>
+                </span>
               </div>
             </div>
 
@@ -953,7 +963,7 @@ export default function AdminControlPanelPage() {
                 <div>
                   <span className="text-[11px] text-slate-500 font-bold block uppercase tracking-wider">Registered Users & Fleet</span>
                   <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                    {usersList.length} <span className="text-xs font-extrabold text-emerald-500 font-bold">({allPartnersList.length} Partners)</span>
+                    {usersList.length} <span className="text-xs font-extrabold text-blue-500">({totalCustomersCount} Cust</span> • <span className="text-xs font-extrabold text-emerald-500">{allPartnersList.length} Part)</span>
                   </p>
                 </div>
               </div>

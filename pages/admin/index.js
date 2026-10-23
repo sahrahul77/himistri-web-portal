@@ -60,6 +60,10 @@ export default function AdminControlPanelPage() {
   const [newCouponMinOrder, setNewCouponMinOrder] = useState('');
   const [newCouponDesc, setNewCouponDesc] = useState('');
 
+  // Platform Settings & Fees State
+  const [platformFees, setPlatformFees] = useState({ visitingFee: 49, gstPercentage: 5, surgeFee: 0, surgeFeeReason: '' });
+  const [isSavingFees, setIsSavingFees] = useState(false);
+
   // Dynamic Popup Modal State
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
@@ -394,6 +398,13 @@ export default function AdminControlPanelPage() {
       setNotificationsList(list);
     });
 
+    // Realtime Listener for Settings & Fees
+    const unsubFees = onValue(ref(rtdb, 'settings/fees'), (snapshot) => {
+      if (snapshot.exists()) {
+        setPlatformFees(snapshot.val());
+      }
+    });
+
     // Realtime Listener for Promo Codes & Auto-Sync Default Coupons into Firebase Database if empty
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
@@ -417,6 +428,7 @@ export default function AdminControlPanelPage() {
       unsubFaqs();
       unsubNotifs();
       unsubCoupons();
+      unsubFees();
     };
   }, []);
 
@@ -826,6 +838,19 @@ export default function AdminControlPanelPage() {
     });
   };
 
+  const handleSaveFees = async (e) => {
+    e.preventDefault();
+    setIsSavingFees(true);
+    try {
+      await set(ref(rtdb, 'settings/fees'), platformFees);
+      setIsSavingFees(false);
+      setPopupState({ isOpen: true, title: 'Fees Updated', message: 'Platform taxes and fees updated successfully.', type: 'success' });
+    } catch (err) {
+      setIsSavingFees(false);
+      setPopupState({ isOpen: true, title: 'Update Failed', message: err.message, type: 'error' });
+    }
+  };
+
   const handleSaveAdminProfile = (e) => {
     e.preventDefault();
     update(ref(rtdb, 'users/bLfKYzhws9d7zozkzwyemQPI8bG3'), { fullName: adminName, phoneNumber: adminPhone, email: adminEmail })
@@ -1107,7 +1132,8 @@ export default function AdminControlPanelPage() {
                 { id: 12, label: `Promo Codes 🎟️ (${activeCouponsList.length})` },
                 { id: 9, label: `Cust. Experience (${testimonialsList.length})` },
                 { id: 10, label: `FAQs (${faqsList.length})` },
-                { id: 8, label: `Manage Sub-Admins 🔑 (${currentAdmins.length}/3)` }
+                { id: 8, label: `Manage Sub-Admins 🔑 (${currentAdmins.length}/3)` },
+                { id: 13, label: `Settings & Fees ⚙️` }
               ].map((t) => (
                 <button
                   key={t.id}
@@ -1945,6 +1971,67 @@ export default function AdminControlPanelPage() {
                   </div>
                   <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold">
                     Save Profile Credentials
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 13: SETTINGS & FEES */}
+            {activeTab === 13 && (
+              <div className="space-y-6">
+                <form onSubmit={handleSaveFees} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-6 rounded-2xl shadow-xl max-w-2xl mx-auto">
+                  <h3 className="font-extrabold text-base text-redPrimary flex items-center gap-2">
+                    <Percent className="w-5 h-5 text-redPrimary" /> Platform Taxes & Surge Fees
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">GST Percentage (%)</label>
+                      <input
+                        type="number"
+                        value={platformFees.gstPercentage}
+                        onChange={(e) => setPlatformFees({ ...platformFees, gstPercentage: parseFloat(e.target.value) || 0 })}
+                        placeholder="e.g. 5"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Visiting / Platform Fee (₹)</label>
+                      <input
+                        type="number"
+                        value={platformFees.visitingFee}
+                        onChange={(e) => setPlatformFees({ ...platformFees, visitingFee: parseFloat(e.target.value) || 0 })}
+                        placeholder="e.g. 49"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Surge Fee (₹)</label>
+                      <input
+                        type="number"
+                        value={platformFees.surgeFee}
+                        onChange={(e) => setPlatformFees({ ...platformFees, surgeFee: parseFloat(e.target.value) || 0 })}
+                        placeholder="e.g. 18"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Surge Reason (Shown to user)</label>
+                      <input
+                        type="text"
+                        value={platformFees.surgeFeeReason}
+                        onChange={(e) => setPlatformFees({ ...platformFees, surgeFeeReason: e.target.value })}
+                        placeholder="e.g. Rain Surge"
+                        className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={isSavingFees} className="btn-primary w-full py-4 text-xs font-extrabold shadow-lg rounded-xl cursor-pointer">
+                    <Save className="w-4 h-4 inline mr-1" /> {isSavingFees ? 'Saving...' : 'Save Taxes & Fees'}
                   </button>
                 </form>
               </div>

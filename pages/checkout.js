@@ -7,7 +7,8 @@ import PopupModal from '../components/PopupModal';
 import { ref, set, push, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck, Tag, Percent } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck, Tag, Percent, ChevronDown } from 'lucide-react';
 import { DURATION_PLANS, getDurationOptions, getDurationUnitText, calculateDurationPrice } from '../lib/durationHelpers';
 import { DEFAULT_COUPONS } from '../lib/defaultData';
 
@@ -60,6 +61,10 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState('');
   const [couponsList, setCouponsList] = useState(DEFAULT_COUPONS);
 
+  // Platform Fees & Taxes
+  const [platformFees, setPlatformFees] = useState({ visitingFee: 49, gstPercentage: 5, surgeFee: 0, surgeFeeReason: '' });
+  const [showFeesBreakdown, setShowFeesBreakdown] = useState(false);
+
   // Payment Method State
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,6 +116,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!currentUser) return;
+
+    const unsubFees = onValue(ref(rtdb, 'settings/fees'), (snapshot) => {
+      if (snapshot.exists()) {
+        setPlatformFees(snapshot.val());
+      }
+    });
+
     const userAddressesRef = ref(rtdb, `users/${currentUser.id}/addresses`);
     const unsubscribe = onValue(userAddressesRef, (snapshot) => {
       const list = [];
@@ -138,7 +150,7 @@ export default function CheckoutPage() {
       if (list.length > 0) setCouponsList(list);
     });
 
-    return () => { unsubscribe(); unsubCoupons(); };
+    return () => { unsubscribe(); unsubCoupons(); unsubFees(); };
   }, [currentUser]);
 
   if (!isAuthLoaded) {
@@ -198,7 +210,15 @@ export default function CheckoutPage() {
     }
   }
 
-  const finalTotalAmount = Math.max(0, rawSubtotal - discountAmount);
+  const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountAmount);
+
+  // Dynamic Taxes & Fees Calculation
+  const visitingFee = platformFees.visitingFee || 0;
+  const surgeFee = platformFees.surgeFee || 0;
+  const gstAmount = Math.round((subtotalAfterDiscount * (platformFees.gstPercentage || 0)) / 100);
+  const totalTaxesAndFees = visitingFee + surgeFee + gstAmount;
+
+  const finalTotalAmount = subtotalAfterDiscount + totalTaxesAndFees;
 
   // Apply Promo Code Handler
   const handleApplyPromoCode = (e) => {
@@ -309,6 +329,12 @@ export default function CheckoutPage() {
       subtotalAmount: rawSubtotal,
       appliedPromoCode: appliedCoupon ? appliedCoupon.code : 'NONE',
       discountAmount: discountAmount,
+      visitingFee: visitingFee,
+      surgeFee: surgeFee,
+      surgeFeeReason: platformFees.surgeFeeReason || '',
+      gstAmount: gstAmount,
+      gstPercentage: platformFees.gstPercentage || 0,
+      totalTaxesAndFees: totalTaxesAndFees,
       totalAmount: finalTotalAmount,
       scheduledDate: date,
       scheduledTimeSlot: slot,
@@ -624,9 +650,42 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-slate-500 text-[11px]">
-                  <span>Visiting Fee & Taxes:</span>
-                  <span className="text-emerald-500 font-bold">FREE (₹0)</span>
+                <div className="border-t border-slate-200 dark:border-neutral-800 pt-2 space-y-2">
+                  <div
+                    className="flex justify-between items-center cursor-pointer group"
+                    onClick={() => setShowFeesBreakdown(!showFeesBreakdown)}
+                  >
+                    <span className="flex items-center gap-1 text-slate-900 dark:text-white font-bold border-b border-dashed border-slate-400 group-hover:border-redPrimary transition">
+                      Taxes & Fees <ChevronDown className={`w-3 h-3 transition-transform ${showFeesBreakdown ? 'rotate-180' : ''}`} />
+                    </span>
+                    <strong className="text-slate-900 dark:text-white font-extrabold">₹{totalTaxesAndFees}</strong>
+                  </div>
+
+                  <AnimatePresence>
+                    {showFeesBreakdown && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="pl-3 space-y-2 text-[11px] text-slate-500 dark:text-slate-400 border-l-2 border-slate-200 dark:border-neutral-700 ml-1 overflow-hidden"
+                      >
+                        <div className="flex justify-between pt-1">
+                          <span>Visiting / Platform Fee</span>
+                          <span>₹{visitingFee}</span>
+                        </div>
+                        {surgeFee > 0 && (
+                          <div className="flex justify-between text-orangeSecondary">
+                            <span>Surge Fee ({platformFees.surgeFeeReason})</span>
+                            <span>₹{surgeFee}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pb-1">
+                          <span>GST ({platformFees.gstPercentage}%)</span>
+                          <span>₹{gstAmount}</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <div className="border-t border-slate-200 dark:border-neutral-800 pt-3 flex justify-between items-center text-base font-black text-slate-900 dark:text-white">

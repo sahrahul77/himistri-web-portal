@@ -5,11 +5,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 export default function HeroBanner({ banners }) {
   const [index, setIndex] = useState(0);
 
+  // Auto-play timer set to 10 seconds (10,000 ms) per slide
   useEffect(() => {
     if (!banners || banners.length === 0) return;
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % banners.length);
-    }, 5000);
+    }, 10000);
     return () => clearInterval(timer);
   }, [banners]);
 

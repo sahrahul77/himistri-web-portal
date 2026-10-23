@@ -46,16 +46,16 @@ export default function HomePage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setTickerIndex((prev) => (prev + 1) % tickerEvents.length);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-play rotation for Promo Coupon Carousel Slider
+  // Auto-play rotation for Promo Coupon Carousel Slider set to 10 seconds (10,000 ms)
   useEffect(() => {
     if (coupons.length === 0) return;
     const timer = setInterval(() => {
       setCouponSliderIdx((prev) => (prev + 1) % coupons.length);
-    }, 5000);
+    }, 10000);
     return () => clearInterval(timer);
   }, [coupons]);
 
@@ -278,10 +278,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 3. APPLE STYLE HERO BANNER CAROUSEL */}
+        {/* 3. APPLE STYLE HERO BANNER CAROUSEL (10 Seconds Interval) */}
         <HeroBanner banners={banners} />
 
-        {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
+        {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER (10 Seconds Interval) */}
         {coupons.length > 0 && (
           <div className="space-y-3">
             <div className="flex justify-between items-center px-1">
@@ -403,7 +403,7 @@ export default function HomePage() {
                     className="web-card flex flex-col justify-between shadow-2xl relative bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-3xl overflow-hidden group hover:border-redPrimary/60"
                   >
                     <div>
-                      {/* Image Box with Subtle Zoom Effect */}
+                      {/* Image Box */}
                       <div className="relative w-full h-52 sm:h-60 overflow-hidden bg-slate-100 dark:bg-neutral-800">
                         <img
                           src={s.imageUrl || FALLBACK_ICON}
@@ -412,12 +412,12 @@ export default function HomePage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
 
-                        {/* Discount Badge on Top Left */}
+                        {/* Discount Badge */}
                         <div className="absolute top-3 left-3 bg-redPrimary text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg uppercase tracking-wider z-10">
                           {discountPercent}% OFF
                         </div>
 
-                        {/* Verified Pill Badge on Top Right */}
+                        {/* Verified Pill Badge */}
                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-white/20 z-10 flex items-center gap-1">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Verified
                         </div>

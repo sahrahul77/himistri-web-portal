@@ -17,7 +17,7 @@ import { DEFAULT_CATEGORIES, DEFAULT_COUPONS } from '../../lib/defaultData';
 export default function AdminControlPanelPage() {
   // Default Website Theme is Light Mode
   const [isDark, setIsDark] = useState(false);
-  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs, 11=Notifications, 12=Coupons
+  const [activeTab, setActiveTab] = useState(0); // 0=Orders, 1=Analytics, 2=Payment, 3=Fleet, 4=Users, 5=Categories, 6=Services, 7=Banners, 8=Profile/Admins, 9=Testimonials, 10=FAQs, 11=Notifications, 12=Coupons, 13=Settings
 
   // Slider Index States for Admin Tabs
   const [orderSliderIdx, setOrderSliderIdx] = useState(0);
@@ -272,7 +272,7 @@ export default function AdminControlPanelPage() {
     setIsRefreshing(true);
 
     try {
-      const [bSnap, uSnap, cSnap, sSnap, bnrSnap, tSnap, fSnap, nSnap, coupSnap] = await Promise.all([
+      const [bSnap, uSnap, cSnap, sSnap, bnrSnap, tSnap, fSnap, nSnap, coupSnap, feeSnap] = await Promise.all([
         get(ref(rtdb, 'bookings')),
         get(ref(rtdb, 'users')),
         get(ref(rtdb, 'categories')),
@@ -281,7 +281,8 @@ export default function AdminControlPanelPage() {
         get(ref(rtdb, 'testimonials')),
         get(ref(rtdb, 'faqs')),
         get(ref(rtdb, 'notifications')),
-        get(ref(rtdb, 'coupons'))
+        get(ref(rtdb, 'coupons')),
+        get(ref(rtdb, 'settings/fees'))
       ]);
 
       if (bSnap.exists()) {
@@ -301,6 +302,7 @@ export default function AdminControlPanelPage() {
         setNotificationsList(list);
       }
       if (coupSnap.exists()) setCouponsList(parseFirebaseSnapshot(coupSnap));
+      if (feeSnap.exists()) setPlatformFees(feeSnap.val());
 
       setTimeout(() => {
         setIsRefreshing(false);
@@ -455,7 +457,7 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Broadcast Push Notification Functionality
+  // Broadcast Push Notification Functionality with Complete Date/Timestamp Keys
   const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!notifTitle || !notifBody) {
@@ -672,6 +674,47 @@ export default function AdminControlPanelPage() {
         message: err.message,
         type: 'error'
       });
+    }
+  };
+
+  // HiMistri One Subscription Toggles
+  const handleToggleHiMistriOne = async (userId, planType) => {
+    try {
+      const expiry = new Date();
+      if (planType === '3_MONTHS') expiry.setMonth(expiry.getMonth() + 3);
+      if (planType === '1_YEAR') expiry.setFullYear(expiry.getFullYear() + 1);
+
+      await update(ref(rtdb, `users/${userId}`), {
+        subscriptionPlan: planType,
+        subscriptionExpiry: expiry.toISOString()
+      });
+
+      setPopupState({
+        isOpen: true,
+        title: 'HiMistri One Activated',
+        message: `User granted ${planType.replace('_', ' ')} of HiMistri One (Free Visiting Fees).`,
+        type: 'success'
+      });
+    } catch (err) {
+      setPopupState({ isOpen: true, title: 'Action Failed', message: err.message, type: 'error' });
+    }
+  };
+
+  const handleRevokeHiMistriOne = async (userId) => {
+    try {
+      await update(ref(rtdb, `users/${userId}`), {
+        subscriptionPlan: 'NONE',
+        subscriptionExpiry: null
+      });
+
+      setPopupState({
+        isOpen: true,
+        title: 'HiMistri One Revoked',
+        message: 'User no longer has HiMistri One benefits.',
+        type: 'info'
+      });
+    } catch (err) {
+      setPopupState({ isOpen: true, title: 'Action Failed', message: err.message, type: 'error' });
     }
   };
 
@@ -1523,6 +1566,8 @@ export default function AdminControlPanelPage() {
                 handleAddTestimonial={handleAddTestimonial} newTestName={newTestName} setNewTestName={setNewTestName} newTestLoc={newTestLoc} setNewTestLoc={setNewTestLoc} newTestText={newTestText} setNewTestText={setNewTestText}
                 handleAddFaq={handleAddFaq} newFaqQ={newFaqQ} setNewFaqQ={setNewFaqQ} newFaqA={newFaqA} setNewFaqA={setNewFaqA}
                 handleImageFileUpload={handleImageFileUpload}
+                handleToggleHiMistriOne={handleToggleHiMistriOne}
+                handleRevokeHiMistriOne={handleRevokeHiMistriOne}
               />
             )}
 
@@ -2061,6 +2106,8 @@ export default function AdminControlPanelPage() {
         skillMatchedCount={skillMatchedCount} freePartnersCount={freePartnersCount} allPartnersList={allPartnersList}
         categoriesList={categoriesList}
         handleImageFileUpload={handleImageFileUpload}
+        handleToggleHiMistriOne={handleToggleHiMistriOne}
+        handleRevokeHiMistriOne={handleRevokeHiMistriOne}
       />
 
       <Footer />

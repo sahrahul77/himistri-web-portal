@@ -212,8 +212,11 @@ export default function CheckoutPage() {
 
   const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountAmount);
 
+  // Check if User is a HiMistri One Subscriber to waive Visiting Fee
+  const isHiMistriOneSub = currentUser && currentUser.subscriptionPlan && currentUser.subscriptionPlan !== 'NONE' && new Date(currentUser.subscriptionExpiry) > new Date();
+
   // Dynamic Taxes & Fees Calculation
-  const visitingFee = platformFees.visitingFee || 0;
+  const visitingFee = isHiMistriOneSub ? 0 : (platformFees.visitingFee || 0);
   const surgeFee = platformFees.surgeFee || 0;
   const gstAmount = Math.round((subtotalAfterDiscount * (platformFees.gstPercentage || 0)) / 100);
   const totalTaxesAndFees = visitingFee + surgeFee + gstAmount;
@@ -650,6 +653,13 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
+                {isHiMistriOneSub && (
+                  <div className="flex justify-between text-amber-500 font-extrabold pb-2 border-b border-dashed border-slate-200 dark:border-neutral-800">
+                    <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" /> HiMistri One Benefits:</span>
+                    <span>Free Visiting Fee (₹0)</span>
+                  </div>
+                )}
+
                 <div className="border-t border-slate-200 dark:border-neutral-800 pt-2 space-y-2">
                   <div
                     className="flex justify-between items-center cursor-pointer group"
@@ -671,8 +681,16 @@ export default function CheckoutPage() {
                       >
                         <div className="flex justify-between pt-1">
                           <span>Visiting / Platform Fee</span>
-                          <span>₹{visitingFee}</span>
+                          <span className={isHiMistriOneSub ? 'text-amber-500 line-through' : ''}>
+                            ₹{platformFees.visitingFee || 0}
+                          </span>
                         </div>
+                        {isHiMistriOneSub && (
+                          <div className="flex justify-between text-amber-500 font-bold">
+                            <span>HiMistri One Waived</span>
+                            <span>-₹{platformFees.visitingFee || 0}</span>
+                          </div>
+                        )}
                         {surgeFee > 0 && (
                           <div className="flex justify-between text-orangeSecondary">
                             <span>Surge Fee ({platformFees.surgeFeeReason})</span>

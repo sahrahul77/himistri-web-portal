@@ -1,10 +1,9 @@
 import React from 'react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, Users, UserPlus, Upload, Star } from 'lucide-react';
 
-export function AdminSliders({
+export const AdminSliders = ({
   activeTab,
-  // Lists
   usersList = [],
   categoriesList = [],
   servicesList = [],
@@ -12,14 +11,12 @@ export function AdminSliders({
   testimonialsList = [],
   faqsList = [],
   currentAdmins = [],
-  // Slider Indices
   userSliderIdx, setUserSliderIdx,
   catSliderIdx, setCatSliderIdx,
   srvSliderIdx, setSrvSliderIdx,
   bnrSliderIdx, setBnrSliderIdx,
   testSliderIdx, setTestSliderIdx,
   faqSliderIdx, setFaqSliderIdx,
-  // Modal Triggers & Handlers
   setIsCreateSubAdminOpen,
   setEditingAdminUser,
   setDeletingPath,
@@ -28,15 +25,16 @@ export function AdminSliders({
   setEditingBanner,
   setEditingTestimonial,
   setEditingFaq,
-  // Creation Handlers & Forms
   handleAddCategory, newCatName, setNewCatName, newCatIcon, setNewCatIcon,
   handleAddService, newSrvTitle, setNewSrvTitle, newSrvCatId, setNewSrvCatId, newSrvPrice, setNewSrvPrice, newSrvDiscount, setNewSrvDiscount, newSrvRating, setNewSrvRating, newSrvImage, setNewSrvImage,
   handleAddBanner, newBnrTitle, setNewBnrTitle, newBnrSub, setNewBnrSub, newBnrImg, setNewBnrImg,
   handleAddTestimonial, newTestName, setNewTestName, newTestLoc, setNewTestLoc, newTestText, setNewTestText,
   handleAddFaq, newFaqQ, setNewFaqQ, newFaqA, setNewFaqA,
-  handleImageFileUpload
-}) {
-  // Clamped Indices
+  handleImageFileUpload,
+  // HiMistri One Props
+  handleToggleHiMistriOne, handleRevokeHiMistriOne
+}) => {
+
   const safeUserIdx = userSliderIdx % (usersList.length || 1);
   const currentUserObj = usersList[safeUserIdx] || usersList[0];
 
@@ -56,40 +54,27 @@ export function AdminSliders({
   const currentFaqObj = faqsList[safeFaqIdx] || faqsList[0];
 
   return (
-    <div className="space-y-6">
-      {/* TAB 4: REGISTERED USERS SLIDER */}
+    <>
+      {/* TAB 4: USERS SLIDER & HIMISTRI ONE MANAGEMENT */}
       {activeTab === 4 && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <h3 className="font-extrabold text-base flex items-center gap-2 text-redPrimary">
-              <Users className="w-5 h-5" /> Registered User Accounts ({usersList.length})
-            </h3>
-            <button
-              type="button"
-              onClick={() => setIsCreateSubAdminOpen(true)}
-              className="btn-primary bg-emerald-600 hover:bg-emerald-700 text-xs py-2 px-4 shadow-md font-black"
-            >
-              <UserPlus className="w-4 h-4 inline mr-1" /> + Create Sub-Admin Account ({currentAdmins.length}/3)
-            </button>
+          <div className="flex justify-between items-center px-1">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              User <span className="text-redPrimary font-black">{safeUserIdx + 1}</span> of {usersList.length}
+            </span>
+            {usersList.length > 1 && (
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setUserSliderIdx((prev) => (prev - 1 + usersList.length) % usersList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
+                <span className="text-xs font-black text-slate-700 dark:text-slate-300">{safeUserIdx + 1} / {usersList.length}</span>
+                <button type="button" onClick={() => setUserSliderIdx((prev) => (prev + 1) % usersList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
+              </div>
+            )}
           </div>
 
           {usersList.length === 0 ? (
             <p className="text-xs text-slate-500 py-6 text-center">No registered users found.</p>
           ) : (
             <div className="space-y-4">
-              <div className="flex justify-between items-center px-1">
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  User Account <span className="text-redPrimary font-black">{safeUserIdx + 1}</span> of {usersList.length}
-                </span>
-                {usersList.length > 1 && (
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => setUserSliderIdx((prev) => (prev - 1 + usersList.length) % usersList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronLeft className="w-4 h-4" /></button>
-                    <span className="text-xs font-black text-slate-700 dark:text-slate-300">{safeUserIdx + 1} / {usersList.length}</span>
-                    <button type="button" onClick={() => setUserSliderIdx((prev) => (prev + 1) % usersList.length)} className="p-2 rounded-xl bg-slate-200 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-white hover:border-redPrimary"><ChevronRight className="w-4 h-4" /></button>
-                  </div>
-                )}
-              </div>
-
               {currentUserObj && (
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -98,23 +83,74 @@ export function AdminSliders({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25 }}
-                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs shadow-xl max-w-lg mx-auto gap-4 w-full"
+                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-xl relative max-w-lg mx-auto w-full"
                   >
-                    <div>
-                      <strong className="text-base block text-slate-900 dark:text-white font-extrabold">{currentUserObj.fullName || 'User'}</strong>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{currentUserObj.email || 'N/A'} • {currentUserObj.phoneNumber || 'N/A'}</p>
-                    </div>
-
-                    <div className="flex gap-2 items-center w-full sm:w-auto justify-between sm:justify-end">
-                      <span className={`px-3 py-1 rounded-full text-xs font-black ${(currentUserObj.role || '').toUpperCase() === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary border border-redPrimary/30' : (currentUserObj.role || '').toUpperCase().includes('PARTNER') ? 'bg-orangeSecondary/20 text-orangeSecondary' : 'bg-emerald-600/20 text-emerald-600'}`}>
+                    <div className="flex justify-between items-start gap-4">
+                      <div>
+                        <strong className="text-lg block text-slate-900 dark:text-white font-extrabold">{currentUserObj.fullName}</strong>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{currentUserObj.email} | {currentUserObj.phoneNumber}</p>
+                        <p className="text-[10px] text-slate-400 mt-1">Joined: {new Date(currentUserObj.createdAt || Date.now()).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                        currentUserObj.role === 'ADMIN' ? 'bg-redPrimary/20 text-redPrimary border border-redPrimary/30' :
+                        currentUserObj.role === 'PARTNER' ? 'bg-orangeSecondary/20 text-orangeSecondary border border-orangeSecondary/30' :
+                        'bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-600/30'
+                      }`}>
                         {currentUserObj.role || 'CUSTOMER'}
                       </span>
+                    </div>
 
-                      {(currentUserObj.role || '').toUpperCase() === 'ADMIN' && (
-                        <button type="button" onClick={() => setEditingAdminUser({ ...currentUserObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Edit</button>
+                    {/* HiMistri One Subscription Management Widget */}
+                    <div className="mt-2 pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-black text-slate-900 dark:text-white">HiMistri One Subscription Status</span>
+                        {currentUserObj.subscriptionPlan && currentUserObj.subscriptionPlan !== 'NONE' && new Date(currentUserObj.subscriptionExpiry) > new Date() ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-600 dark:text-amber-500 border border-amber-500/30 flex items-center gap-1">
+                            <Star className="w-3 h-3" /> Active
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-200 dark:bg-neutral-800 text-slate-500 border border-slate-300 dark:border-neutral-700">
+                            Inactive / None
+                          </span>
+                        )}
+                      </div>
+
+                      {currentUserObj.subscriptionPlan && currentUserObj.subscriptionPlan !== 'NONE' && new Date(currentUserObj.subscriptionExpiry) > new Date() ? (
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/30 rounded-xl flex justify-between items-center text-xs">
+                          <div>
+                            <strong className="text-amber-700 dark:text-amber-500 block">Plan: {currentUserObj.subscriptionPlan.replace('_', ' ')}</strong>
+                            <span className="text-amber-600 dark:text-amber-400/80">Expires: {new Date(currentUserObj.subscriptionExpiry).toLocaleDateString()}</span>
+                          </div>
+                          <button
+                            onClick={() => handleRevokeHiMistriOne(currentUserObj.id)}
+                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm transition"
+                          >
+                            Revoke Plan
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 text-xs">
+                          <button
+                            onClick={() => handleToggleHiMistriOne(currentUserObj.id, '3_MONTHS')}
+                            className="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:border-amber-500 hover:text-white transition shadow-sm"
+                          >
+                            Grant 3 Months
+                          </button>
+                          <button
+                            onClick={() => handleToggleHiMistriOne(currentUserObj.id, '1_YEAR')}
+                            className="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition shadow-md"
+                          >
+                            Grant 1 Year
+                          </button>
+                        </div>
                       )}
+                      <p className="text-[9px] text-slate-500 dark:text-slate-400">
+                        *HiMistri One members receive 100% discount on Visiting Fees (₹0 Visiting Fee).
+                      </p>
+                    </div>
 
-                      <button onClick={() => setDeletingPath(`users/${currentUserObj.id}`)} className="bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold">Delete</button>
+                    <div className="flex gap-2 justify-end pt-2">
+                      <button onClick={() => setDeletingPath(`users/${currentUserObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold">Delete Account</button>
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -251,19 +287,19 @@ export function AdminSliders({
                     step="0.1"
                     min="1.0"
                     max="5.0"
-                    value={newSrvRating || '5.0'}
+                    value={newSrvRating}
                     onChange={(e) => setNewSrvRating(e.target.value)}
-                    placeholder="Initial Rating (★ Default: 5.0)"
-                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                    placeholder="e.g. 5.0"
+                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                   />
                 </div>
               </div>
 
               <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Service Image (Upload File &le;200KB or Paste Image URL)</label>
+                <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block">Service Image (Upload File &le;200KB or Paste URL)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <label className="bg-redPrimary/10 hover:bg-redPrimary/20 text-redPrimary border border-redPrimary/30 px-4 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 transition shrink-0">
-                    <Upload className="w-4 h-4" /> 📷 Upload Service Image File
+                    <Upload className="w-4 h-4" /> 📷 Upload Service Image
                     <input
                       type="file"
                       accept="image/*"
@@ -276,7 +312,7 @@ export function AdminSliders({
                     type="text"
                     value={newSrvImage}
                     onChange={(e) => setNewSrvImage(e.target.value)}
-                    placeholder="Or paste Service Icon Image URL"
+                    placeholder="Or paste Service Image URL"
                     className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white flex-1 outline-none focus:border-redPrimary"
                   />
                 </div>
@@ -285,12 +321,12 @@ export function AdminSliders({
 
             {newSrvImage && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
-                <img src={newSrvImage} className="w-16 h-12 object-cover rounded-lg bg-white p-1" alt="Preview" />
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Service Image Selected & Previewed</span>
+                <img src={newSrvImage} className="w-16 h-16 object-cover rounded-lg bg-white p-1 shadow-sm" alt="Preview" />
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Image Selected & Previewed</span>
               </div>
             )}
 
-            <button type="submit" className="btn-primary w-full py-3.5 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Create & Link Service to Category</button>
+            <button type="submit" className="btn-primary py-3.5 px-6 font-extrabold text-xs w-full"><Plus className="w-4 h-4 inline mr-1" /> Save New Service</button>
           </form>
 
           {servicesList.length === 0 ? (
@@ -318,48 +354,32 @@ export function AdminSliders({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25 }}
-                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl flex flex-col justify-between shadow-2xl relative max-w-md mx-auto w-full overflow-hidden"
+                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-0 rounded-2xl shadow-xl flex flex-col max-w-sm mx-auto overflow-hidden w-full"
                   >
-                    <div>
-                      {/* Image occupies ENTIRE top box */}
-                      <div className="relative w-full h-52 sm:h-60 overflow-hidden bg-slate-100 dark:bg-neutral-800">
-                        <img src={currentSrvObj.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} alt="" className="w-full h-full object-cover" />
-                      </div>
-
-                      <div className="p-4 sm:p-5 space-y-1">
-                        <span className="text-[10px] font-bold text-redPrimary uppercase">{currentSrvObj.categoryName || 'General'}</span>
-
-                        <div className="flex justify-between items-center gap-2">
-                          <h4 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">{currentSrvObj.title}</h4>
-
-                          <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 text-xs font-black shrink-0 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
-                            <Star className="w-3.5 h-3.5 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" /> {parseFloat(currentSrvObj.ratingAverage || 5.0).toFixed(1)}
-                          </div>
-                        </div>
-
-                        <p className="text-lg font-black text-redPrimary mt-1">₹{currentSrvObj.discountedPrice || currentSrvObj.originalPrice}</p>
+                    <div className="relative w-full h-48 bg-slate-100 dark:bg-neutral-800">
+                      <img src={currentSrvObj.imageUrl || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'} className="w-full h-full object-cover" alt="" />
+                      <div className="absolute top-2 left-2 bg-redPrimary text-white text-[10px] font-black px-2 py-1 rounded shadow uppercase tracking-wider">
+                        {Math.round(((currentSrvObj.originalPrice - currentSrvObj.discountedPrice) / currentSrvObj.originalPrice) * 100) || 10}% OFF
                       </div>
                     </div>
+                    <div className="p-5 space-y-2">
+                      <span className="text-[10px] font-black uppercase text-redPrimary block">{currentSrvObj.categoryName}</span>
 
-                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-slate-100 dark:border-neutral-800 flex gap-2">
-                      <button
-                        onClick={() => {
-                          const matchedCat = (categoriesList || []).find(c =>
-                            c.id === currentSrvObj.categoryId ||
-                            (c.name || '').toLowerCase() === (currentSrvObj.categoryName || '').toLowerCase()
-                          ) || (categoriesList || [])[0] || { id: 'cat_services', name: 'Services Manpower' };
+                      <div className="flex justify-between items-start gap-2">
+                        <strong className="text-base text-slate-900 dark:text-white font-extrabold leading-tight">{currentSrvObj.title}</strong>
+                        <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 text-xs font-black shrink-0 bg-amber-500/10 px-1.5 py-1 rounded border border-amber-500/20">
+                          <Star className="w-3 h-3 fill-amber-500" /> {parseFloat(currentSrvObj.ratingAverage || 5.0).toFixed(1)}
+                        </div>
+                      </div>
 
-                          setEditingService({
-                            ...currentSrvObj,
-                            categoryId: matchedCat.id,
-                            categoryName: matchedCat.name
-                          });
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1"
-                      >
-                        Edit
-                      </button>
-                      <button onClick={() => setDeletingPath(`services/${currentSrvObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-neutral-800 mt-2">
+                        <span className="text-xl font-black text-redPrimary">₹{currentSrvObj.discountedPrice}</span>
+                        <span className="text-xs text-slate-400 line-through">₹{currentSrvObj.originalPrice}</span>
+                      </div>
+                      <div className="flex gap-2 justify-center pt-3 w-full">
+                        <button onClick={() => setEditingService({ ...currentSrvObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                        <button onClick={() => setDeletingPath(`services/${currentSrvObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Delete</button>
+                      </div>
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -448,14 +468,17 @@ export function AdminSliders({
                     transition={{ duration: 0.25 }}
                     className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-2xl relative max-w-lg mx-auto w-full"
                   >
-                    <img src={currentBnrObj.imageUrl} className="w-full h-40 sm:h-48 object-cover rounded-xl" alt="" />
-                    <div>
-                      <strong className="block text-base sm:text-lg font-bold text-slate-900 dark:text-white">{currentBnrObj.title}</strong>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">{currentBnrObj.subtitle}</span>
+                    <div className="relative w-full h-48 bg-slate-100 dark:bg-neutral-800 rounded-xl overflow-hidden shadow-inner border border-slate-200 dark:border-neutral-700">
+                      <img src={currentBnrObj.imageUrl} className="w-full h-full object-cover" alt="" />
                     </div>
-                    <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
-                      <button onClick={() => setEditingBanner({ ...currentBnrObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
-                      <button onClick={() => setDeletingPath(`banners/${currentBnrObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
+                    <div className="space-y-1">
+                      <strong className="text-lg block text-slate-900 dark:text-white font-extrabold leading-tight">{currentBnrObj.title}</strong>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">{currentBnrObj.subtitle}</p>
+                    </div>
+
+                    <div className="flex gap-2 justify-center pt-2 w-full">
+                      <button onClick={() => setEditingBanner({ ...currentBnrObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                      <button onClick={() => setDeletingPath(`banners/${currentBnrObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -473,21 +496,23 @@ export function AdminSliders({
         </div>
       )}
 
-      {/* TAB 9: CUSTOMER EXPERIENCE SLIDER */}
+      {/* TAB 9: TESTIMONIALS SLIDER */}
       {activeTab === 9 && (
         <div className="space-y-6">
-          <form onSubmit={handleAddTestimonial} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl">
-            <h3 className="font-extrabold text-base text-redPrimary">Add Customer Experience Review</h3>
-            <div className="space-y-3">
-              <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name (e.g. Mohor Ghosh)" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-              <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari, Gangtok)" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-              <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Content..." rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
+          <form onSubmit={handleAddTestimonial} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
+            <h3 className="font-extrabold text-base text-redPrimary">Add Customer Review</h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input type="text" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} placeholder="Customer Name" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+              <input type="text" value={newTestLoc} onChange={(e) => setNewTestLoc(e.target.value)} placeholder="Location (e.g. Upper Syari)" className="p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
             </div>
-            <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save Customer Review</button>
+            <textarea value={newTestText} onChange={(e) => setNewTestText(e.target.value)} placeholder="Review Details" rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
+
+            <button type="submit" className="btn-primary w-full py-3.5 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Publish Review</button>
           </form>
 
           {testimonialsList.length === 0 ? (
-            <p className="text-xs text-slate-500 py-6 text-center">No customer reviews found.</p>
+            <p className="text-xs text-slate-500 py-6 text-center">No reviews found.</p>
           ) : (
             <div className="space-y-4">
               <div className="flex justify-between items-center px-1">
@@ -511,16 +536,21 @@ export function AdminSliders({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25 }}
-                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
+                    className="web-card p-6 bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl flex flex-col max-w-md mx-auto w-full shadow-lg relative"
                   >
-                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-neutral-800 pb-2">
-                      <strong className="block text-base font-bold text-slate-900 dark:text-white">{currentTestObj.name}</strong>
-                      <span className="text-xs text-slate-400">({currentTestObj.location})</span>
+                    <div className="flex items-center gap-1 text-amber-500 mb-2">
+                      {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-4 h-4 fill-amber-500" />)}
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 italic leading-relaxed">"{currentTestObj.text}"</p>
-                    <div className="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-neutral-800">
-                      <button onClick={() => setEditingTestimonial({ ...currentTestObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
-                      <button onClick={() => setDeletingPath(`testimonials/${currentTestObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
+                    <p className="text-sm italic font-medium text-slate-700 dark:text-slate-300 leading-relaxed mb-4">"{currentTestObj.text}"</p>
+                    <div className="mt-auto pt-4 border-t border-slate-200 dark:border-neutral-800 flex justify-between items-center w-full">
+                      <div>
+                        <strong className="text-slate-900 dark:text-white text-sm block font-extrabold">{currentTestObj.name}</strong>
+                        <span className="text-xs text-slate-500">{currentTestObj.location}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-center pt-4 mt-2 border-t border-slate-200 dark:border-neutral-800 w-full">
+                      <button onClick={() => setEditingTestimonial({ ...currentTestObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                      <button onClick={() => setDeletingPath(`testimonials/${currentTestObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -541,13 +571,13 @@ export function AdminSliders({
       {/* TAB 10: FAQS SLIDER */}
       {activeTab === 10 && (
         <div className="space-y-6">
-          <form onSubmit={handleAddFaq} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl">
-            <h3 className="font-extrabold text-base text-redPrimary">Add Frequently Asked Question</h3>
-            <div className="space-y-3">
-              <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
-              <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
-            </div>
-            <button type="submit" className="btn-primary w-full py-3.5 text-xs font-extrabold"><Plus className="w-4 h-4 inline mr-1" /> Save FAQ</button>
+          <form onSubmit={handleAddFaq} className="web-card space-y-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl shadow-md">
+            <h3 className="font-extrabold text-base text-redPrimary">Add FAQ</h3>
+
+            <input type="text" value={newFaqQ} onChange={(e) => setNewFaqQ(e.target.value)} placeholder="Question" className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary" />
+            <textarea value={newFaqA} onChange={(e) => setNewFaqA(e.target.value)} placeholder="Answer" rows={3} className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs text-slate-900 dark:text-white outline-none focus:border-redPrimary"></textarea>
+
+            <button type="submit" className="btn-primary w-full py-3.5 font-extrabold text-xs"><Plus className="w-4 h-4 inline mr-1" /> Save FAQ</button>
           </form>
 
           {faqsList.length === 0 ? (
@@ -575,13 +605,14 @@ export function AdminSliders({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25 }}
-                    className="web-card bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-5 sm:p-6 rounded-2xl space-y-3 shadow-2xl relative max-w-lg mx-auto w-full"
+                    className="web-card p-6 bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl flex flex-col max-w-md mx-auto w-full shadow-lg"
                   >
-                    <strong className="block text-base font-bold text-redPrimary">Q: {currentFaqObj.q}</strong>
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">A: {currentFaqObj.a}</p>
-                    <div className="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-neutral-800">
-                      <button onClick={() => setEditingFaq({ ...currentFaqObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Edit</button>
-                      <button onClick={() => setDeletingPath(`faqs/${currentFaqObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-3 py-2.5 rounded-xl font-bold flex-1">Delete</button>
+                    <strong className="text-sm font-extrabold text-slate-900 dark:text-white mb-2 leading-relaxed block">Q: {currentFaqObj.q}</strong>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">A: {currentFaqObj.a}</p>
+
+                    <div className="flex gap-2 justify-center pt-4 mt-4 border-t border-slate-200 dark:border-neutral-800 w-full">
+                      <button onClick={() => setEditingFaq({ ...currentFaqObj })} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Edit</button>
+                      <button onClick={() => setDeletingPath(`faqs/${currentFaqObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex-1">Delete</button>
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -598,6 +629,6 @@ export function AdminSliders({
           )}
         </div>
       )}
-    </div>
+    </>
   );
-}
+};

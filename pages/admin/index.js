@@ -211,6 +211,27 @@ export default function AdminControlPanelPage() {
     return list;
   };
 
+  // Direct Promo Code Deletion Handler from Firebase Database
+  const handleDeleteCouponDirect = async (couponId) => {
+    try {
+      await remove(ref(rtdb, `coupons/${couponId}`));
+      setCouponsList(prev => prev.filter(c => c.id !== couponId));
+      setPopupState({
+        isOpen: true,
+        title: 'Promo Code Deleted',
+        message: 'Promo Code deleted permanently from Firebase Realtime Database!',
+        type: 'info'
+      });
+    } catch (err) {
+      setPopupState({
+        isOpen: true,
+        title: 'Delete Failed',
+        message: err.message,
+        type: 'error'
+      });
+    }
+  };
+
   // Manual Refresh & Pull-To-Refresh Sync Handler
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -391,7 +412,7 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Broadcast Push Notification Functionality
+  // Broadcast Push Notification Functionality with Complete Date/Timestamp Keys
   const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!notifTitle || !notifBody) {
@@ -1743,7 +1764,7 @@ export default function AdminControlPanelPage() {
                           <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-neutral-800">
                             <button
                               type="button"
-                              onClick={() => setDeletingPath(`coupons/${currentCouponObj.id}`)}
+                              onClick={() => handleDeleteCouponDirect(currentCouponObj.id)}
                               className="bg-rose-700 hover:bg-rose-800 text-white text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1 transition shadow-sm cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Delete Promo Code

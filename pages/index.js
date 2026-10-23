@@ -13,7 +13,7 @@ import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import {
   Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign,
-  Sparkles, Zap, Flame, Tag, BadgePercent, Check, ExternalLink, TrendingUp, Heart, UserCheck, Timer, Gift, Layers
+  Sparkles, Zap, Flame, Tag, BadgePercent, Check, ExternalLink, TrendingUp, Heart, UserCheck, Timer, Gift, Layers, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -23,8 +23,9 @@ export default function HomePage() {
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Live Ticker State
+  // Live Ticker State & Coupon Slider State
   const [tickerIndex, setTickerIndex] = useState(0);
+  const [couponSliderIdx, setCouponSliderIdx] = useState(0);
 
   // Live Firebase States
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
@@ -48,6 +49,15 @@ export default function HomePage() {
     }, 4000);
     return () => clearInterval(timer);
   }, []);
+
+  // Auto-play rotation for Promo Coupon Carousel Slider
+  useEffect(() => {
+    if (coupons.length === 0) return;
+    const timer = setInterval(() => {
+      setCouponSliderIdx((prev) => (prev + 1) % coupons.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [coupons]);
 
   // Automatic Theme Synchronization Effect
   useEffect(() => {
@@ -168,6 +178,9 @@ export default function HomePage() {
   const displayCategories = categories;
   const popularServices = filteredServices.slice(0, 12);
 
+  const safeCouponIdx = couponSliderIdx % (coupons.length || 1);
+  const currentCoupon = coupons[safeCouponIdx] || coupons[0];
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
@@ -268,27 +281,87 @@ export default function HomePage() {
         {/* 3. APPLE STYLE HERO BANNER CAROUSEL */}
         <HeroBanner banners={banners} />
 
-        {/* 4. FLIPKART / AMAZON STYLE PROMO COUPON CARDS */}
+        {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
         {coupons.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {coupons.slice(0, 3).map((coup) => (
-              <div
-                key={coup.id}
-                className="web-card p-4 sm:p-5 bg-gradient-to-r from-redPrimary/10 via-amber-500/10 to-transparent border border-redPrimary/30 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-redPrimary transition"
-              >
-                <div className="space-y-1 z-10">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-redPrimary text-white shadow-sm inline-block">
-                    {coup.discountType === 'PERCENTAGE' ? `${coup.discountValue}% OFF` : `Flat ₹${coup.discountValue} OFF`}
-                  </span>
-                  <h4 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">{coup.code}</h4>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium line-clamp-1">{coup.description || 'Doorstep discount offer'}</p>
-                </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs font-black uppercase text-redPrimary tracking-widest flex items-center gap-1">
+                <Tag className="w-4 h-4 text-redPrimary" /> Active Offers & Promo Codes ({safeCouponIdx + 1} of {coupons.length})
+              </span>
 
-                <div className="p-3 rounded-2xl bg-redPrimary/20 text-redPrimary shrink-0 z-10 group-hover:scale-110 transition-transform">
-                  <Tag className="w-6 h-6 text-redPrimary" />
+              {coupons.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCouponSliderIdx((prev) => (prev - 1 + coupons.length) % coupons.length)}
+                    className="p-1.5 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-white hover:border-redPrimary transition cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs font-bold text-slate-500">
+                    {safeCouponIdx + 1} / {coupons.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCouponSliderIdx((prev) => (prev + 1) % coupons.length)}
+                    className="p-1.5 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-white hover:border-redPrimary transition cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
+              )}
+            </div>
+
+            {currentCoupon && (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentCoupon.id || safeCouponIdx}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.25 }}
+                  className="web-card p-5 sm:p-6 bg-gradient-to-r from-redPrimary/15 via-orangeSecondary/10 to-amber-500/10 border border-redPrimary/40 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-2xl relative overflow-hidden"
+                >
+                  <div className="space-y-1.5 z-10">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-black uppercase bg-redPrimary text-white shadow-md">
+                        {currentCoupon.discountType === 'PERCENTAGE' ? `${currentCoupon.discountValue}% OFF` : `Flat ₹${currentCoupon.discountValue} OFF`}
+                      </span>
+                      {currentCoupon.minOrderAmount > 0 && (
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                          (Min Order Subtotal: ₹{currentCoupon.minOrderAmount})
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-wider">{currentCoupon.code}</h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium max-w-xl">{currentCoupon.description || 'Use promo code at checkout to enjoy doorstep discount in Sikkim.'}</p>
+                  </div>
+
+                  <Link
+                    href="/services"
+                    className="btn-primary py-3 px-6 text-xs font-black rounded-xl shadow-lg shrink-0 cursor-pointer w-full sm:w-auto text-center"
+                  >
+                    Apply at Checkout →
+                  </Link>
+                </motion.div>
+              </AnimatePresence>
+            )}
+
+            {coupons.length > 1 && (
+              <div className="flex justify-center gap-1.5 pt-1">
+                {coupons.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setCouponSliderIdx(i)}
+                    className={`h-2 rounded-full transition-all cursor-pointer ${
+                      safeCouponIdx === i ? 'w-8 bg-redPrimary shadow-md' : 'w-2 bg-slate-300 dark:bg-neutral-700'
+                    }`}
+                  />
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
 

@@ -21,7 +21,6 @@ export default function HomePage() {
   // Default Website Theme is Light Mode
   const [isDark, setIsDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
   const searchRef = useRef(null);
@@ -242,23 +241,15 @@ export default function HomePage() {
   // Instant Global Real-time Search Filter Logic
   const filteredServices = services.filter((s) => {
     const q = searchQuery.toLowerCase().trim();
-    const chip = activeChip.toLowerCase().trim();
-
     if (q) {
       return (s.title || '').toLowerCase().includes(q) ||
         (s.categoryName || '').toLowerCase().includes(q) ||
         (s.shortDescription || '').toLowerCase().includes(q);
     }
-
-    if (chip === 'all') return true;
-    return (s.categoryName || '').toLowerCase().includes(chip) ||
-      (s.title || '').toLowerCase().includes(chip) ||
-      chip.includes((s.categoryName || '').toLowerCase());
+    return true;
   });
 
-  const displayCategories = categories;
   const popularServices = filteredServices.slice(0, 12);
-
   const safeCouponIdx = couponSliderIdx % (coupons.length || 1);
   const currentCoupon = coupons[safeCouponIdx] || coupons[0];
   const safeTickerIdx = tickerIndex % tickerEvents.length;
@@ -267,7 +258,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      {/* DYNAMIC REALTIME TICKER STRIP */}
+      {/* DYNAMIC REALTIME TICKER STRIP WITH POLISHED PRIVACY GRAMMAR */}
       <div className="bg-gradient-to-r from-redPrimary via-orangeSecondary to-redDark text-white py-2 px-3 sm:px-4 text-xs font-black shadow-md overflow-hidden">
         <div className="web-container flex items-center justify-between">
           <AnimatePresence mode="wait">
@@ -373,18 +364,13 @@ export default function HomePage() {
 
           <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
             {categories.map((c) => {
-              const isSelected = activeChip.toLowerCase() === c.name.toLowerCase();
               return (
-                <div
+                <Link
+                  href={`/categories?id=${c.id}`}
                   key={c.id}
-                  onClick={() => { setActiveChip(isSelected ? 'ALL' : c.name); setSearchQuery(''); }}
                   className="flex flex-col items-center gap-1.5 sm:gap-2 cursor-pointer group shrink-0 w-18 sm:w-24 text-center snap-start"
                 >
-                  <div className={`w-14 h-14 sm:w-20 sm:h-20 rounded-full p-1 transition-all duration-300 shadow-xl flex items-center justify-center ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-redPrimary to-orangeSecondary scale-105 sm:scale-110 shadow-redPrimary/40'
-                      : 'bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] group-hover:border-redPrimary group-hover:scale-105'
-                  }`}>
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full p-1 transition-all duration-300 shadow-xl flex items-center justify-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] group-hover:border-redPrimary group-hover:scale-105">
                     <div className="w-full h-full rounded-full bg-slate-50 dark:bg-neutral-900 p-2.5 sm:p-3 flex items-center justify-center">
                       <img
                         src={c.iconUrl || FALLBACK_ICON}
@@ -394,12 +380,10 @@ export default function HomePage() {
                       />
                     </div>
                   </div>
-                  <span className={`text-[10px] sm:text-xs font-extrabold leading-tight transition line-clamp-2 ${
-                    isSelected ? 'text-redPrimary font-black' : 'text-slate-800 dark:text-slate-200 group-hover:text-redPrimary'
-                  }`}>
+                  <span className="text-[10px] sm:text-xs font-extrabold leading-tight transition line-clamp-2 text-slate-800 dark:text-slate-200 group-hover:text-redPrimary">
                     {c.name.replace(' Manpower', '')}
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -498,7 +482,7 @@ export default function HomePage() {
             <div>
               <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Top Requested</span>
               <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white mt-0.5">
-                {searchQuery ? `Search Results for "${searchQuery}"` : activeChip === 'ALL' ? 'Most Booked Services in Sikkim' : `${activeChip} Services in Gangtok`}
+                {searchQuery ? `Search Results for "${searchQuery}"` : 'Most Booked Services in Sikkim'}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Found {popularServices.length} verified technical solutions</p>
             </div>
@@ -509,9 +493,9 @@ export default function HomePage() {
 
           {popularServices.length === 0 ? (
             <div className="web-card text-center py-16 text-slate-500 space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-lg">
-              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{searchQuery || activeChip}".</p>
-              <button onClick={() => { setSearchQuery(''); setActiveChip('ALL'); }} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
-                Reset Filter
+              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{searchQuery}".</p>
+              <button onClick={() => setSearchQuery('')} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
+                Clear Search
               </button>
             </div>
           ) : (
@@ -594,7 +578,7 @@ export default function HomePage() {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sikkim's premier doorstep technical manpower platform</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
 
             <div className="web-card flex items-start gap-3.5 sm:gap-4 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] p-4 sm:p-5 rounded-2xl shadow-xl hover:border-redPrimary/50 transition">
               <div className="p-3 rounded-2xl bg-redPrimary/10 text-redPrimary shrink-0">
@@ -642,7 +626,7 @@ export default function HomePage() {
         {/* 7. SERVICE PARTNER FLEET BANNER */}
         <div className="web-card bg-gradient-to-r from-redPrimary/20 via-slate-100 dark:via-neutral-900 to-transparent border border-redPrimary/30 p-5 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 shadow-2xl">
           <div className="flex items-center gap-3.5 sm:gap-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-lg">
+            <div className="w-12 h-12 sm:w-14 h-14 rounded-2xl bg-redPrimary text-white flex items-center justify-center shrink-0 shadow-lg">
               <Handshake className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
             <div>

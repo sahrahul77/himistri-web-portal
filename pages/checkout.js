@@ -17,6 +17,7 @@ export default function CheckoutPage() {
   // Default Website Theme is Light Mode
   const [isDark, setIsDark] = useState(false);
   const { currentUser, isAuthLoaded } = useAuth();
+  const [liveUser, setLiveUser] = useState(null);
 
   const [quantity, setQuantity] = useState(1);
   const [date, setDate] = useState('');
@@ -126,6 +127,13 @@ export default function CheckoutPage() {
       }
     });
 
+    const userProfileRef = ref(rtdb, `users/${currentUser.id}`);
+    const unsubProfile = onValue(userProfileRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setLiveUser(snapshot.val());
+      }
+    });
+
     const userAddressesRef = ref(rtdb, `users/${currentUser.id}/addresses`);
     const unsubscribe = onValue(userAddressesRef, (snapshot) => {
       const list = [];
@@ -153,7 +161,7 @@ export default function CheckoutPage() {
       if (list.length > 0) setCouponsList(list);
     });
 
-    return () => { unsubscribe(); unsubCoupons(); unsubFees(); };
+    return () => { unsubscribe(); unsubCoupons(); unsubFees(); unsubProfile(); };
   }, [currentUser]);
 
   if (!isAuthLoaded) {
@@ -216,7 +224,8 @@ export default function CheckoutPage() {
   const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountAmount);
 
   // Check if User is a HiMistri Amaze Subscriber to waive Visiting Fee
-  const isHiMistriAmazeSub = currentUser && currentUser.subscriptionPlan && currentUser.subscriptionPlan !== 'NONE' && new Date(currentUser.subscriptionExpiry) > new Date();
+  const activeUser = liveUser || currentUser;
+  const isHiMistriAmazeSub = activeUser && activeUser.subscriptionPlan && activeUser.subscriptionPlan !== 'NONE' && new Date(activeUser.subscriptionExpiry) > new Date();
 
   // Dynamic Taxes & Fees Calculation
   const visitingFee = (isHiMistriAmazeSub || selectedAmazePlan) ? 0 : (platformFees.visitingFee || 0);

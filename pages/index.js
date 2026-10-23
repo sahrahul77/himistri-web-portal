@@ -32,25 +32,42 @@ export default function HomePage() {
   const [services, setServices] = useState(DEFAULT_SERVICES);
   const [banners, setBanners] = useState(DEFAULT_BANNERS);
   const [coupons, setCoupons] = useState(DEFAULT_COUPONS);
+  const [testimonials, setTestimonials] = useState([]);
+  const [bookings, setBookings] = useState([]);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
-  // Ticker items inspired by Swiggy / Zomato live booking notifications
-  const tickerEvents = [
-    "⚡ Passang Bhutia booked Full House Wiring in Deorali • 2 mins ago",
-    "🎉 SIKKIM10 applied: Saved ₹200 on Door Lock Repair • 5 mins ago",
-    "🟢 Mistri Dhiraj Jaiswal dispatched to Upper Syari • 8 mins ago",
-    "⭐ Piku Shah completed Deep Cleaning service in Gangtok (5.0★)"
-  ];
+  // Dynamic Ticker Events retrieved directly from Firebase Realtime Database
+  const tickerEvents = [];
+
+  // 1. Include REAL Coupons from Database
+  coupons.forEach((c) => {
+    tickerEvents.push(`🎉 Promo Code: Use '${c.code}' to get ${c.discountType === 'PERCENTAGE' ? c.discountValue + '% OFF' : 'Flat ₹' + c.discountValue + ' OFF'}!`);
+  });
+
+  // 2. Include REAL Customer Reviews/Feedback from Database
+  testimonials.forEach((t) => {
+    tickerEvents.push(`⭐ Customer Feedback by ${t.name || 'Sikkim Resident'}: "${t.text || 'Great doorstep service!'}" (${t.rating || 5}★)`);
+  });
+
+  // 3. Include ONLY REAL Orders/Bookings that exist in Database
+  bookings.forEach((b) => {
+    tickerEvents.push(`⚡ Real Order: ${b.serviceTitle} in ${b.address || 'Gangtok'} • Status: ${b.status || 'ACTIVE'}`);
+  });
+
+  // Fallback if empty database
+  if (tickerEvents.length === 0) {
+    tickerEvents.push("⚡ Welcome to HiMistri: Sikkim's #1 Doorstep Service Platform!");
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTickerIndex((prev) => (prev + 1) % tickerEvents.length);
-    }, 5000);
+    }, 4500);
     return () => clearInterval(timer);
-  }, []);
+  }, [tickerEvents.length]);
 
-  // Auto-play rotation for Promo Coupon Carousel Slider set to 10 seconds (10,000 ms)
+  // Auto-play rotation for Promo Coupon Carousel Slider set to 10 seconds
   useEffect(() => {
     if (coupons.length === 0) return;
     const timer = setInterval(() => {
@@ -90,7 +107,7 @@ export default function HomePage() {
     }, { onlyOnce: true });
   }, []);
 
-  // Fetch Live Categories from Firebase (Only keep Manpower categories)
+  // Fetch Live Realtime Database Nodes (Categories, Services, Banners, Coupons, Testimonials, Bookings)
   useEffect(() => {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
@@ -104,11 +121,7 @@ export default function HomePage() {
           });
         }
       }
-      if (list.length > 0) {
-        setCategories(list);
-      } else {
-        setCategories(DEFAULT_CATEGORIES);
-      }
+      if (list.length > 0) setCategories(list);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -144,7 +157,36 @@ export default function HomePage() {
       if (list.length > 0) setCoupons(list);
     });
 
-    return () => { unsubCat(); unsubSrv(); unsubBanners(); unsubCoupons(); };
+    const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      setTestimonials(list);
+    });
+
+    const unsubBookings = onValue(ref(rtdb, 'bookings'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
+        }
+      }
+      setBookings(list);
+    });
+
+    return () => {
+      unsubCat();
+      unsubSrv();
+      unsubBanners();
+      unsubCoupons();
+      unsubTestimonials();
+      unsubBookings();
+    };
   }, []);
 
   const handleHireNow = (serviceObj) => {
@@ -157,22 +199,21 @@ export default function HomePage() {
     }
   };
 
-  // Smart Real-time Filter
+  // Fixed Global Search Logic: Overrides Active Chip when Search Query is Entered
   const filteredServices = services.filter((s) => {
     const q = searchQuery.toLowerCase().trim();
     const chip = activeChip.toLowerCase().trim();
 
-    const matchesSearch = !q ||
-      (s.title || '').toLowerCase().includes(q) ||
-      (s.categoryName || '').toLowerCase().includes(q) ||
-      (s.shortDescription || '').toLowerCase().includes(q);
+    if (q) {
+      return (s.title || '').toLowerCase().includes(q) ||
+        (s.categoryName || '').toLowerCase().includes(q) ||
+        (s.shortDescription || '').toLowerCase().includes(q);
+    }
 
-    const matchesChip = chip === 'all' ||
-      (s.categoryName || '').toLowerCase().includes(chip) ||
+    if (chip === 'all') return true;
+    return (s.categoryName || '').toLowerCase().includes(chip) ||
       (s.title || '').toLowerCase().includes(chip) ||
       chip.includes((s.categoryName || '').toLowerCase());
-
-    return matchesSearch && matchesChip;
   });
 
   const displayCategories = categories;
@@ -180,17 +221,18 @@ export default function HomePage() {
 
   const safeCouponIdx = couponSliderIdx % (coupons.length || 1);
   const currentCoupon = coupons[safeCouponIdx] || coupons[0];
+  const safeTickerIdx = tickerIndex % tickerEvents.length;
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      {/* SWIGGY / ZOMATO STYLE LIVE TICKER STRIP */}
+      {/* DYNAMIC REALTIME TICKER STRIP (PROMO CODES, FEEDBACK, REAL ORDERS FROM DATABASE) */}
       <div className="bg-gradient-to-r from-redPrimary via-orangeSecondary to-redDark text-white py-2 px-4 text-xs font-black shadow-md overflow-hidden">
         <div className="web-container flex items-center justify-between">
           <AnimatePresence mode="wait">
             <motion.div
-              key={tickerIndex}
+              key={safeTickerIdx}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -198,7 +240,7 @@ export default function HomePage() {
               className="flex items-center gap-2 truncate"
             >
               <Sparkles className="w-4 h-4 text-amber-300 shrink-0 animate-pulse" />
-              <span className="truncate">{tickerEvents[tickerIndex]}</span>
+              <span className="truncate">{tickerEvents[safeTickerIdx]}</span>
             </motion.div>
           </AnimatePresence>
 
@@ -210,7 +252,7 @@ export default function HomePage() {
 
       <main className="web-container py-6 sm:py-10 flex-1 space-y-10 sm:space-y-14 max-w-7xl mx-auto px-4 sm:px-6 w-full">
 
-        {/* 1. APPLE STYLE GLASSMORPHISM HERO SEARCH BAR */}
+        {/* 1. GLASSMORPHISM HERO SEARCH BAR */}
         <div className="relative max-w-3xl mx-auto w-full group">
           <div className="absolute -inset-1 bg-gradient-to-r from-redPrimary via-orangeSecondary to-amber-500 rounded-3xl blur-md opacity-30 group-hover:opacity-70 transition duration-300" />
           <div className="relative flex items-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-2xl p-2 sm:p-2.5">
@@ -233,10 +275,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 2. HERO BANNER CAROUSEL SLIDER (Positioned above Explore Categories) */}
-        <HeroBanner banners={banners} />
-
-        {/* 3. SWIGGY / ZOMATO STYLE CIRCULAR CATEGORY AVATAR BAR (Positioned below Image Slider) */}
+        {/* 2. EXPLORE CATEGORIES CIRCULAR AVATAR BAR */}
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
             <span className="text-xs font-black uppercase text-redPrimary tracking-widest flex items-center gap-1">
@@ -253,7 +292,7 @@ export default function HomePage() {
               return (
                 <div
                   key={c.id}
-                  onClick={() => setActiveChip(isSelected ? 'ALL' : c.name)}
+                  onClick={() => { setActiveChip(isSelected ? 'ALL' : c.name); setSearchQuery(''); }}
                   className="flex flex-col items-center gap-2 cursor-pointer group shrink-0 w-20 sm:w-24 text-center"
                 >
                   <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 transition-all duration-300 shadow-xl flex items-center justify-center ${
@@ -280,6 +319,9 @@ export default function HomePage() {
             })}
           </div>
         </div>
+
+        {/* 3. HERO BANNER CAROUSEL SLIDER (Positioned below Explore Categories) */}
+        <HeroBanner banners={banners} />
 
         {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
         {coupons.length > 0 && (
@@ -371,9 +413,9 @@ export default function HomePage() {
             <div>
               <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Top Requested</span>
               <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5">
-                {activeChip === 'ALL' ? 'Most Booked Services in Sikkim' : `${activeChip} Services in Gangtok`}
+                {searchQuery ? `Search Results for "${searchQuery}"` : activeChip === 'ALL' ? 'Most Booked Services in Sikkim' : `${activeChip} Services in Gangtok`}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">High-demand technical solutions delivered by local craftsmen</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Found {popularServices.length} verified technical solutions</p>
             </div>
             <Link href="/services" className="btn-primary text-xs py-2 px-4 shadow-md shrink-0 rounded-xl">
               View Catalog <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
@@ -382,8 +424,8 @@ export default function HomePage() {
 
           {popularServices.length === 0 ? (
             <div className="web-card text-center py-16 text-slate-500 space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-lg">
-              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{activeChip}".</p>
-              <button onClick={() => setActiveChip('ALL')} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
+              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{searchQuery || activeChip}".</p>
+              <button onClick={() => { setSearchQuery(''); setActiveChip('ALL'); }} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
                 Reset Filter
               </button>
             </div>

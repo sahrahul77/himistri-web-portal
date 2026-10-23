@@ -342,9 +342,17 @@ export default function AdminControlPanelPage() {
       setNotificationsList(list);
     });
 
+    // Realtime Listener for Promo Codes & Auto-Sync Default Coupons into Firebase Database if empty
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
-      setCouponsList(list.length > 0 ? list : DEFAULT_COUPONS);
+      if (!snapshot.exists() || list.length === 0) {
+        DEFAULT_COUPONS.forEach((c) => {
+          set(ref(rtdb, `coupons/${c.id}`), c);
+        });
+        setCouponsList(DEFAULT_COUPONS);
+      } else {
+        setCouponsList(list);
+      }
     });
 
     return () => {
@@ -383,7 +391,7 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Broadcast Push Notification Functionality with Complete Date/Timestamp Keys
+  // Broadcast Push Notification Functionality
   const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!notifTitle || !notifBody) {
@@ -435,7 +443,7 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // Create & Manage Promo Codes
+  // Create & Save Promo Codes directly to Firebase Database
   const handleAddCoupon = async (e) => {
     e.preventDefault();
     if (!newCouponCode || !newCouponValue) {
@@ -471,8 +479,8 @@ export default function AdminControlPanelPage() {
 
       setPopupState({
         isOpen: true,
-        title: 'Promo Code Saved! 🎟️',
-        message: `Code '${couponCodeClean}' created successfully!\nDiscount: ${newCouponType === 'PERCENTAGE' ? newCouponValue + '% OFF' : 'Flat ₹' + newCouponValue + ' OFF'}`,
+        title: 'Promo Code Saved in Database! 🎟️',
+        message: `Code '${couponCodeClean}' saved to Firebase Realtime Database!\nDiscount: ${newCouponType === 'PERCENTAGE' ? newCouponValue + '% OFF' : 'Flat ₹' + newCouponValue + ' OFF'}`,
         type: 'success'
       });
     } catch (err) {
@@ -606,7 +614,7 @@ export default function AdminControlPanelPage() {
   const handleDeleteConfirm = () => {
     if (!deletingPath) return;
     remove(ref(rtdb, deletingPath)).then(() => {
-      setPopupState({ isOpen: true, title: 'Deleted', message: 'Item deleted successfully.', type: 'info' });
+      setPopupState({ isOpen: true, title: 'Deleted from Firebase', message: 'Item deleted permanently from database.', type: 'info' });
       setDeletingPath(null);
     });
   };
@@ -1736,7 +1744,7 @@ export default function AdminControlPanelPage() {
                             <button
                               type="button"
                               onClick={() => setDeletingPath(`coupons/${currentCouponObj.id}`)}
-                              className="bg-rose-700 hover:bg-rose-800 text-white text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1 transition shadow-sm"
+                              className="bg-rose-700 hover:bg-rose-800 text-white text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1 transition shadow-sm cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Delete Promo Code
                             </button>

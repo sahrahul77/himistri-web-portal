@@ -5,7 +5,7 @@ import PopupModal from '../components/PopupModal';
 import { ref, onValue, update, push, remove, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
-import { UserCircle, MapPin, Save, Plus, Trash2, Lock, LogIn, Phone, Mail, User, ShoppingBag, ArrowRight, CheckCircle2, Clock, Edit } from 'lucide-react';
+import { UserCircle, MapPin, Save, Plus, Trash2, Lock, LogIn, Phone, Mail, User, ShoppingBag, ArrowRight, CheckCircle2, Clock, Edit, Award, Star } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -16,6 +16,7 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [liveUser, setLiveUser] = useState(null);
 
   const [addresses, setAddresses] = useState([]);
   const [editingAddrId, setEditingAddrId] = useState(null);
@@ -74,6 +75,7 @@ export default function ProfilePage() {
     const unsubscribe = onValue(userRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
+        setLiveUser(data);
         setFullName(data.fullName || '');
         setEmail(data.email || '');
         setPhone(data.phoneNumber || '');
@@ -185,6 +187,8 @@ export default function ProfilePage() {
     }
   };
 
+  const isAmazeMember = liveUser?.subscriptionPlan && liveUser?.subscriptionPlan !== 'NONE' && new Date(liveUser?.subscriptionExpiry) > new Date();
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
@@ -211,6 +215,39 @@ export default function ProfilePage() {
               <span className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full uppercase">
                 {currentUser.role || 'CUSTOMER'}
               </span>
+            </div>
+
+            {/* HiMistri Amaze Membership Card */}
+            <div className="web-card p-6 bg-gradient-to-br from-amber-100 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 border border-amber-300 dark:border-amber-700/50 rounded-2xl shadow-xl space-y-4">
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 border-b border-amber-200 dark:border-amber-800/50 pb-3">
+                <Award className="w-6 h-6" />
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">HiMistri Amaze Membership</h2>
+              </div>
+
+              {isAmazeMember ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase bg-amber-500 text-white shadow-md flex items-center gap-1">
+                      <Star className="w-3 h-3" /> Active Member
+                    </span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Valid till: {new Date(liveUser.subscriptionExpiry).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                    Enjoy <strong className="text-emerald-600 dark:text-emerald-400">FREE Visiting Fees (₹0)</strong> on all your doorstep service bookings!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase bg-slate-200 dark:bg-neutral-800 text-slate-500">Not Subscribed</span>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                    Join HiMistri Amaze during checkout to get <strong className="text-emerald-600 dark:text-emerald-400">FREE Visiting Fees (₹0)</strong> on all future orders!
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Profile Credentials Form Card */}

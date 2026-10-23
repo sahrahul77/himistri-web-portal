@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/AuthContext';
-import { Sun, Moon, Phone, User, MapPin, ChevronDown, UserCircle, Map, LogOut, ShieldCheck, HardHat, FileText, Menu, X, Home, Layers, Wrench, Bell } from 'lucide-react';
+import { Sun, Moon, Phone, User, MapPin, ChevronDown, UserCircle, Map, LogOut, ShieldCheck, HardHat, FileText, Menu, X, Home, Layers, Wrench, Bell, Star } from 'lucide-react';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 
@@ -14,6 +14,7 @@ export default function Header({ isDark, onToggleTheme }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [liveUser, setLiveUser] = useState(null);
 
   const dropdownRef = useRef(null);
 
@@ -53,8 +54,11 @@ export default function Header({ isDark, onToggleTheme }) {
         let clearedMap = {};
         if (userSnap.exists()) {
           const userData = userSnap.val();
+          setLiveUser(userData);
           readMap = userData.readNotifications || {};
           clearedMap = userData.clearedNotifications || {};
+        } else {
+          setLiveUser(null);
         }
 
         const isCustomer = !currentUser?.role || currentUser?.role === 'CUSTOMER';
@@ -86,6 +90,8 @@ export default function Header({ isDark, onToggleTheme }) {
 
   const isAdmin = currentUser?.role === 'ADMIN';
   const isPartner = currentUser?.role === 'PARTNER' || currentUser?.role === 'SERVICE_PARTNER';
+
+  const isAmazeMember = liveUser?.subscriptionPlan && liveUser?.subscriptionPlan !== 'NONE' && new Date(liveUser?.subscriptionExpiry) > new Date();
 
   return (
     <header className="sticky top-0 z-50 shadow-2xl">
@@ -175,7 +181,14 @@ export default function Header({ isDark, onToggleTheme }) {
                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-darkSurface rounded-2xl shadow-2xl border border-slate-200 dark:border-neutral-800 overflow-hidden text-slate-800 dark:text-slate-200 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-4 py-3 bg-slate-50 dark:bg-neutral-800/50 border-b border-slate-200 dark:border-neutral-800">
                     <p className="font-extrabold text-sm truncate">{currentUser.fullName}</p>
-                    <p className="text-[10px] text-redPrimary font-bold uppercase tracking-wider">{currentUser.role || 'CUSTOMER'}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-redPrimary font-bold uppercase tracking-wider">{currentUser.role || 'CUSTOMER'}</span>
+                      {isAmazeMember && (
+                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-500/20 text-amber-600 dark:text-amber-500 border border-amber-500/30 flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-500" /> Amaze
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="py-2 flex flex-col">

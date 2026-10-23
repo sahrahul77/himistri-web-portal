@@ -4,11 +4,11 @@ import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PopupModal from '../components/PopupModal';
-import { ref, set, push, onValue } from 'firebase/database';
+import { ref, set, push, onValue, update } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck, Tag, Percent, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck, Tag, Percent, ChevronDown, Award, Star } from 'lucide-react';
 import { DURATION_PLANS, getDurationOptions, getDurationUnitText, calculateDurationPrice } from '../lib/durationHelpers';
 import { DEFAULT_COUPONS } from '../lib/defaultData';
 

@@ -18,7 +18,8 @@ import {
 
 export default function HomePage() {
   const router = useRouter();
-  const [isDark, setIsDark] = useState(true);
+  // Default Website Theme is Light Mode
+  const [isDark, setIsDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
@@ -39,23 +40,50 @@ export default function HomePage() {
 
   const { currentUser, isAuthLoaded } = useAuth();
 
-  // Dynamic Ticker Events retrieved directly from Firebase Realtime Database
+  // Helper to extract clean locality (e.g. "Lower Sichey, Gangtok") without exact house numbers or PIN codes
+  const extractLocality = (fullAddr) => {
+    if (!fullAddr) return 'Gangtok, Sikkim';
+    const parts = fullAddr.replace(/PIN:?\s*\d+/gi, '').replace(/\b\d+\b/g, '').split(',').map(s => s.trim()).filter(Boolean);
+
+    if (parts.length >= 2) {
+      const locality = parts[parts.length - 2];
+      const city = parts[parts.length - 1];
+      if (locality.toLowerCase() !== city.toLowerCase()) {
+        return `${locality}, ${city}`;
+      }
+      return city;
+    }
+    return parts[0] || 'Gangtok, Sikkim';
+  };
+
+  // Dynamic Ticker Events retrieved directly from Firebase Realtime Database with polished privacy grammar
   const tickerEvents = [];
 
+  // 1. Include REAL Coupons from Database
   coupons.forEach((c) => {
-    tickerEvents.push(`🎉 Promo Code: Use '${c.code}' to get ${c.discountType === 'PERCENTAGE' ? c.discountValue + '% OFF' : 'Flat ₹' + c.discountValue + ' OFF'}!`);
+    tickerEvents.push(`🎉 Special Offer: Use promo code '${c.code}' to get ${c.discountType === 'PERCENTAGE' ? c.discountValue + '% OFF' : 'Flat ₹' + c.discountValue + ' OFF'} on doorstep services!`);
   });
 
+  // 2. Include REAL Customer Reviews/Feedback from Database
   testimonials.forEach((t) => {
-    tickerEvents.push(`⭐ Customer Feedback by ${t.name || 'Sikkim Resident'}: "${t.text || 'Great doorstep service!'}" (${t.rating || 5}★)`);
+    const loc = extractLocality(t.location);
+    tickerEvents.push(`⭐ Customer Review: ${t.name || 'Resident'} from ${loc} rated HiMistri ${t.rating || 5}.0★!`);
   });
 
+  // 3. Include ONLY REAL Orders/Bookings that exist in Database with polished privacy grammar
   bookings.forEach((b) => {
-    tickerEvents.push(`⚡ Real Order: ${b.serviceTitle} in ${b.address || 'Gangtok'} • Status: ${b.status || 'ACTIVE'}`);
+    const loc = extractLocality(b.address);
+    const st = (b.status || '').toUpperCase();
+    if (st === 'COMPLETED') {
+      tickerEvents.push(`⚡ Order Fulfilled: An order for ${b.serviceTitle} from ${loc} has been successfully fulfilled by HiMistri!`);
+    } else {
+      tickerEvents.push(`⚡ Order Update: An order for ${b.serviceTitle} from ${loc} is currently being fulfilled by HiMistri!`);
+    }
   });
 
+  // Fallback if empty database
   if (tickerEvents.length === 0) {
-    tickerEvents.push("⚡ Welcome to HiMistri: Sikkim's #1 Doorstep Service Platform!");
+    tickerEvents.push("⚡ Welcome to HiMistri: Sikkim's #1 Doorstep Technical Service Platform!");
   }
 
   useEffect(() => {
@@ -73,20 +101,37 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [coupons]);
 
+  // Sync saved theme or default to Light Mode
   useEffect(() => {
-    if (isDark) {
+    const savedTheme = localStorage.getItem('himistri_theme') || 'light';
+    const isDarkTheme = savedTheme === 'dark';
+    setIsDark(isDarkTheme);
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
-  }, [isDark]);
+  }, []);
 
   const toggleTheme = () => {
-    setIsDark(prev => !prev);
+    setIsDark(prev => {
+      const nextDark = !prev;
+      if (nextDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('himistri_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('himistri_theme', 'light');
+      }
+      return nextDark;
+    });
   };
 
+  // Strictly purge any category from Firebase Database where "manpower" is NOT written in the category name
   useEffect(() => {
     const categoriesRef = ref(rtdb, 'categories');
     onValue(categoriesRef, (snapshot) => {
@@ -102,6 +147,7 @@ export default function HomePage() {
     }, { onlyOnce: true });
   }, []);
 
+  // Fetch Live Realtime Database Nodes (Categories, Services, Banners, Coupons, Testimonials, Bookings)
   useEffect(() => {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
@@ -221,7 +267,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
       <Header isDark={isDark} onToggleTheme={toggleTheme} currentUser={currentUser} />
 
-      {/* DYNAMIC REALTIME TICKER STRIP */}
+      {/* DYNAMIC REALTIME TICKER STRIP WITH POLISHED PRIVACY GRAMMAR */}
       <div className="bg-gradient-to-r from-redPrimary via-orangeSecondary to-redDark text-white py-2 px-4 text-xs font-black shadow-md overflow-hidden">
         <div className="web-container flex items-center justify-between">
           <AnimatePresence mode="wait">
@@ -359,7 +405,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 3. HERO BANNER CAROUSEL SLIDER (Positioned below Explore Categories) */}
+        {/* 3. HERO BANNER CAROUSEL SLIDER */}
         <HeroBanner banners={banners} />
 
         {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
@@ -446,7 +492,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 5. POPULAR SERVICES GRID SHOWCASE (SWIGGY + APPLE STYLE) */}
+        {/* 5. POPULAR SERVICES GRID SHOWCASE */}
         <div className="space-y-6">
           <div className="flex justify-between items-end border-b border-slate-200 dark:border-neutral-800 pb-3">
             <div>

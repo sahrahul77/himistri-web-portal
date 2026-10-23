@@ -4,9 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 
 function AuthGuard({ children }) {
+  // Default theme is Light Mode across the entire website
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-    document.documentElement.setAttribute('data-theme', 'dark');
+    const savedTheme = localStorage.getItem('himistri_theme') || 'light';
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
   }, []);
 
   const { currentUser, isAuthLoaded } = useAuth();
@@ -28,7 +35,7 @@ function AuthGuard({ children }) {
 
   if (!isAuthLoaded) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0F0F0F] flex items-center justify-center">
         <div className="text-slate-500 font-bold text-sm">Verifying Secure Session...</div>
       </div>
     );

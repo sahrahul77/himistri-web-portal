@@ -61,8 +61,8 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState('');
   const [couponsList, setCouponsList] = useState(DEFAULT_COUPONS);
 
-  // HiMistri Prime Subscription Upsell State
-  const [selectedPrimePlan, setSelectedPrimePlan] = useState(null); // '3_MONTHS' | '1_YEAR'
+  // HiMistri Amaze Subscription Upsell State
+  const [selectedAmazePlan, setSelectedAmazePlan] = useState(null); // '3_MONTHS' | '1_YEAR'
 
   // Platform Fees & Taxes
   const [platformFees, setPlatformFees] = useState({ visitingFee: 49, gstPercentage: 5, surgeFee: 0, surgeFeeReason: '' });
@@ -215,17 +215,17 @@ export default function CheckoutPage() {
 
   const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountAmount);
 
-  // Check if User is a HiMistri Prime Subscriber to waive Visiting Fee
-  const isHiMistriPrimeSub = currentUser && currentUser.subscriptionPlan && currentUser.subscriptionPlan !== 'NONE' && new Date(currentUser.subscriptionExpiry) > new Date();
+  // Check if User is a HiMistri Amaze Subscriber to waive Visiting Fee
+  const isHiMistriAmazeSub = currentUser && currentUser.subscriptionPlan && currentUser.subscriptionPlan !== 'NONE' && new Date(currentUser.subscriptionExpiry) > new Date();
 
   // Dynamic Taxes & Fees Calculation
-  const visitingFee = (isHiMistriPrimeSub || selectedPrimePlan) ? 0 : (platformFees.visitingFee || 0);
+  const visitingFee = (isHiMistriAmazeSub || selectedAmazePlan) ? 0 : (platformFees.visitingFee || 0);
   const surgeFee = platformFees.surgeFee || 0;
   const gstAmount = Math.round((subtotalAfterDiscount * (platformFees.gstPercentage || 0)) / 100);
   const totalTaxesAndFees = visitingFee + surgeFee + gstAmount;
 
-  const primeSubscriptionCost = selectedPrimePlan === '3_MONTHS' ? 199 : selectedPrimePlan === '1_YEAR' ? 799 : 0;
-  const finalTotalAmount = subtotalAfterDiscount + totalTaxesAndFees + primeSubscriptionCost;
+  const amazeSubscriptionCost = selectedAmazePlan === '3_MONTHS' ? 199 : selectedAmazePlan === '1_YEAR' ? 799 : 0;
+  const finalTotalAmount = subtotalAfterDiscount + totalTaxesAndFees + amazeSubscriptionCost;
 
   // Apply Promo Code Handler
   const handleApplyPromoCode = (e) => {
@@ -315,15 +315,15 @@ export default function CheckoutPage() {
       }
     }
 
-    // Process HiMistri Prime Subscription Purchase
-    if (selectedPrimePlan && currentUser) {
+    // Process HiMistri Amaze Subscription Purchase
+    if (selectedAmazePlan && currentUser) {
       try {
         const expiry = new Date();
-        if (selectedPrimePlan === '3_MONTHS') expiry.setMonth(expiry.getMonth() + 3);
-        if (selectedPrimePlan === '1_YEAR') expiry.setFullYear(expiry.getFullYear() + 1);
+        if (selectedAmazePlan === '3_MONTHS') expiry.setMonth(expiry.getMonth() + 3);
+        if (selectedAmazePlan === '1_YEAR') expiry.setFullYear(expiry.getFullYear() + 1);
 
         await update(ref(rtdb, `users/${currentUser.id}`), {
-          subscriptionPlan: selectedPrimePlan,
+          subscriptionPlan: selectedAmazePlan,
           subscriptionExpiry: expiry.toISOString()
         });
       } catch (subErr) {
@@ -358,7 +358,7 @@ export default function CheckoutPage() {
       gstAmount: gstAmount,
       gstPercentage: platformFees.gstPercentage || 0,
       totalTaxesAndFees: totalTaxesAndFees,
-      primeSubscriptionCost: primeSubscriptionCost,
+      amazeSubscriptionCost: amazeSubscriptionCost,
       totalAmount: finalTotalAmount,
       scheduledDate: date,
       scheduledTimeSlot: slot,
@@ -608,13 +608,13 @@ export default function CheckoutPage() {
           {/* Right Column: Order Price Summary & Promo Code Box */}
           <div className="space-y-6">
 
-            {/* HiMistri Prime Upsell Box */}
-            {!isHiMistriPrimeSub && (
+            {/* HiMistri Amaze Upsell Box */}
+            {!isHiMistriAmazeSub && (
               <div className="web-card p-5 bg-gradient-to-br from-amber-100 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 border border-amber-300 dark:border-amber-700/50 rounded-2xl shadow-md space-y-4">
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
                   <Award className="w-6 h-6" />
                   <div>
-                    <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">HiMistri Prime</h3>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">HiMistri Amaze</h3>
                   </div>
                 </div>
                 <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
@@ -624,25 +624,25 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setSelectedPrimePlan(selectedPrimePlan === '3_MONTHS' ? null : '3_MONTHS')}
-                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden ${selectedPrimePlan === '3_MONTHS' ? 'border-amber-500 bg-amber-500/15 shadow-md' : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-amber-400'}`}
+                    onClick={() => setSelectedAmazePlan(selectedAmazePlan === '3_MONTHS' ? null : '3_MONTHS')}
+                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden ${selectedAmazePlan === '3_MONTHS' ? 'border-amber-500 bg-amber-500/15 shadow-md' : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-amber-400'}`}
                   >
                     <div className="flex justify-between items-start">
                       <span className="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200">3 Months</span>
-                      {selectedPrimePlan === '3_MONTHS' && <CheckCircle className="w-4 h-4 text-amber-600" />}
+                      {selectedAmazePlan === '3_MONTHS' && <CheckCircle className="w-4 h-4 text-amber-600" />}
                     </div>
                     <span className="text-base font-black text-amber-600 block mt-2">₹199</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setSelectedPrimePlan(selectedPrimePlan === '1_YEAR' ? null : '1_YEAR')}
-                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden ${selectedPrimePlan === '1_YEAR' ? 'border-amber-500 bg-amber-500/15 shadow-md' : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-amber-400'}`}
+                    onClick={() => setSelectedAmazePlan(selectedAmazePlan === '1_YEAR' ? null : '1_YEAR')}
+                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden ${selectedAmazePlan === '1_YEAR' ? 'border-amber-500 bg-amber-500/15 shadow-md' : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-amber-400'}`}
                   >
                     <div className="absolute top-0 right-0 bg-redPrimary text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg">BEST VALUE</div>
                     <div className="flex justify-between items-start mt-1">
                       <span className="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200">1 Year</span>
-                      {selectedPrimePlan === '1_YEAR' && <CheckCircle className="w-4 h-4 text-amber-600" />}
+                      {selectedAmazePlan === '1_YEAR' && <CheckCircle className="w-4 h-4 text-amber-600" />}
                     </div>
                     <span className="text-base font-black text-amber-600 block mt-1">₹799</span>
                   </button>
@@ -716,16 +716,16 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {selectedPrimePlan && (
+                {selectedAmazePlan && (
                   <div className="flex justify-between text-amber-500 font-extrabold">
-                    <span>HiMistri Prime ({selectedPrimePlan === '3_MONTHS' ? '3 Months' : '1 Year'}):</span>
-                    <span>+₹{primeSubscriptionCost}</span>
+                    <span>HiMistri Amaze ({selectedAmazePlan === '3_MONTHS' ? '3 Months' : '1 Year'}):</span>
+                    <span>+₹{amazeSubscriptionCost}</span>
                   </div>
                 )}
 
-                {(isHiMistriPrimeSub || selectedPrimePlan) && (
+                {(isHiMistriAmazeSub || selectedAmazePlan) && (
                   <div className="flex justify-between text-amber-500 font-extrabold pb-2 border-b border-dashed border-slate-200 dark:border-neutral-800">
-                    <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" /> Prime Benefits:</span>
+                    <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" /> Amaze Benefits:</span>
                     <span>Free Visiting Fee (₹0)</span>
                   </div>
                 )}
@@ -751,13 +751,13 @@ export default function CheckoutPage() {
                       >
                         <div className="flex justify-between pt-1">
                           <span>Visiting / Platform Fee</span>
-                          <span className={(isHiMistriPrimeSub || selectedPrimePlan) ? 'text-amber-500 line-through' : ''}>
+                          <span className={(isHiMistriAmazeSub || selectedAmazePlan) ? 'text-amber-500 line-through' : ''}>
                             ₹{platformFees.visitingFee || 0}
                           </span>
                         </div>
-                        {(isHiMistriPrimeSub || selectedPrimePlan) && (
+                        {(isHiMistriAmazeSub || selectedAmazePlan) && (
                           <div className="flex justify-between text-amber-500 font-bold">
-                            <span>Prime Waived</span>
+                            <span>Amaze Waived</span>
                             <span>-₹{platformFees.visitingFee || 0}</span>
                           </div>
                         )}

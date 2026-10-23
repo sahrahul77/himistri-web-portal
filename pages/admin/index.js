@@ -677,8 +677,8 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // HiMistri One Subscription Toggles
-  const handleToggleHiMistriOne = async (userId, planType) => {
+  // HiMistri Amaze Subscription Toggles
+  const handleToggleHiMistriAmaze = async (userId, planType) => {
     try {
       const expiry = new Date();
       if (planType === '3_MONTHS') expiry.setMonth(expiry.getMonth() + 3);
@@ -691,8 +691,8 @@ export default function AdminControlPanelPage() {
 
       setPopupState({
         isOpen: true,
-        title: 'HiMistri One Activated',
-        message: `User granted ${planType.replace('_', ' ')} of HiMistri One (Free Visiting Fees).`,
+        title: 'HiMistri Amaze Activated',
+        message: `User granted ${planType.replace('_', ' ')} of HiMistri Amaze (Free Visiting Fees).`,
         type: 'success'
       });
     } catch (err) {
@@ -700,7 +700,7 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  const handleRevokeHiMistriOne = async (userId) => {
+  const handleRevokeHiMistriAmaze = async (userId) => {
     try {
       await update(ref(rtdb, `users/${userId}`), {
         subscriptionPlan: 'NONE',
@@ -709,8 +709,8 @@ export default function AdminControlPanelPage() {
 
       setPopupState({
         isOpen: true,
-        title: 'HiMistri One Revoked',
-        message: 'User no longer has HiMistri One benefits.',
+        title: 'HiMistri Amaze Revoked',
+        message: 'User no longer has HiMistri Amaze benefits.',
         type: 'info'
       });
     } catch (err) {
@@ -1566,8 +1566,8 @@ export default function AdminControlPanelPage() {
                 handleAddTestimonial={handleAddTestimonial} newTestName={newTestName} setNewTestName={setNewTestName} newTestLoc={newTestLoc} setNewTestLoc={setNewTestLoc} newTestText={newTestText} setNewTestText={setNewTestText}
                 handleAddFaq={handleAddFaq} newFaqQ={newFaqQ} setNewFaqQ={setNewFaqQ} newFaqA={newFaqA} setNewFaqA={setNewFaqA}
                 handleImageFileUpload={handleImageFileUpload}
-                handleToggleHiMistriOne={handleToggleHiMistriOne}
-                handleRevokeHiMistriOne={handleRevokeHiMistriOne}
+                handleToggleHiMistriAmaze={handleToggleHiMistriAmaze}
+                handleRevokeHiMistriAmaze={handleRevokeHiMistriAmaze}
               />
             )}
 
@@ -2106,8 +2106,8 @@ export default function AdminControlPanelPage() {
         skillMatchedCount={skillMatchedCount} freePartnersCount={freePartnersCount} allPartnersList={allPartnersList}
         categoriesList={categoriesList}
         handleImageFileUpload={handleImageFileUpload}
-        handleToggleHiMistriOne={handleToggleHiMistriOne}
-        handleRevokeHiMistriOne={handleRevokeHiMistriOne}
+        handleToggleHiMistriAmaze={handleToggleHiMistriAmaze}
+        handleRevokeHiMistriAmaze={handleRevokeHiMistriAmaze}
       />
 
       <Footer />

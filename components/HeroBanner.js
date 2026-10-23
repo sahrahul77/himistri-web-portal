@@ -18,9 +18,9 @@ export default function HeroBanner({ banners }) {
   const slide = banners[index] || banners[0];
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-neutral-800 shadow-2xl aspect-[16/8] sm:aspect-[16/6] lg:aspect-[21/8] bg-neutral-900 group">
+    <div className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-neutral-800 shadow-2xl aspect-[16/8] sm:aspect-[16/6] lg:aspect-[21/8] bg-black group">
 
-      {/* 100% Ultra-HD High-Definition Sharp Crisp Banner & Ad Image */}
+      {/* 100% Native Ultra-HD Sharp Crisp Image Container */}
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
@@ -28,12 +28,12 @@ export default function HeroBanner({ banners }) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.99 }}
           transition={{ duration: 0.35, ease: "easeInOut" }}
-          className="absolute inset-0 w-full h-full"
+          className="absolute inset-0 w-full h-full flex items-center justify-center bg-black"
         >
           <img
             src={slide.imageUrl}
-            alt={slide.title || "Banner Ad"}
-            className="w-full h-full object-cover rounded-2xl sm:rounded-3xl"
+            alt={slide.title || "HiMistri Banner"}
+            className="w-full h-full object-cover object-center rounded-2xl sm:rounded-3xl"
             style={{
               imageRendering: '-webkit-optimize-contrast',
               WebkitBackfaceVisibility: 'hidden',
@@ -43,7 +43,7 @@ export default function HeroBanner({ banners }) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Subtle Bottom Gradient Overlay for Navigation Indicator Visibility */}
+      {/* Minimal Subtle Edge Gradient Mask for Navigation Indicator Visibility */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none rounded-2xl sm:rounded-3xl" />
 
       {/* Sleek Floating Glassmorphic Navigation Controls */}

@@ -133,7 +133,7 @@ export default function AdminControlPanelPage() {
     setIsDark(prev => !prev);
   };
 
-  // HTML5 Canvas 2000px Ultra-HD Image Quality Preserver
+  // HTML5 Canvas 100% Native High-Definition File Preserver
   const handleImageFileUpload = (e, callback) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -150,10 +150,25 @@ export default function AdminControlPanelPage() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
+      const originalDataUrl = event.target.result;
+
+      // If file is under 3MB, preserve 100% raw uncompressed data URL for zero quality loss!
+      if (file.size <= 3 * 1024 * 1024) {
+        callback(originalDataUrl);
+        setPopupState({
+          isOpen: true,
+          title: 'HD Image Loaded!',
+          message: `100% Uncompressed Native HD Image selected (${Math.round(file.size / 1024)} KB) with zero quality loss.`,
+          type: 'success'
+        });
+        return;
+      }
+
+      // Otherwise scale down large >3MB images safely
       const img = new Image();
       img.onload = () => {
-        const MAX_WIDTH = 2000;
-        const MAX_HEIGHT = 2000;
+        const MAX_WIDTH = 2400;
+        const MAX_HEIGHT = 2400;
         let width = img.width;
         let height = img.height;
 
@@ -175,7 +190,7 @@ export default function AdminControlPanelPage() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
         callback(compressedDataUrl);
 
@@ -186,7 +201,7 @@ export default function AdminControlPanelPage() {
           type: 'success'
         });
       };
-      img.src = event.target.result;
+      img.src = originalDataUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -412,7 +427,7 @@ export default function AdminControlPanelPage() {
     });
   };
 
-  // Broadcast Push Notification Functionality with Complete Date/Timestamp Keys
+  // Broadcast Push Notification Functionality
   const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!notifTitle || !notifBody) {

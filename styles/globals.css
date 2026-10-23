@@ -124,6 +124,25 @@ input, select, textarea {
   min-height: 42px;
 }
 
+/* FORCE DATE PICKER & NATIVE DROPDOWN COLOR IN LIGHT/DARK MODE */
+input[type="date"] {
+  color: var(--text-main);
+  background-color: var(--surface-color);
+}
+input[type="date"]::-webkit-datetime-edit {
+  color: var(--text-main);
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+select option {
+  background-color: var(--surface-color);
+  color: var(--text-main);
+}
+
 /* Custom Scrollbar Hiding Utility */
 .scrollbar-none::-webkit-scrollbar {
   display: none;

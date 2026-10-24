@@ -611,7 +611,7 @@ export default function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'CASH_ON_DELIVERY' ? 'border-redPrimary bg-redPrimary/5' : 'border-slate-200 dark:border-neutral-800'}`}>
-                  <input type="radio" name="payMethod" checked={paymentMethod === 'CASH_ON_DELIVERY'} onChange={() => setPaymentMethod('CASH_ON_DELIVERY')} className="text-redPrimary" />
+                  <input type="radio" name="payMethod" checked={paymentMethod === 'CASH_ON_DELIVERY'} onChange={() => setPaymentMethod('CASH_ON_DELIVERY')} className="text-redPrimary shrink-0" />
                   <div>
                     <strong className="text-xs font-extrabold block text-slate-900 dark:text-white">Cash on Service (COD)</strong>
                     <span className="text-[10px] text-slate-500">Pay after completion to technician</span>
@@ -619,13 +619,21 @@ export default function CheckoutPage() {
                 </label>
 
                 <label className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition ${paymentMethod === 'ONLINE_UPI' ? 'border-redPrimary bg-redPrimary/5' : 'border-slate-200 dark:border-neutral-800'}`}>
-                  <input type="radio" name="payMethod" checked={paymentMethod === 'ONLINE_UPI'} onChange={() => setPaymentMethod('ONLINE_UPI')} className="text-redPrimary" />
+                  <input type="radio" name="payMethod" checked={paymentMethod === 'ONLINE_UPI'} onChange={() => setPaymentMethod('ONLINE_UPI')} className="text-redPrimary shrink-0" />
                   <div>
-                    <strong className="text-xs font-extrabold block text-slate-900 dark:text-white">Online UPI / GPay / PhonePe</strong>
-                    <span className="text-[10px] text-slate-500">Scan QR or pay online</span>
+                    <strong className="text-xs font-extrabold block text-slate-900 dark:text-white">Online Payment</strong>
+                    <span className="text-[10px] text-slate-500">Cards, UPI, GPay, Razorpay</span>
                   </div>
                 </label>
               </div>
+
+              {/* Online Payment Explainer */}
+              {paymentMethod === 'ONLINE_UPI' && (
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50 rounded-xl text-[11px] text-blue-700 dark:text-blue-400 font-bold flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p>You will be redirected to our secure Razorpay gateway to complete your payment using Credit/Debit Cards, UPI apps (GPay, PhonePe, Paytm), or Netbanking after you click "Confirm & Place Order".</p>
+                </div>
+              )}
             </div>
 
           </div>

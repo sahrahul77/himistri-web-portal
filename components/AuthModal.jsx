@@ -20,21 +20,27 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setShowOtpStep(false);
       setErrorMsg('');
       setLoading(false);
+
+      // Pre-initialize reCAPTCHA safely after DOM mounts
+      const timer = setTimeout(() => {
+        if (!window.recaptchaVerifier && document.getElementById('recaptcha-container')) {
+          try {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+              size: 'invisible',
+              callback: (response) => {
+                // reCAPTCHA solved
+              }
+            });
+          } catch (e) {
+            console.error("Recaptcha Init Error:", e);
+          }
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: (response) => {
-          // reCAPTCHA solved
-        }
-      });
-    }
-  };
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -47,7 +53,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     }
 
     setLoading(true);
-    setupRecaptcha();
+
+    // Initialize recaptcha if it wasn't pre-initialized
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible'
+      });
+    }
 
     const formattedPhone = `+91${cleanPhone}`;
     const appVerifier = window.recaptchaVerifier;
@@ -58,14 +70,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setShowOtpStep(true);
       setLoading(false);
     } catch (error) {
-      console.error("SMS Error:", error);
-      setErrorMsg('Failed to send OTP SMS. Please try again later.');
+      console.error("SMS Error Details:", error);
+      let errorText = 'Failed to send OTP SMS. Please try again later.';
+
+      // Provide clearer Firebase Error Messages
+      if (error.code === 'auth/unauthorized-domain') {
+        errorText = 'Error: This domain is not authorized in Firebase Console (Authentication -> Settings -> Authorized domains).';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorText = 'Too many SMS requests. Please try again later or use a different number.';
+      } else if (error.message) {
+        errorText = error.message; // Show exact firebase error
+      }
+
+      setErrorMsg(errorText);
       setLoading(false);
+
       // Reset reCAPTCHA if failed
       if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.render().then(widgetId => {
-          window.recaptchaVerifier.reset(widgetId);
-        });
+        try {
+          window.recaptchaVerifier.render().then(widgetId => {
+            window.recaptchaVerifier.reset(widgetId);
+          });
+        } catch(e) {}
       }
     }
   };

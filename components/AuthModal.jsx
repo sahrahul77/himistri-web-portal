@@ -1,110 +1,235 @@
-import React, { useState } from 'react';
-import { X, CheckCircle, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Phone, ShieldCheck, Loader2, MessageSquare, ArrowRight } from 'lucide-react';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { ref, get, set } from 'firebase/database';
+import { auth, rtdb } from '../lib/firebase';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  const [authInput, setAuthInput] = useState('');
-  const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [showOtpStep, setShowOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState(null);
+
+  useEffect(() => {
+    // Reset state when modal opens/closes
+    if (isOpen) {
+      setPhoneNumber('');
+      setOtpCode('');
+      setShowOtpStep(false);
+      setErrorMsg('');
+      setLoading(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const phone = authInput || '+916296351107';
-    onAuthSuccess({
-      id: 'usr_' + Math.random().toString(36).substring(2, 8),
-      fullName: 'Passang Bhutia',
-      phoneNumber: phone,
-      role: 'CUSTOMER'
-    });
-    onClose();
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: (response) => {
+          // reCAPTCHA solved
+        }
+      });
+    }
   };
 
-  const handleOtpVerify = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
-    onAuthSuccess({
-      id: 'usr_' + Math.random().toString(36).substring(2, 8),
-      fullName: 'Verified Customer',
-      phoneNumber: authInput || '+916296351107',
-      role: 'CUSTOMER'
-    });
-    setShowOtpStep(false);
-    onClose();
+    setErrorMsg('');
+    const cleanPhone = phoneNumber.replace(/\D/g, '').slice(-10);
+
+    if (cleanPhone.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    setLoading(true);
+    setupRecaptcha();
+
+    const formattedPhone = `+91${cleanPhone}`;
+    const appVerifier = window.recaptchaVerifier;
+
+    try {
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setShowOtpStep(true);
+      setLoading(false);
+    } catch (error) {
+      console.error("SMS Error:", error);
+      setErrorMsg('Failed to send OTP SMS. Please try again later.');
+      setLoading(false);
+      // Reset reCAPTCHA if failed
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.render().then(widgetId => {
+          window.recaptchaVerifier.reset(widgetId);
+        });
+      }
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+
+    if (otpCode.trim().length < 6) {
+      setErrorMsg('Please enter the complete 6-digit OTP code.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Verify OTP code
+      const result = await confirmationResult.confirm(otpCode);
+      const fbUser = result.user;
+
+      const userPhoneStr = fbUser.phoneNumber || `+91${phoneNumber.replace(/\D/g, '').slice(-10)}`;
+
+      // Check if user exists in RTDB
+      const snapshot = await get(ref(rtdb, 'users'));
+      let matchedUser = null;
+
+      if (snapshot.exists()) {
+        snapshot.forEach((childSnap) => {
+          const u = childSnap.val();
+          const uPhone = (u.phoneNumber || '').replace(/\D/g, '').slice(-10);
+          const currentPhone = userPhoneStr.replace(/\D/g, '').slice(-10);
+
+          if (currentPhone.length >= 10 && uPhone === currentPhone) {
+            matchedUser = { id: childSnap.key, ...u };
+          }
+        });
+      }
+
+      // If user doesn't exist, create a new customer record
+      if (!matchedUser) {
+        const newId = 'usr_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+        matchedUser = {
+          id: newId,
+          fullName: 'HiMistri Customer',
+          phoneNumber: userPhoneStr,
+          email: '',
+          role: 'CUSTOMER',
+          createdAt: new Date().toISOString()
+        };
+        await set(ref(rtdb, 'users/' + newId), matchedUser);
+      }
+
+      setLoading(false);
+      onAuthSuccess(matchedUser);
+      onClose();
+    } catch (error) {
+      console.error("OTP Verification Error:", error);
+      setErrorMsg('Invalid OTP Code. Please double-check the SMS.');
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-neutral-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-200">
-          <X className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-neutral-800 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+
+        {/* Decorative Background */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-redPrimary/5 rounded-full blur-3xl -z-10 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-orangeSecondary/5 rounded-full blur-3xl -z-10 pointer-events-none" />
+
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-neutral-800 text-slate-400 hover:text-redPrimary rounded-full transition"
+        >
+          <X className="w-4 h-4" />
         </button>
 
-        {!showOtpStep ? (
-          <div>
-            <h3 className="text-xl font-bold mb-1">Sign In to HiMistri</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">Enter your registered mobile number or email credentials</p>
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Mobile Number OR Email Address</label>
-                <input
-                  type="text"
-                  value={authInput}
-                  onChange={(e) => setAuthInput(e.target.value)}
-                  placeholder="e.g. 9564111224 or user@gmail.com"
-                  className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm focus:outline-none focus:border-redPrimary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Password * (Compulsory)</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm focus:outline-none focus:border-redPrimary"
-                />
-              </div>
-
-              <button type="submit" className="w-full bg-redPrimary hover:bg-redDark text-white py-3 rounded-lg font-bold text-sm transition">
-                Sign In & Access Account
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowOtpStep(true)}
-                className="w-full bg-orangeSecondary text-white py-3 rounded-lg font-bold text-sm transition"
-              >
-                Send Phone Verification OTP Code
-              </button>
-            </form>
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 mx-auto bg-redPrimary text-white rounded-2xl flex items-center justify-center shadow-lg mb-3">
+            <ShieldCheck className="w-7 h-7" />
           </div>
-        ) : (
-          <div>
-            <h3 className="text-xl font-bold mb-1">Phone OTP Verification</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">SMS code sent to +91{authInput.replace(/\D/g, '').slice(-10) || '9563213089'}</p>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white">Quick Login</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {!showOtpStep ? "Enter your mobile number to receive a secure code" : "Enter the 6-digit code sent to your phone"}
+          </p>
+        </div>
 
-            <form onSubmit={handleOtpVerify} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Enter 6-Digit OTP Code</label>
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs font-bold text-rose-600 text-center">
+            {errorMsg}
+          </div>
+        )}
+
+        {!showOtpStep ? (
+          <form onSubmit={handleSendOtp} className="space-y-4">
+            <div>
+              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Mobile Number (+91)</label>
+              <div className="relative">
+                <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                  placeholder="e.g. 9564111224"
+                  className="w-full pl-10 p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                />
+              </div>
+            </div>
+
+            {/* Invisible reCAPTCHA container required by Firebase */}
+            <div id="recaptcha-container"></div>
+
+            <button
+              type="submit"
+              disabled={loading || phoneNumber.length !== 10}
+              className={`btn-primary w-full py-4 text-xs font-black shadow-lg rounded-xl flex justify-center items-center gap-2 transition ${loading || phoneNumber.length !== 10 ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {loading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Sending Secure SMS...</>
+              ) : (
+                <>Send Secure OTP SMS <ArrowRight className="w-4 h-4" /></>
+              )}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <div>
+              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Secure 6-Digit OTP</label>
+              <div className="relative">
+                <MessageSquare className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
                 <input
                   type="text"
                   maxLength={6}
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="e.g. 123456"
-                  className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 text-sm focus:outline-none focus:border-redPrimary"
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="• • • • • •"
+                  className="w-full pl-10 p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-lg font-black text-slate-900 dark:text-white outline-none focus:border-redPrimary tracking-widest text-center"
                 />
               </div>
+            </div>
 
-              <button type="submit" className="w-full bg-redPrimary hover:bg-redDark text-white py-3 rounded-lg font-bold text-sm transition">
-                Verify OTP Code & Access Account
-              </button>
-            </form>
-          </div>
+            <button
+              type="submit"
+              disabled={loading || otpCode.length < 6}
+              className={`btn-primary w-full py-4 text-xs font-black shadow-lg rounded-xl flex justify-center items-center gap-2 transition ${loading || otpCode.length < 6 ? 'opacity-70 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 border-emerald-600'}`}
+            >
+              {loading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...</>
+              ) : (
+                <><ShieldCheck className="w-4 h-4" /> Verify & Access Account</>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setShowOtpStep(false); setOtpCode(''); }}
+              className="w-full text-center text-xs font-bold text-slate-500 hover:text-redPrimary mt-2"
+            >
+              Change Mobile Number
+            </button>
+          </form>
         )}
+
       </div>
     </div>
   );

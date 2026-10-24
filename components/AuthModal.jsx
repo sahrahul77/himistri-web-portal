@@ -54,6 +54,16 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
     setLoading(true);
 
+    // TEST MODE BYPASS: If test number used, bypass Firebase SMS entirely
+    if (cleanPhone === '9999999999') {
+      setTimeout(() => {
+        setConfirmationResult({ isMock: true, phone: cleanPhone });
+        setShowOtpStep(true);
+        setLoading(false);
+      }, 800);
+      return;
+    }
+
     // Initialize recaptcha if it wasn't pre-initialized
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -76,6 +86,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       // Provide clearer Firebase Error Messages
       if (error.code === 'auth/unauthorized-domain') {
         errorText = 'Error: This domain is not authorized in Firebase Console (Authentication -> Settings -> Authorized domains).';
+      } else if (error.code === 'auth/billing-not-enabled') {
+        errorText = 'Firebase Billing Error: SMS requires the Blaze (Pay-as-you-go) plan. (Use 9999999999 to test UI)';
       } else if (error.code === 'auth/too-many-requests') {
         errorText = 'Too many SMS requests. Please try again later or use a different number.';
       } else if (error.message) {
@@ -108,11 +120,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setLoading(true);
 
     try {
-      // Verify OTP code
-      const result = await confirmationResult.confirm(otpCode);
-      const fbUser = result.user;
+      let userPhoneStr = '';
 
-      const userPhoneStr = fbUser.phoneNumber || `+91${phoneNumber.replace(/\D/g, '').slice(-10)}`;
+      if (confirmationResult?.isMock) {
+        if (otpCode !== '123456') {
+          throw new Error('Invalid Test OTP. Please enter 123456');
+        }
+        userPhoneStr = `+91${confirmationResult.phone}`;
+      } else {
+        // Verify OTP code normally via Firebase
+        const result = await confirmationResult.confirm(otpCode);
+        const fbUser = result.user;
+        userPhoneStr = fbUser.phoneNumber || `+91${phoneNumber.replace(/\D/g, '').slice(-10)}`;
+      }
 
       // Check if user exists in RTDB
       const snapshot = await get(ref(rtdb, 'users'));

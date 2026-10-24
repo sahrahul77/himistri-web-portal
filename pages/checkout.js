@@ -79,6 +79,12 @@ export default function CheckoutPage() {
   const [pendingBookingData, setPendingBookingData] = useState(null);
   const [isProcessingGateway, setIsProcessingGateway] = useState(false);
 
+  const [activePaymentTab, setActivePaymentTab] = useState('CARD'); // 'CARD', 'UPI_APPS', 'QR_CODE'
+  const [cardNum, setCardNum] = useState('');
+  const [cardExp, setCardExp] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [upiId, setUpiId] = useState('');
+
   // Dynamic Popup Modal State
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
 
@@ -882,71 +888,194 @@ export default function CheckoutPage() {
       {/* Online Payment Gateway Selection Modal */}
       {showOnlinePaymentModal && pendingBookingData && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-neutral-800 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-neutral-800 rounded-3xl w-full max-w-4xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row h-[550px] max-h-[90vh]">
+
             <button
               onClick={() => setShowOnlinePaymentModal(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-redPrimary transition"
+              className="absolute top-4 right-4 z-20 p-2 bg-slate-100 dark:bg-neutral-800 rounded-full text-slate-400 hover:text-redPrimary transition"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center justify-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-emerald-500" /> Secure Payment
-              </h3>
-              <p className="text-sm font-bold text-slate-500 mt-1">Amount Payable: <strong className="text-redPrimary text-lg">₹{pendingBookingData.totalAmount}</strong></p>
-            </div>
-
             {isProcessingGateway ? (
-              <div className="py-12 flex flex-col items-center justify-center space-y-4">
+              <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
                 <div className="w-12 h-12 border-4 border-slate-200 dark:border-neutral-800 border-t-redPrimary rounded-full animate-spin"></div>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Processing secure transaction...</p>
-                <p className="text-[10px] text-slate-500">Please do not close this window.</p>
+                <p className="text-base font-bold text-slate-700 dark:text-slate-300">Processing secure transaction...</p>
+                <p className="text-xs text-slate-500">Please do not close or refresh this window.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => handleProcessOnlinePayment('RAZORPAY_CARDS')}
-                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-neutral-800 hover:border-redPrimary bg-slate-50 dark:bg-neutral-900 flex items-center gap-4 transition group text-left"
-                >
-                  <div className="p-2 rounded-lg bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 group-hover:text-redPrimary shadow-sm">
-                    <CreditCard className="w-6 h-6" />
+              <>
+                {/* Left Pane - Payment Methods */}
+                <div className="w-full md:w-1/3 bg-slate-50 dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-800 flex flex-col h-full overflow-y-auto">
+                  <div className="p-6 border-b border-slate-200 dark:border-neutral-800">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-500" /> Secure Checkout
+                    </h3>
                   </div>
-                  <div>
-                    <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">Credit / Debit Card</strong>
-                    <span className="text-[10px] text-slate-500 font-medium">Visa, MasterCard, RuPay (via Razorpay)</span>
-                  </div>
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleProcessOnlinePayment('UPI_APPS')}
-                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-neutral-800 hover:border-redPrimary bg-slate-50 dark:bg-neutral-900 flex items-center gap-4 transition group text-left"
-                >
-                  <div className="p-2 rounded-lg bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 group-hover:text-redPrimary shadow-sm">
-                    <Smartphone className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">UPI Apps</strong>
-                    <span className="text-[10px] text-slate-500 font-medium">Google Pay, PhonePe, Paytm, Amazon Pay</span>
-                  </div>
-                </button>
+                  <div className="flex flex-col flex-1 p-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActivePaymentTab('CARD')}
+                      className={`p-4 rounded-xl border flex items-center gap-3 transition group text-left ${activePaymentTab === 'CARD' ? 'bg-white dark:bg-[#1A1A1A] border-redPrimary shadow-md' : 'border-transparent hover:bg-slate-200/50 dark:hover:bg-neutral-800/50'}`}
+                    >
+                      <CreditCard className={`w-5 h-5 ${activePaymentTab === 'CARD' ? 'text-redPrimary' : 'text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white'}`} />
+                      <strong className={`block text-sm font-bold ${activePaymentTab === 'CARD' ? 'text-redPrimary' : 'text-slate-700 dark:text-slate-300'}`}>Credit/Debit Card</strong>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleProcessOnlinePayment('UPI_QR_CODE')}
-                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-neutral-800 hover:border-redPrimary bg-slate-50 dark:bg-neutral-900 flex items-center gap-4 transition group text-left"
-                >
-                  <div className="p-2 rounded-lg bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 group-hover:text-redPrimary shadow-sm">
-                    <QrCode className="w-6 h-6" />
+                    <button
+                      type="button"
+                      onClick={() => setActivePaymentTab('UPI_APPS')}
+                      className={`p-4 rounded-xl border flex items-center gap-3 transition group text-left ${activePaymentTab === 'UPI_APPS' ? 'bg-white dark:bg-[#1A1A1A] border-redPrimary shadow-md' : 'border-transparent hover:bg-slate-200/50 dark:hover:bg-neutral-800/50'}`}
+                    >
+                      <Smartphone className={`w-5 h-5 ${activePaymentTab === 'UPI_APPS' ? 'text-redPrimary' : 'text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white'}`} />
+                      <strong className={`block text-sm font-bold ${activePaymentTab === 'UPI_APPS' ? 'text-redPrimary' : 'text-slate-700 dark:text-slate-300'}`}>UPI Apps / ID</strong>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActivePaymentTab('QR_CODE')}
+                      className={`p-4 rounded-xl border flex items-center gap-3 transition group text-left ${activePaymentTab === 'QR_CODE' ? 'bg-white dark:bg-[#1A1A1A] border-redPrimary shadow-md' : 'border-transparent hover:bg-slate-200/50 dark:hover:bg-neutral-800/50'}`}
+                    >
+                      <QrCode className={`w-5 h-5 ${activePaymentTab === 'QR_CODE' ? 'text-redPrimary' : 'text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white'}`} />
+                      <strong className={`block text-sm font-bold ${activePaymentTab === 'QR_CODE' ? 'text-redPrimary' : 'text-slate-700 dark:text-slate-300'}`}>Scan QR Code</strong>
+                    </button>
                   </div>
-                  <div>
-                    <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">Scan QR Code</strong>
-                    <span className="text-[10px] text-slate-500 font-medium">Generate Dynamic UPI QR to scan & pay</span>
+                </div>
+
+                {/* Right Pane - Payment Details */}
+                <div className="w-full md:w-2/3 bg-white dark:bg-[#1A1A1A] flex flex-col h-full overflow-y-auto">
+                  <div className="p-6 border-b border-slate-100 dark:border-neutral-800 flex justify-between items-center bg-slate-50/50 dark:bg-black/20">
+                    <span className="text-sm font-bold text-slate-500">Amount Payable</span>
+                    <strong className="text-2xl font-black text-redPrimary">₹{pendingBookingData.totalAmount}</strong>
                   </div>
-                </button>
-              </div>
+
+                  <div className="p-6 flex-1 flex flex-col justify-center max-w-md w-full mx-auto">
+                    {activePaymentTab === 'CARD' && (
+                      <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div>
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Card Number</label>
+                          <input
+                            type="text"
+                            placeholder="4000 1234 5678 9010"
+                            value={cardNum}
+                            onChange={(e) => setCardNum(e.target.value.replace(/\D/g, '').substring(0, 16))}
+                            className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold tracking-widest outline-none focus:border-redPrimary"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Expiry (MM/YY)</label>
+                            <input
+                              type="text"
+                              placeholder="MM/YY"
+                              value={cardExp}
+                              onChange={(e) => setCardExp(e.target.value.substring(0, 5))}
+                              className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold tracking-widest outline-none focus:border-redPrimary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">CVV</label>
+                            <input
+                              type="password"
+                              placeholder="123"
+                              maxLength={4}
+                              value={cardCvv}
+                              onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
+                              className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold tracking-widest outline-none focus:border-redPrimary"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleProcessOnlinePayment('RAZORPAY_CARDS')}
+                          disabled={cardNum.length < 15 || !cardExp || cardCvv.length < 3}
+                          className={`btn-primary w-full py-4 text-sm font-black mt-4 shadow-lg ${cardNum.length < 15 || !cardExp || cardCvv.length < 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <Lock className="w-4 h-4 mr-1" /> Pay ₹{pendingBookingData.totalAmount} Securely
+                        </button>
+                      </div>
+                    )}
+
+                    {activePaymentTab === 'UPI_APPS' && (
+                      <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="grid grid-cols-4 gap-3">
+                          <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-redPrimary transition">
+                              <span className="font-black text-blue-600">G</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-500">GPay</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-redPrimary transition">
+                              <span className="font-black text-purple-600">Pe</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-500">PhonePe</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-redPrimary transition">
+                              <span className="font-black text-sky-500">Pym</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-500">Paytm</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-redPrimary transition">
+                              <span className="font-black text-orange-500">B</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-500">BHIM</span>
+                          </div>
+                        </div>
+
+                        <div className="relative flex items-center justify-center my-2">
+                          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-neutral-700"></div></div>
+                          <div className="relative bg-white dark:bg-[#1A1A1A] px-4 text-xs font-bold text-slate-400">OR ENTER UPI ID</div>
+                        </div>
+
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="e.g. 9876543210@ybl"
+                            value={upiId}
+                            onChange={(e) => setUpiId(e.target.value.toLowerCase())}
+                            className="w-full p-4 rounded-xl border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold outline-none focus:border-redPrimary text-center"
+                          />
+                        </div>
+
+                        <button
+                          onClick={() => handleProcessOnlinePayment('UPI_APPS')}
+                          disabled={upiId.length < 5 || !upiId.includes('@')}
+                          className={`btn-primary w-full py-4 text-sm font-black shadow-lg ${upiId.length < 5 || !upiId.includes('@') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          Verify & Pay ₹{pendingBookingData.totalAmount}
+                        </button>
+                      </div>
+                    )}
+
+                    {activePaymentTab === 'QR_CODE' && (
+                      <div className="flex flex-col items-center justify-center space-y-5 animate-in fade-in zoom-in-95 duration-200 text-center">
+                        <div className="p-3 bg-white rounded-2xl shadow-xl border border-slate-200">
+                          {/* Use standard QR generator API to create realistic dummy QR */}
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=himistri@sbi&pn=HiMistri&am=${pendingBookingData.totalAmount}`}
+                            alt="Scan to Pay"
+                            className="w-40 h-40 object-contain"
+                          />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white">Scan with any UPI App</h4>
+                          <p className="text-xs text-slate-500 mt-1">Open GPay, PhonePe, or Paytm and scan the QR code to complete your payment.</p>
+                        </div>
+
+                        <button
+                          onClick={() => handleProcessOnlinePayment('UPI_QR_CODE')}
+                          className="btn-primary w-full py-4 text-sm font-black shadow-lg bg-emerald-600 hover:bg-emerald-700 mt-4"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" /> I have completed the payment
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

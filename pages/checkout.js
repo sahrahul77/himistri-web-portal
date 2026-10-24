@@ -8,7 +8,7 @@ import { ref, set, push, onValue, update } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck, Tag, Percent, ChevronDown, Award, Star } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, MapPin, CreditCard, CheckCircle, Plus, Minus, Lock, LogIn, Map, X, Timer, ShieldCheck, Tag, Percent, ChevronDown, Award, Star, Smartphone, QrCode } from 'lucide-react';
 import { DURATION_PLANS, getDurationOptions, getDurationUnitText, calculateDurationPrice } from '../lib/durationHelpers';
 import { DEFAULT_COUPONS } from '../lib/defaultData';
 
@@ -73,6 +73,11 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [service, setService] = useState(null);
+
+  // Online Payment Popup State
+  const [showOnlinePaymentModal, setShowOnlinePaymentModal] = useState(false);
+  const [pendingBookingData, setPendingBookingData] = useState(null);
+  const [isProcessingGateway, setIsProcessingGateway] = useState(false);
 
   // Dynamic Popup Modal State
   const [popupState, setPopupState] = useState({ isOpen: false, title: '', message: '', type: 'success', onAction: null });
@@ -400,21 +405,43 @@ export default function CheckoutPage() {
       createdAt: new Date().toISOString()
     };
 
+    if (paymentMethod === 'ONLINE_UPI') {
+      setPendingBookingData(bookingData);
+      setShowOnlinePaymentModal(true);
+      return;
+    }
+
+    await executeBookingSave(bookingData);
+  };
+
+  const executeBookingSave = async (bData, gatewayMethod = null) => {
+    setIsSubmitting(true);
+
+    // Add exact payment gateway info if it was an online payment
+    if (gatewayMethod) {
+      bData.paymentGatewayMethod = gatewayMethod;
+      bData.paymentStatus = 'PAID';
+    } else {
+      bData.paymentStatus = 'PENDING';
+    }
+
     try {
-      await set(ref(rtdb, `bookings/${newBookingKey}`), bookingData);
+      await set(ref(rtdb, `bookings/${bData.id}`), bData);
 
       setIsSubmitting(false);
       localStorage.removeItem('himistri_checkout_service');
+      setShowOnlinePaymentModal(false);
 
       setPopupState({
         isOpen: true,
         title: 'Booking Confirmed! 🎉',
-        message: `Your booking (${bookingRefId}) for ${service.title} has been placed successfully!\nScheduled for ${date} (${slot}).`,
+        message: `Your booking (${bData.bookingRef}) for ${service.title} has been placed successfully!\nScheduled for ${bData.scheduledDate} (${bData.scheduledTimeSlot}).`,
         type: 'success',
         onAction: () => router.push('/tracking')
       });
     } catch (err) {
       setIsSubmitting(false);
+      setShowOnlinePaymentModal(false);
       setPopupState({
         isOpen: true,
         title: 'Booking Failed',
@@ -422,6 +449,14 @@ export default function CheckoutPage() {
         type: 'error'
       });
     }
+  };
+
+  const handleProcessOnlinePayment = (selectedGateway) => {
+    setIsProcessingGateway(true);
+    // Simulate secure 1.5 second delay connecting to Razorpay / UPI Gateways
+    setTimeout(() => {
+      executeBookingSave(pendingBookingData, selectedGateway);
+    }, 1500);
   };
 
   return (
@@ -843,6 +878,79 @@ export default function CheckoutPage() {
         actionText="View Booking Status"
         onAction={popupState.onAction}
       />
+
+      {/* Online Payment Gateway Selection Modal */}
+      {showOnlinePaymentModal && pendingBookingData && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-neutral-800 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+            <button
+              onClick={() => setShowOnlinePaymentModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-redPrimary transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center justify-center gap-2">
+                <ShieldCheck className="w-6 h-6 text-emerald-500" /> Secure Payment
+              </h3>
+              <p className="text-sm font-bold text-slate-500 mt-1">Amount Payable: <strong className="text-redPrimary text-lg">₹{pendingBookingData.totalAmount}</strong></p>
+            </div>
+
+            {isProcessingGateway ? (
+              <div className="py-12 flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-slate-200 dark:border-neutral-800 border-t-redPrimary rounded-full animate-spin"></div>
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Processing secure transaction...</p>
+                <p className="text-[10px] text-slate-500">Please do not close this window.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => handleProcessOnlinePayment('RAZORPAY_CARDS')}
+                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-neutral-800 hover:border-redPrimary bg-slate-50 dark:bg-neutral-900 flex items-center gap-4 transition group text-left"
+                >
+                  <div className="p-2 rounded-lg bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 group-hover:text-redPrimary shadow-sm">
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">Credit / Debit Card</strong>
+                    <span className="text-[10px] text-slate-500 font-medium">Visa, MasterCard, RuPay (via Razorpay)</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleProcessOnlinePayment('UPI_APPS')}
+                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-neutral-800 hover:border-redPrimary bg-slate-50 dark:bg-neutral-900 flex items-center gap-4 transition group text-left"
+                >
+                  <div className="p-2 rounded-lg bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 group-hover:text-redPrimary shadow-sm">
+                    <Smartphone className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">UPI Apps</strong>
+                    <span className="text-[10px] text-slate-500 font-medium">Google Pay, PhonePe, Paytm, Amazon Pay</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleProcessOnlinePayment('UPI_QR_CODE')}
+                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-neutral-800 hover:border-redPrimary bg-slate-50 dark:bg-neutral-900 flex items-center gap-4 transition group text-left"
+                >
+                  <div className="p-2 rounded-lg bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 group-hover:text-redPrimary shadow-sm">
+                    <QrCode className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">Scan QR Code</strong>
+                    <span className="text-[10px] text-slate-500 font-medium">Generate Dynamic UPI QR to scan & pay</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

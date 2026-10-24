@@ -59,7 +59,8 @@ export default function TrackingPage() {
   };
 
   useEffect(() => {
-    const timer = setInterval(() => setNowTime(Date.now()), 5000);
+    // Run timer every 1000ms (1 second) for smooth countdown rendering
+    const timer = setInterval(() => setNowTime(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -220,6 +221,14 @@ export default function TrackingPage() {
   const isCompleted = (st) => {
     const s = (st || '').toUpperCase().trim();
     return s === 'COMPLETED';
+  };
+
+  const getCancelTimeLeft = (createdAtStr) => {
+    if (!createdAtStr) return 0;
+    const createdTime = new Date(createdAtStr).getTime();
+    if (isNaN(createdTime)) return 0;
+    const diffInSeconds = Math.floor((nowTime - createdTime) / 1000);
+    return Math.max(0, 60 - diffInSeconds);
   };
 
   const activeBookings = userBookings.filter(b => !isCompleted(b.status) && !isCancelled(b.status));
@@ -461,13 +470,13 @@ export default function TrackingPage() {
                             </button>
                           )}
 
-                          {currentBooking.status === 'PENDING' && isWithinOneMinute(currentBooking.createdAt) ? (
+                          {currentBooking.status === 'PENDING' && getCancelTimeLeft(currentBooking.createdAt) > 0 ? (
                             <button
                               type="button"
                               onClick={() => handleCancelBooking(currentBooking.id)}
                               className="py-2.5 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-xs font-bold text-white flex items-center justify-center gap-2 transition"
                             >
-                              <X className="w-3.5 h-3.5" /> Cancel Order
+                              <X className="w-3.5 h-3.5" /> Cancel Order ({getCancelTimeLeft(currentBooking.createdAt)}s)
                             </button>
                           ) : (
                             <a
@@ -475,8 +484,9 @@ export default function TrackingPage() {
                               target="_blank"
                               rel="noreferrer"
                               className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 hover:bg-slate-100 dark:hover:bg-neutral-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-2 text-center transition"
+                              title="Orders can only be cancelled within 1 minute of booking."
                             >
-                              <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Support
+                              <MessageSquare className="w-3.5 h-3.5 text-redPrimary" /> Contact Support
                             </a>
                           )}
                         </div>

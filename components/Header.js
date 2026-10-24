@@ -91,7 +91,17 @@ export default function Header({ isDark, onToggleTheme }) {
   const isAdmin = currentUser?.role === 'ADMIN';
   const isPartner = currentUser?.role === 'PARTNER' || currentUser?.role === 'SERVICE_PARTNER';
 
-  const isAmazeMember = liveUser?.subscriptionPlan && liveUser?.subscriptionPlan !== 'NONE' && new Date(liveUser?.subscriptionExpiry) > new Date();
+  // Helper to parse dates (handles both ISO strings from Web and dd/MM/yyyy from Android)
+  const parseExpiryDate = (dateStr) => {
+    if (!dateStr) return new Date(0);
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59Z`);
+    }
+    return new Date(dateStr);
+  };
+
+  const isAmazeMember = liveUser?.subscriptionPlan && liveUser?.subscriptionPlan !== 'NONE' && parseExpiryDate(liveUser?.subscriptionExpiry) > new Date();
 
   return (
     <header className="sticky top-0 z-50 shadow-2xl">

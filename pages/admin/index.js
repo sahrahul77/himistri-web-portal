@@ -684,10 +684,16 @@ export default function AdminControlPanelPage() {
       if (planType === '3_MONTHS') expiry.setMonth(expiry.getMonth() + 3);
       if (planType === '1_YEAR') expiry.setFullYear(expiry.getFullYear() + 1);
 
-      await update(ref(rtdb, `users/${userId}`), {
-        subscriptionPlan: planType,
-        subscriptionExpiry: expiry.toISOString()
-      });
+      const expiryStr = expiry.toISOString();
+      const updates = {};
+      updates[`users/${userId}/subscriptionPlan`] = planType;
+      updates[`users/${userId}/subscriptionExpiry`] = expiryStr;
+      updates[`customers/${userId}/subscriptionPlan`] = planType;
+      updates[`customers/${userId}/subscriptionExpiry`] = expiryStr;
+      updates[`partners/${userId}/subscriptionPlan`] = planType;
+      updates[`partners/${userId}/subscriptionExpiry`] = expiryStr;
+
+      await update(ref(rtdb), updates);
 
       setPopupState({
         isOpen: true,
@@ -702,10 +708,15 @@ export default function AdminControlPanelPage() {
 
   const handleRevokeHiMistriAmaze = async (userId) => {
     try {
-      await update(ref(rtdb, `users/${userId}`), {
-        subscriptionPlan: 'NONE',
-        subscriptionExpiry: null
-      });
+      const updates = {};
+      updates[`users/${userId}/subscriptionPlan`] = 'NONE';
+      updates[`users/${userId}/subscriptionExpiry`] = '';
+      updates[`customers/${userId}/subscriptionPlan`] = 'NONE';
+      updates[`customers/${userId}/subscriptionExpiry`] = '';
+      updates[`partners/${userId}/subscriptionPlan`] = 'NONE';
+      updates[`partners/${userId}/subscriptionExpiry`] = '';
+
+      await update(ref(rtdb), updates);
 
       setPopupState({
         isOpen: true,

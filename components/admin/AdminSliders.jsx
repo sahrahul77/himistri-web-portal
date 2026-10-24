@@ -53,6 +53,16 @@ export const AdminSliders = ({
   const safeFaqIdx = faqSliderIdx % (faqsList.length || 1);
   const currentFaqObj = faqsList[safeFaqIdx] || faqsList[0];
 
+  // Helper to parse dates (handles both ISO strings from Web and dd/MM/yyyy from Android)
+  const parseExpiryDate = (dateStr) => {
+    if (!dateStr) return new Date(0);
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59Z`);
+    }
+    return new Date(dateStr);
+  };
+
   return (
     <>
       {/* TAB 4: USERS SLIDER & HIMISTRI ONE MANAGEMENT */}
@@ -104,7 +114,7 @@ export const AdminSliders = ({
                     <div className="mt-2 pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-black text-slate-900 dark:text-white">HiMistri Amaze Subscription Status</span>
-                        {currentUserObj.subscriptionPlan && currentUserObj.subscriptionPlan !== 'NONE' && new Date(currentUserObj.subscriptionExpiry) > new Date() ? (
+                        {currentUserObj.subscriptionPlan && currentUserObj.subscriptionPlan !== 'NONE' && parseExpiryDate(currentUserObj.subscriptionExpiry) > new Date() ? (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-600 dark:text-amber-500 border border-amber-500/30 flex items-center gap-1">
                             <Star className="w-3 h-3" /> Active
                           </span>
@@ -115,11 +125,11 @@ export const AdminSliders = ({
                         )}
                       </div>
 
-                      {currentUserObj.subscriptionPlan && currentUserObj.subscriptionPlan !== 'NONE' && new Date(currentUserObj.subscriptionExpiry) > new Date() ? (
+                      {currentUserObj.subscriptionPlan && currentUserObj.subscriptionPlan !== 'NONE' && parseExpiryDate(currentUserObj.subscriptionExpiry) > new Date() ? (
                         <div className="p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/30 rounded-xl flex justify-between items-center text-xs">
                           <div>
                             <strong className="text-amber-700 dark:text-amber-500 block">Plan: {currentUserObj.subscriptionPlan.replace('_', ' ')}</strong>
-                            <span className="text-amber-600 dark:text-amber-400/80">Expires: {new Date(currentUserObj.subscriptionExpiry).toLocaleDateString()}</span>
+                            <span className="text-amber-600 dark:text-amber-400/80">Expires: {parseExpiryDate(currentUserObj.subscriptionExpiry).toLocaleDateString()}</span>
                           </div>
                           <button
                             onClick={() => handleRevokeHiMistriAmaze(currentUserObj.id)}

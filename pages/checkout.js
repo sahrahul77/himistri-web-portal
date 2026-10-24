@@ -223,9 +223,19 @@ export default function CheckoutPage() {
 
   const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountAmount);
 
+  // Helper to parse dates (handles both ISO strings from Web and dd/MM/yyyy from Android)
+  const parseExpiryDate = (dateStr) => {
+    if (!dateStr) return new Date(0);
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59Z`);
+    }
+    return new Date(dateStr);
+  };
+
   // Check if User is a HiMistri Amaze Subscriber to waive Visiting Fee
   const activeUser = liveUser || currentUser;
-  const isHiMistriAmazeSub = activeUser && activeUser.subscriptionPlan && activeUser.subscriptionPlan !== 'NONE' && new Date(activeUser.subscriptionExpiry) > new Date();
+  const isHiMistriAmazeSub = activeUser && activeUser.subscriptionPlan && activeUser.subscriptionPlan !== 'NONE' && parseExpiryDate(activeUser.subscriptionExpiry) > new Date();
 
   // Dynamic Taxes & Fees Calculation
   const visitingFee = (isHiMistriAmazeSub || selectedAmazePlan) ? 0 : (platformFees.visitingFee || 0);
@@ -331,10 +341,16 @@ export default function CheckoutPage() {
         if (selectedAmazePlan === '3_MONTHS') expiry.setMonth(expiry.getMonth() + 3);
         if (selectedAmazePlan === '1_YEAR') expiry.setFullYear(expiry.getFullYear() + 1);
 
-        await update(ref(rtdb, `users/${currentUser.id}`), {
-          subscriptionPlan: selectedAmazePlan,
-          subscriptionExpiry: expiry.toISOString()
-        });
+        const expiryStr = expiry.toISOString();
+        const updates = {};
+        updates[`users/${currentUser.id}/subscriptionPlan`] = selectedAmazePlan;
+        updates[`users/${currentUser.id}/subscriptionExpiry`] = expiryStr;
+        updates[`customers/${currentUser.id}/subscriptionPlan`] = selectedAmazePlan;
+        updates[`customers/${currentUser.id}/subscriptionExpiry`] = expiryStr;
+        updates[`partners/${currentUser.id}/subscriptionPlan`] = selectedAmazePlan;
+        updates[`partners/${currentUser.id}/subscriptionExpiry`] = expiryStr;
+
+        await update(ref(rtdb), updates);
       } catch (subErr) {
         console.error("Could not update subscription plan:", subErr);
       }

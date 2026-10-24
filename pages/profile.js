@@ -187,7 +187,17 @@ export default function ProfilePage() {
     }
   };
 
-  const isAmazeMember = liveUser?.subscriptionPlan && liveUser?.subscriptionPlan !== 'NONE' && new Date(liveUser?.subscriptionExpiry) > new Date();
+  // Helper to parse dates (handles both ISO strings from Web and dd/MM/yyyy from Android)
+  const parseExpiryDate = (dateStr) => {
+    if (!dateStr) return new Date(0);
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59Z`);
+    }
+    return new Date(dateStr);
+  };
+
+  const isAmazeMember = liveUser?.subscriptionPlan && liveUser?.subscriptionPlan !== 'NONE' && parseExpiryDate(liveUser?.subscriptionExpiry) > new Date();
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
@@ -231,7 +241,7 @@ export default function ProfilePage() {
                       <Star className="w-3 h-3" /> Active Member
                     </span>
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Valid till: {new Date(liveUser.subscriptionExpiry).toLocaleDateString()}
+                      Valid till: {parseExpiryDate(liveUser.subscriptionExpiry).toLocaleDateString()}
                     </span>
                   </div>
                   <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">

@@ -93,8 +93,8 @@ export default function ServicesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingSrv(false);
       }
+      setIsLoadingSrv(false);
     });
 
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
@@ -109,14 +109,11 @@ export default function ServicesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingCat(false);
       }
+      setIsLoadingCat(false);
     });
 
-    // Fallback timer
-    const timer = setTimeout(() => {}, 4000);
-
-    return () => { unsubSrv(); unsubCat(); clearTimeout(timer); };
+    return () => { unsubSrv(); unsubCat(); };
   }, []);
 
   const handleHireNow = (serviceObj) => {
@@ -198,20 +195,27 @@ export default function ServicesPage() {
             >
               All Services
             </button>
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => { setActiveChip(c.name); setQuery(''); }}
-                className={`px-4 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 border ${
-                  activeChip === c.name
-                    ? 'bg-redPrimary text-white border-redPrimary shadow-lg'
-                    : 'bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-[#333333] hover:border-redPrimary/50'
-                }`}
-              >
-                {c.name.replace(' Manpower', '')}
-              </button>
-            ))}
+            {isLoadingCat ? (
+              <div className="flex gap-2">
+                <div className="w-20 h-9 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-2xl" />
+                <div className="w-20 h-9 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-2xl" />
+              </div>
+            ) : (
+              categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => { setActiveChip(c.name); setQuery(''); }}
+                  className={`px-4 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 border ${
+                    activeChip === c.name
+                      ? 'bg-redPrimary text-white border-redPrimary shadow-lg'
+                      : 'bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-[#333333] hover:border-redPrimary/50'
+                  }`}
+                >
+                  {c.name.replace(' Manpower', '')}
+                </button>
+              ))
+            )}
           </div>
         </div>
 

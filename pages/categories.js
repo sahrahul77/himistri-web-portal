@@ -19,7 +19,7 @@ export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Initialize state with default data to avoid blank loading pauses
+  // Initialize state empty
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
 
@@ -65,7 +65,7 @@ export default function CategoriesPage() {
       const cachedCat = localStorage.getItem('himistri_cache_cat');
       if (cachedCat) {
           const parsedCat = JSON.parse(cachedCat);
-          if(parsedCat.length > 0) {
+          if (parsedCat.length > 0) {
             setCategories(parsedCat);
             setIsLoadingCat(false);
           }
@@ -74,7 +74,7 @@ export default function CategoriesPage() {
       const cachedSrv = localStorage.getItem('himistri_cache_srv');
       if (cachedSrv) {
           const parsedSrv = JSON.parse(cachedSrv);
-          if(parsedSrv.length > 0) {
+          if (parsedSrv.length > 0) {
             setServices(parsedSrv);
             setIsLoadingSrv(false);
           }
@@ -95,8 +95,8 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingCat(false);
       }
+      setIsLoadingCat(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -109,14 +109,11 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingSrv(false);
       }
+      setIsLoadingSrv(false);
     });
 
-    // Fallback timer
-    const timer = setTimeout(() => {}, 4000);
-
-    return () => { unsubCat(); unsubSrv(); clearTimeout(timer); };
+    return () => { unsubCat(); unsubSrv(); };
   }, []);
 
   useEffect(() => {
@@ -149,6 +146,9 @@ export default function CategoriesPage() {
     return s.categoryId === selectedCategoryId ||
       (selectedCategoryObj && (s.categoryName || '').toLowerCase().includes((selectedCategoryObj.name || '').toLowerCase()));
   });
+
+  // Critical fix: We MUST wait for BOTH services and categories if a specific category is selected from URL
+  const isGridLoading = isLoadingSrv || (selectedCategoryId !== 'ALL' && isLoadingCat && !selectedCategoryObj);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0F0F0F] text-slate-900 dark:text-white transition-colors duration-200">
@@ -194,7 +194,7 @@ export default function CategoriesPage() {
                 <span className="text-[9px] text-slate-400">Click item to book</span>
               </div>
 
-              {filteredServices.length === 0 && !isLoadingSrv ? (
+              {filteredServices.length === 0 && !isGridLoading ? (
                 <div className="p-4 text-center text-xs text-slate-500 font-bold">
                   No services matching "{searchQuery}". Try searching "Plumber", "Electrician", or "Tutor".
                 </div>
@@ -322,7 +322,7 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          {isLoadingSrv ? (
+          {isGridLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
             </div>

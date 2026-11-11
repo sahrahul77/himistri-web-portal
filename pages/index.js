@@ -146,8 +146,26 @@ export default function HomePage() {
     }, { onlyOnce: true });
   }, []);
 
-  // Fetch Live Realtime Database Nodes
+  // Fetch Live Realtime Database Nodes with Local Storage Stale-While-Revalidate Caching
   useEffect(() => {
+    // 1. Instantly load from cache to eliminate UI render delay
+    try {
+      const cachedCat = localStorage.getItem('himistri_cache_cat');
+      if (cachedCat) setCategories(JSON.parse(cachedCat));
+
+      const cachedSrv = localStorage.getItem('himistri_cache_srv');
+      if (cachedSrv) setServices(JSON.parse(cachedSrv));
+
+      const cachedBnr = localStorage.getItem('himistri_cache_bnr');
+      if (cachedBnr) setBanners(JSON.parse(cachedBnr));
+
+      const cachedCpn = localStorage.getItem('himistri_cache_cpn');
+      if (cachedCpn) setCoupons(JSON.parse(cachedCpn));
+    } catch (e) {
+      console.warn("Cache read error", e);
+    }
+
+    // 2. Fetch fresh data from Firebase silently
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
@@ -160,7 +178,10 @@ export default function HomePage() {
           });
         }
       }
-      if (list.length > 0) setCategories(list);
+      if (list.length > 0) {
+        setCategories(list);
+        localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
+      }
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -171,7 +192,10 @@ export default function HomePage() {
           Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
         }
       }
-      if (list.length > 0) setServices(list);
+      if (list.length > 0) {
+        setServices(list);
+        localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
+      }
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
@@ -182,7 +206,10 @@ export default function HomePage() {
           Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
         }
       }
-      if (list.length > 0) setBanners(list);
+      if (list.length > 0) {
+        setBanners(list);
+        localStorage.setItem('himistri_cache_bnr', JSON.stringify(list));
+      }
     });
 
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
@@ -193,7 +220,10 @@ export default function HomePage() {
           Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
         }
       }
-      if (list.length > 0) setCoupons(list);
+      if (list.length > 0) {
+        setCoupons(list);
+        localStorage.setItem('himistri_cache_cpn', JSON.stringify(list));
+      }
     });
 
     const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {

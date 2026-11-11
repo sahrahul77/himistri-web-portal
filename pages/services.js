@@ -54,7 +54,18 @@ export default function ServicesPage() {
     });
   };
 
+  // Fetch Live Realtime Database Nodes with Local Storage Stale-While-Revalidate Caching
   useEffect(() => {
+    try {
+      const cachedSrv = localStorage.getItem('himistri_cache_srv');
+      if (cachedSrv) setServices(JSON.parse(cachedSrv));
+
+      const cachedCat = localStorage.getItem('himistri_cache_cat');
+      if (cachedCat) setCategories(JSON.parse(cachedCat));
+    } catch (e) {
+      console.warn("Cache read error", e);
+    }
+
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
@@ -62,7 +73,10 @@ export default function ServicesPage() {
           list.push({ id: child.key, ...child.val() });
         });
       }
-      if (list.length > 0) setServices(list);
+      if (list.length > 0) {
+        setServices(list);
+        localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
+      }
     });
 
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
@@ -74,7 +88,10 @@ export default function ServicesPage() {
           }
         });
       }
-      if (list.length > 0) setCategories(list);
+      if (list.length > 0) {
+        setCategories(list);
+        localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
+      }
     });
 
     return () => { unsubSrv(); unsubCat(); };

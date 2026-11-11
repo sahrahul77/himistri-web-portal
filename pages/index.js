@@ -8,7 +8,6 @@ import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
 import { CategorySkeleton, ServiceSkeleton, HeroBannerSkeleton } from '../components/Skeletons';
-import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, DEFAULT_COUPONS, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue, remove } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -16,6 +15,7 @@ import {
   Search, ShieldCheck, Star, ArrowRight, Clock, CheckCircle2, Award, Phone, Info, Handshake, DollarSign,
   Sparkles, Zap, Flame, Tag, BadgePercent, Check, ExternalLink, TrendingUp, Heart, UserCheck, Timer, Gift, Layers, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
+import { FALLBACK_ICON } from '../lib/defaultData';
 
 export default function HomePage() {
   const router = useRouter();
@@ -133,22 +133,6 @@ export default function HomePage() {
     });
   };
 
-  // Strictly purge any category from Firebase Database where "manpower" is NOT written in the category name
-  useEffect(() => {
-    const categoriesRef = ref(rtdb, 'categories');
-    onValue(categoriesRef, (snapshot) => {
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          const cat = child.val();
-          const catName = (cat?.name || '').trim();
-          if (!catName.toLowerCase().includes('manpower')) {
-            remove(ref(rtdb, `categories/${child.key}`));
-          }
-        });
-      }
-    }, { onlyOnce: true });
-  }, []);
-
   // Fetch Live Realtime Database Nodes with Local Storage Stale-While-Revalidate Caching
   useEffect(() => {
     // 1. Instantly load from cache to eliminate UI render delay
@@ -164,6 +148,10 @@ export default function HomePage() {
 
       const cachedCpn = localStorage.getItem('himistri_cache_cpn');
       if (cachedCpn) setCoupons(JSON.parse(cachedCpn));
+
+      if (cachedCat || cachedSrv || cachedBnr) {
+        setIsLoadingContent(false);
+      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -172,84 +160,70 @@ export default function HomePage() {
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
-        const val = snapshot.val();
-        if (typeof val === 'object' && val !== null) {
-          Object.keys(val).forEach((k) => {
-            if (val[k] && (val[k].name || '').toLowerCase().includes('manpower')) {
-              list.push({ id: k, ...val[k] });
-            }
-          });
-        }
+        snapshot.forEach((child) => {
+          const cat = child.val();
+          const catName = (cat?.name || '').trim();
+          if (catName.toLowerCase().includes('manpower')) {
+            list.push({ id: child.key, ...cat });
+          } else {
+            remove(ref(rtdb, `categories/${child.key}`));
+          }
+        });
       }
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingContent(false);
-      } else {
-        setCategories(DEFAULT_CATEGORIES);
-        setIsLoadingContent(false);
       }
+      setIsLoadingContent(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
-        const val = snapshot.val();
-        if (typeof val === 'object' && val !== null) {
-          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
-        }
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
       }
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingContent(false);
-      } else {
-        setServices(DEFAULT_SERVICES);
-        setIsLoadingContent(false);
       }
+      setIsLoadingContent(false);
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
-        const val = snapshot.val();
-        if (typeof val === 'object' && val !== null) {
-          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
-        }
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
       }
       if (list.length > 0) {
         setBanners(list);
         localStorage.setItem('himistri_cache_bnr', JSON.stringify(list));
-        setIsLoadingContent(false);
-      } else {
-        setBanners(DEFAULT_BANNERS);
-        setIsLoadingContent(false);
       }
+      setIsLoadingContent(false);
     });
 
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
-        const val = snapshot.val();
-        if (typeof val === 'object' && val !== null) {
-          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
-        }
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
       }
       if (list.length > 0) {
         setCoupons(list);
         localStorage.setItem('himistri_cache_cpn', JSON.stringify(list));
-      } else {
-        setCoupons(DEFAULT_COUPONS);
       }
     });
 
     const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
-        const val = snapshot.val();
-        if (typeof val === 'object' && val !== null) {
-          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
-        }
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
       }
       setTestimonials(list);
     });
@@ -257,21 +231,14 @@ export default function HomePage() {
     const unsubBookings = onValue(ref(rtdb, 'bookings'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
-        const val = snapshot.val();
-        if (typeof val === 'object' && val !== null) {
-          Object.keys(val).forEach((k) => list.push({ id: k, ...val[k] }));
-        }
+        snapshot.forEach((child) => {
+          list.push({ id: child.key, ...child.val() });
+        });
       }
       setBookings(list);
     });
 
-    // Fallback timer
-    const fallbackTimer = setTimeout(() => {
-      setIsLoadingContent(false);
-    }, 2000);
-
     return () => {
-      clearTimeout(fallbackTimer);
       unsubCat();
       unsubSrv();
       unsubBanners();

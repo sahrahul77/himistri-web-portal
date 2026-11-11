@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CheckoutModal from '../components/CheckoutModal';
 import { CategorySkeleton, ServiceSkeleton } from '../components/Skeletons';
-import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
+import { FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
@@ -84,11 +84,8 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingContent(false);
-      } else {
-        setCategories(DEFAULT_CATEGORIES);
-        setIsLoadingContent(false);
       }
+      setIsLoadingContent(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -101,15 +98,12 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingContent(false);
-      } else {
-        setServices(DEFAULT_SERVICES);
-        setIsLoadingContent(false);
       }
+      setIsLoadingContent(false);
     });
 
     // Fallback timer
-    const timer = setTimeout(() => setIsLoadingContent(false), 3000);
+    const timer = setTimeout(() => setIsLoadingContent(false), 2000);
 
     return () => { unsubCat(); unsubSrv(); clearTimeout(timer); };
   }, []);

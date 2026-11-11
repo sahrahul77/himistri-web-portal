@@ -7,6 +7,7 @@ import Footer from '../components/Footer';
 import HeroBanner from '../components/HeroBanner';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CheckoutModal from '../components/CheckoutModal';
+import { CategorySkeleton, ServiceSkeleton, HeroBannerSkeleton } from '../components/Skeletons';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, DEFAULT_COUPONS, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue, remove } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
@@ -30,12 +31,13 @@ export default function HomePage() {
   const [couponSliderIdx, setCouponSliderIdx] = useState(0);
 
   // Live Firebase States
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [services, setServices] = useState(DEFAULT_SERVICES);
-  const [banners, setBanners] = useState(DEFAULT_BANNERS);
-  const [coupons, setCoupons] = useState(DEFAULT_COUPONS);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [coupons, setCoupons] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -161,6 +163,10 @@ export default function HomePage() {
 
       const cachedCpn = localStorage.getItem('himistri_cache_cpn');
       if (cachedCpn) setCoupons(JSON.parse(cachedCpn));
+
+      if (cachedCat || cachedSrv || cachedBnr) {
+        setIsLoadingContent(false);
+      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -181,6 +187,7 @@ export default function HomePage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
+        setIsLoadingContent(false);
       }
     });
 
@@ -195,6 +202,7 @@ export default function HomePage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
+        setIsLoadingContent(false);
       }
     });
 
@@ -209,6 +217,7 @@ export default function HomePage() {
       if (list.length > 0) {
         setBanners(list);
         localStorage.setItem('himistri_cache_bnr', JSON.stringify(list));
+        setIsLoadingContent(false);
       }
     });
 
@@ -393,11 +402,14 @@ export default function HomePage() {
           </div>
 
           <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
-            {categories.map((c) => {
-              return (
-                <Link
-                  href={`/categories?id=${c.id}`}
-                  key={c.id}
+            {isLoadingContent && categories.length === 0 ? (
+              [1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)
+            ) : (
+              categories.map((c) => {
+                return (
+                  <Link
+                    href={`/categories?id=${c.id}`}
+                    key={c.id}
                   className="flex flex-col items-center gap-1.5 sm:gap-2 cursor-pointer group shrink-0 w-18 sm:w-24 text-center snap-start"
                 >
                   <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full p-1 transition-all duration-300 shadow-xl flex items-center justify-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] group-hover:border-redPrimary group-hover:scale-105">
@@ -415,12 +427,17 @@ export default function HomePage() {
                   </span>
                 </Link>
               );
-            })}
+            })
+            )}
           </div>
         </div>
 
         {/* 3. HERO BANNER CAROUSEL SLIDER */}
-        <HeroBanner banners={banners} />
+        {isLoadingContent && banners.length === 0 ? (
+          <HeroBannerSkeleton />
+        ) : (
+          <HeroBanner banners={banners} />
+        )}
 
         {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
         {coupons.length > 0 && (
@@ -521,9 +538,13 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {popularServices.length === 0 ? (
+          {isLoadingContent && popularServices.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
+            </div>
+          ) : popularServices.length === 0 ? (
             <div className="web-card text-center py-16 text-slate-500 space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-lg">
-              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{searchQuery}".</p>
+              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{searchQuery || activeChip}".</p>
               <button onClick={() => setSearchQuery('')} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
                 Clear Search
               </button>

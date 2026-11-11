@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CheckoutModal from '../components/CheckoutModal';
+import { CategorySkeleton, ServiceSkeleton } from '../components/Skeletons';
 import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, FALLBACK_ICON } from '../lib/defaultData';
 import { ref, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
@@ -17,10 +18,11 @@ export default function CategoriesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [checkoutService, setCheckoutService] = useState(null);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
 
   // Initialize state with default data to avoid blank loading pauses
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [services, setServices] = useState(DEFAULT_SERVICES);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -62,6 +64,10 @@ export default function CategoriesPage() {
 
       const cachedSrv = localStorage.getItem('himistri_cache_srv');
       if (cachedSrv) setServices(JSON.parse(cachedSrv));
+
+      if (cachedCat || cachedSrv) {
+        setIsLoadingContent(false);
+      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -78,6 +84,7 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
+        setIsLoadingContent(false);
       }
     });
 
@@ -91,6 +98,7 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
+        setIsLoadingContent(false);
       }
     });
 
@@ -224,21 +232,29 @@ export default function CategoriesPage() {
             <Flame className="w-3.5 h-3.5 text-amber-300" /> All Categories ({categories.length})
           </button>
 
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => { setSelectedCategoryId(c.id); setSearchQuery(''); }}
-              className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition flex items-center gap-2 cursor-pointer shrink-0 ${
-                selectedCategoryId === c.id
-                  ? 'bg-redPrimary text-white shadow-lg scale-105'
-                  : 'bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#333333] hover:border-redPrimary/50'
-              }`}
-            >
-              <img src={c.iconUrl || FALLBACK_ICON} alt="" className="w-4 h-4 object-contain" />
-              {c.name}
-            </button>
-          ))}
+          {isLoadingContent && categories.length === 0 ? (
+            <div className="flex gap-2">
+              <div className="w-24 h-10 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-full" />
+              <div className="w-24 h-10 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-full" />
+              <div className="w-24 h-10 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-full" />
+            </div>
+          ) : (
+            categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setSelectedCategoryId(c.id); setSearchQuery(''); }}
+                className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition flex items-center gap-2 cursor-pointer shrink-0 ${
+                  selectedCategoryId === c.id
+                    ? 'bg-redPrimary text-white shadow-lg scale-105'
+                    : 'bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#333333] hover:border-redPrimary/50'
+                }`}
+              >
+                <img src={c.iconUrl || FALLBACK_ICON} alt="" className="w-4 h-4 object-contain" />
+                {c.name}
+              </button>
+            ))
+          )}
         </div>
 
         {/* Category Visual Grid Showcase */}
@@ -286,7 +302,11 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          {filteredServices.length === 0 ? (
+          {isLoadingContent && filteredServices.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
+            </div>
+          ) : filteredServices.length === 0 ? (
             <div className="text-center py-20 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-lg space-y-3">
               <Layers className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
               <p className="text-slate-500 dark:text-slate-400 font-bold text-sm">No services found matching your selection.</p>

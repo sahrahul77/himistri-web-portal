@@ -174,6 +174,7 @@ export default function HomePage() {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
       }
+      setIsLoadingContent(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -187,6 +188,7 @@ export default function HomePage() {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
       }
+      setIsLoadingContent(false);
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
@@ -200,6 +202,7 @@ export default function HomePage() {
         setBanners(list);
         localStorage.setItem('himistri_cache_bnr', JSON.stringify(list));
       }
+      setIsLoadingContent(false);
     });
 
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {

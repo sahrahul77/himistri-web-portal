@@ -22,6 +22,7 @@ export default function HomePage() {
   // Default Website Theme is Light Mode
   const [isDark, setIsDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
   const searchRef = useRef(null);
@@ -163,10 +164,6 @@ export default function HomePage() {
 
       const cachedCpn = localStorage.getItem('himistri_cache_cpn');
       if (cachedCpn) setCoupons(JSON.parse(cachedCpn));
-
-      if (cachedCat || cachedSrv || cachedBnr) {
-        setIsLoadingContent(false);
-      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -268,7 +265,13 @@ export default function HomePage() {
       setBookings(list);
     });
 
+    // Fallback timer
+    const fallbackTimer = setTimeout(() => {
+      setIsLoadingContent(false);
+    }, 2000);
+
     return () => {
+      clearTimeout(fallbackTimer);
       unsubCat();
       unsubSrv();
       unsubBanners();
@@ -291,12 +294,18 @@ export default function HomePage() {
   // Instant Global Real-time Search Filter Logic
   const filteredServices = services.filter((s) => {
     const q = searchQuery.toLowerCase().trim();
+    const chip = activeChip.toLowerCase().trim();
+
     if (q) {
       return (s.title || '').toLowerCase().includes(q) ||
         (s.categoryName || '').toLowerCase().includes(q) ||
         (s.shortDescription || '').toLowerCase().includes(q);
     }
-    return true;
+
+    if (chip === 'all') return true;
+    return (s.categoryName || '').toLowerCase().includes(chip) ||
+      (s.title || '').toLowerCase().includes(chip) ||
+      chip.includes((s.categoryName || '').toLowerCase());
   });
 
   const popularServices = filteredServices.slice(0, 12);
@@ -417,29 +426,36 @@ export default function HomePage() {
               [1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)
             ) : (
               categories.map((c) => {
+                const isSelected = activeChip.toLowerCase() === c.name.toLowerCase();
                 return (
-                  <Link
-                    href={`/categories?id=${c.id}`}
+                  <div
                     key={c.id}
-                  className="flex flex-col items-center gap-1.5 sm:gap-2 cursor-pointer group shrink-0 w-18 sm:w-24 text-center snap-start"
-                >
-                  <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full p-1 transition-all duration-300 shadow-xl flex items-center justify-center bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] group-hover:border-redPrimary group-hover:scale-105">
-                    <div className="w-full h-full rounded-full bg-slate-50 dark:bg-neutral-900 p-2.5 sm:p-3 flex items-center justify-center">
-                      <img
-                        src={c.iconUrl || FALLBACK_ICON}
-                        alt={c.name}
-                        onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                      />
+                    onClick={() => { setActiveChip(isSelected ? 'ALL' : c.name); setSearchQuery(''); }}
+                    className="flex flex-col items-center gap-1.5 sm:gap-2 cursor-pointer group shrink-0 w-18 sm:w-24 text-center snap-start"
+                  >
+                    <div className={`w-14 h-14 sm:w-20 sm:h-20 rounded-full p-1 transition-all duration-300 shadow-xl flex items-center justify-center ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-redPrimary to-orangeSecondary scale-105 sm:scale-110 shadow-redPrimary/40'
+                        : 'bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] group-hover:border-redPrimary group-hover:scale-105'
+                    }`}>
+                      <div className="w-full h-full rounded-full bg-slate-50 dark:bg-neutral-900 p-2.5 sm:p-3 flex items-center justify-center">
+                        <img
+                          src={c.iconUrl || FALLBACK_ICON}
+                          alt={c.name}
+                          onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                          className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
                     </div>
+                    <span className={`text-[10px] sm:text-xs font-extrabold leading-tight transition line-clamp-2 ${
+                      isSelected ? 'text-redPrimary font-black' : 'text-slate-800 dark:text-slate-200 group-hover:text-redPrimary'
+                    }`}>
+                      {c.name.replace(' Manpower', '')}
+                    </span>
                   </div>
-                  <span className="text-[10px] sm:text-xs font-extrabold leading-tight transition line-clamp-2 text-slate-800 dark:text-slate-200 group-hover:text-redPrimary">
-                    {c.name.replace(' Manpower', '')}
-                  </span>
-                </Link>
-              );
-            })
-          )}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -540,7 +556,7 @@ export default function HomePage() {
             <div>
               <span className="text-[10px] font-black uppercase text-redPrimary tracking-widest block">Top Requested</span>
               <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white mt-0.5">
-                {searchQuery ? `Search Results for "${searchQuery}"` : 'Most Booked Services in Sikkim'}
+                {searchQuery ? `Search Results for "${searchQuery}"` : activeChip === 'ALL' ? 'Most Booked Services in Sikkim' : `${activeChip} Services in Gangtok`}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Found {popularServices.length} verified technical solutions</p>
             </div>
@@ -556,8 +572,8 @@ export default function HomePage() {
           ) : popularServices.length === 0 ? (
             <div className="web-card text-center py-16 text-slate-500 space-y-3 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-lg">
               <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No services found matching "{searchQuery || activeChip}".</p>
-              <button onClick={() => setSearchQuery('')} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
-                Clear Search
+              <button onClick={() => { setSearchQuery(''); setActiveChip('ALL'); }} className="btn-primary text-xs py-2.5 px-5 rounded-xl cursor-pointer">
+                Reset Filter
               </button>
             </div>
           ) : (

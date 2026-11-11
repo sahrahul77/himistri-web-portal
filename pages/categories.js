@@ -18,10 +18,11 @@ export default function CategoriesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [checkoutService, setCheckoutService] = useState(null);
+
   // Initialize state with default data to avoid blank loading pauses
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [services, setServices] = useState(DEFAULT_SERVICES);
-  const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -63,6 +64,10 @@ export default function CategoriesPage() {
 
       const cachedSrv = localStorage.getItem('himistri_cache_srv');
       if (cachedSrv) setServices(JSON.parse(cachedSrv));
+
+      if (cachedCat || cachedSrv) {
+        setIsLoadingContent(false);
+      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -79,6 +84,10 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
+        setIsLoadingContent(false);
+      } else {
+        setCategories(DEFAULT_CATEGORIES);
+        setIsLoadingContent(false);
       }
     });
 
@@ -92,10 +101,17 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
+        setIsLoadingContent(false);
+      } else {
+        setServices(DEFAULT_SERVICES);
+        setIsLoadingContent(false);
       }
     });
 
-    return () => { unsubCat(); unsubSrv(); };
+    // Fallback timer
+    const timer = setTimeout(() => setIsLoadingContent(false), 3000);
+
+    return () => { unsubCat(); unsubSrv(); clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
@@ -257,29 +273,35 @@ export default function CategoriesPage() {
               Browse All Workforce Categories
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-5">
-              {categories.map((c) => (
-                <div key={c.id} onClick={() => { setSelectedCategoryId(c.id); setSearchQuery(''); }}>
-                  <motion.div
-                    whileHover={{ y: -6, scale: 1.03 }}
-                    transition={{ duration: 0.2 }}
-                    className="web-card text-center p-4 sm:p-5 cursor-pointer shadow-xl flex flex-col justify-center items-center h-full bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] hover:border-redPrimary rounded-2xl group relative overflow-hidden"
-                  >
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-redPrimary/10 group-hover:bg-redPrimary/20 flex items-center justify-center mb-3 shrink-0 p-2.5 transition shadow-inner">
-                      <img
-                        src={c.iconUrl || FALLBACK_ICON}
-                        alt={c.name}
-                        onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
-                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                      />
-                    </div>
-                    <strong className="text-xs sm:text-sm font-extrabold block text-slate-900 dark:text-white leading-tight group-hover:text-redPrimary transition">
-                      {c.name}
-                    </strong>
-                  </motion.div>
-                </div>
-              ))}
-            </div>
+            {isLoadingContent && categories.length === 0 ? (
+              <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
+                {[1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-5">
+                {categories.map((c) => (
+                  <div key={c.id} onClick={() => { setSelectedCategoryId(c.id); setSearchQuery(''); }}>
+                    <motion.div
+                      whileHover={{ y: -6, scale: 1.03 }}
+                      transition={{ duration: 0.2 }}
+                      className="web-card text-center p-4 sm:p-5 cursor-pointer shadow-xl flex flex-col justify-center items-center h-full bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] hover:border-redPrimary rounded-2xl group relative overflow-hidden"
+                    >
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-redPrimary/10 group-hover:bg-redPrimary/20 flex items-center justify-center mb-3 shrink-0 p-2.5 transition shadow-inner">
+                        <img
+                          src={c.iconUrl || FALLBACK_ICON}
+                          alt={c.name}
+                          onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_ICON; }}
+                          className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
+                      <strong className="text-xs sm:text-sm font-extrabold block text-slate-900 dark:text-white leading-tight group-hover:text-redPrimary transition">
+                        {c.name}
+                      </strong>
+                    </motion.div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

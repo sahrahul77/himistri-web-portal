@@ -31,13 +31,13 @@ export default function HomePage() {
   const [couponSliderIdx, setCouponSliderIdx] = useState(0);
 
   // Live Firebase States
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
-  const [banners, setBanners] = useState([]);
-  const [coupons, setCoupons] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
+  const [banners, setBanners] = useState(DEFAULT_BANNERS);
+  const [coupons, setCoupons] = useState(DEFAULT_COUPONS);
   const [testimonials, setTestimonials] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -163,10 +163,6 @@ export default function HomePage() {
 
       const cachedCpn = localStorage.getItem('himistri_cache_cpn');
       if (cachedCpn) setCoupons(JSON.parse(cachedCpn));
-
-      if (cachedCat || cachedSrv || cachedBnr) {
-        setIsLoadingContent(false);
-      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -187,7 +183,6 @@ export default function HomePage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingContent(false);
       }
     });
 
@@ -202,7 +197,6 @@ export default function HomePage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingContent(false);
       }
     });
 
@@ -217,7 +211,6 @@ export default function HomePage() {
       if (list.length > 0) {
         setBanners(list);
         localStorage.setItem('himistri_cache_bnr', JSON.stringify(list));
-        setIsLoadingContent(false);
       }
     });
 

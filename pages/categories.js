@@ -18,11 +18,10 @@ export default function CategoriesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [checkoutService, setCheckoutService] = useState(null);
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
-
   // Initialize state with default data to avoid blank loading pauses
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -64,10 +63,6 @@ export default function CategoriesPage() {
 
       const cachedSrv = localStorage.getItem('himistri_cache_srv');
       if (cachedSrv) setServices(JSON.parse(cachedSrv));
-
-      if (cachedCat || cachedSrv) {
-        setIsLoadingContent(false);
-      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -84,7 +79,6 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingContent(false);
       }
     });
 
@@ -98,7 +92,6 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingContent(false);
       }
     });
 

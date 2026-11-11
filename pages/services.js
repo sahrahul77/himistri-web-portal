@@ -83,7 +83,6 @@ export default function ServicesPage() {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
     });
 
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
@@ -99,7 +98,6 @@ export default function ServicesPage() {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
     });
 
     // Fallback timer

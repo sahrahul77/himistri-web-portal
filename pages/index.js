@@ -174,7 +174,6 @@ export default function HomePage() {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -188,7 +187,6 @@ export default function HomePage() {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
@@ -202,7 +200,6 @@ export default function HomePage() {
         setBanners(list);
         localStorage.setItem('himistri_cache_bnr', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
     });
 
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
@@ -395,7 +392,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
-            {isLoadingContent ? (
+            {isLoadingContent && categories.length === 0 ? (
               [1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)
             ) : (
               categories.map((c) => {
@@ -433,7 +430,7 @@ export default function HomePage() {
         </div>
 
         {/* 3. HERO BANNER CAROUSEL SLIDER */}
-        {isLoadingContent ? (
+        {isLoadingContent && banners.length === 0 ? (
           <HeroBannerSkeleton />
         ) : (
           <HeroBanner banners={banners} />
@@ -538,7 +535,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {isLoadingContent ? (
+          {isLoadingContent && popularServices.length === 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
             </div>

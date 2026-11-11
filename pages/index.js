@@ -238,7 +238,13 @@ export default function HomePage() {
       setBookings(list);
     });
 
+    // Fallback timer
+    const fallbackTimer = setTimeout(() => {
+      setIsLoadingContent(false);
+    }, 2000);
+
     return () => {
+      clearTimeout(fallbackTimer);
       unsubCat();
       unsubSrv();
       unsubBanners();
@@ -389,7 +395,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
-            {isLoadingContent && categories.length === 0 ? (
+            {isLoadingContent ? (
               [1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)
             ) : (
               categories.map((c) => {
@@ -427,14 +433,14 @@ export default function HomePage() {
         </div>
 
         {/* 3. HERO BANNER CAROUSEL SLIDER */}
-        {isLoadingContent && banners.length === 0 ? (
+        {isLoadingContent ? (
           <HeroBannerSkeleton />
         ) : (
           <HeroBanner banners={banners} />
         )}
 
         {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
-        {coupons.length > 0 && (
+        {coupons.length > 0 && !isLoadingContent && (
           <div className="space-y-3">
             <div className="flex justify-between items-center px-1">
               <span className="text-xs font-black uppercase text-redPrimary tracking-widest flex items-center gap-1">
@@ -532,7 +538,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {isLoadingContent && popularServices.length === 0 ? (
+          {isLoadingContent ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
             </div>

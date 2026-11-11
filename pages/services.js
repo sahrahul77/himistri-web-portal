@@ -114,10 +114,7 @@ export default function ServicesPage() {
     });
 
     // Fallback timer
-    const timer = setTimeout(() => {
-      setIsLoadingSrv(false);
-      setIsLoadingCat(false);
-    }, 4000);
+    const timer = setTimeout(() => {}, 4000);
 
     return () => { unsubSrv(); unsubCat(); clearTimeout(timer); };
   }, []);

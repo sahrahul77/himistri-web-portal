@@ -114,10 +114,7 @@ export default function CategoriesPage() {
     });
 
     // Fallback timer
-    const timer = setTimeout(() => {
-      setIsLoadingCat(false);
-      setIsLoadingSrv(false);
-    }, 4000);
+    const timer = setTimeout(() => {}, 4000);
 
     return () => { unsubCat(); unsubSrv(); clearTimeout(timer); };
   }, []);

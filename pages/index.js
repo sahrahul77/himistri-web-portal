@@ -251,11 +251,7 @@ export default function HomePage() {
     });
 
     // Fallback timer
-    const fallbackTimer = setTimeout(() => {
-      setIsLoadingCat(false);
-      setIsLoadingSrv(false);
-      setIsLoadingBnr(false);
-    }, 4000);
+    const fallbackTimer = setTimeout(() => {}, 4000);
 
     return () => {
       clearTimeout(fallbackTimer);

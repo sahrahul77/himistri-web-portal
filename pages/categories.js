@@ -60,10 +60,16 @@ export default function CategoriesPage() {
   useEffect(() => {
     try {
       const cachedCat = localStorage.getItem('himistri_cache_cat');
-      if (cachedCat) setCategories(JSON.parse(cachedCat));
+      if (cachedCat) {
+          const parsedCat = JSON.parse(cachedCat);
+          if(parsedCat.length > 0) setCategories(parsedCat);
+      }
 
       const cachedSrv = localStorage.getItem('himistri_cache_srv');
-      if (cachedSrv) setServices(JSON.parse(cachedSrv));
+      if (cachedSrv) {
+          const parsedSrv = JSON.parse(cachedSrv);
+          if(parsedSrv.length > 0) setServices(parsedSrv);
+      }
 
       if (cachedCat || cachedSrv) {
         setIsLoadingContent(false);
@@ -85,6 +91,7 @@ export default function CategoriesPage() {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
       }
+      setIsLoadingContent(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -98,10 +105,11 @@ export default function CategoriesPage() {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
       }
+      setIsLoadingContent(false);
     });
 
     // Fallback timer
-    const timer = setTimeout(() => setIsLoadingContent(false), 2000);
+    const timer = setTimeout(() => setIsLoadingContent(false), 4000);
 
     return () => { unsubCat(); unsubSrv(); clearTimeout(timer); };
   }, []);
@@ -233,7 +241,7 @@ export default function CategoriesPage() {
             <Flame className="w-3.5 h-3.5 text-amber-300" /> All Categories ({categories.length})
           </button>
 
-          {isLoadingContent && categories.length === 0 ? (
+          {isLoadingContent ? (
             <div className="flex gap-2">
               <div className="w-24 h-10 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-full" />
               <div className="w-24 h-10 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-full" />
@@ -265,7 +273,7 @@ export default function CategoriesPage() {
               Browse All Workforce Categories
             </h2>
 
-            {isLoadingContent && categories.length === 0 ? (
+            {isLoadingContent ? (
               <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
                 {[1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)}
               </div>
@@ -309,7 +317,7 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          {isLoadingContent && filteredServices.length === 0 ? (
+          {isLoadingContent ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
             </div>

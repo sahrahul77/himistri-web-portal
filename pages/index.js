@@ -138,17 +138,30 @@ export default function HomePage() {
     // 1. Instantly load from cache to eliminate UI render delay
     try {
       const cachedCat = localStorage.getItem('himistri_cache_cat');
-      if (cachedCat) setCategories(JSON.parse(cachedCat));
+      if (cachedCat) {
+          const parsedCat = JSON.parse(cachedCat);
+          if(parsedCat.length > 0) setCategories(parsedCat);
+      }
 
       const cachedSrv = localStorage.getItem('himistri_cache_srv');
-      if (cachedSrv) setServices(JSON.parse(cachedSrv));
+      if (cachedSrv) {
+          const parsedSrv = JSON.parse(cachedSrv);
+          if(parsedSrv.length > 0) setServices(parsedSrv);
+      }
 
       const cachedBnr = localStorage.getItem('himistri_cache_bnr');
-      if (cachedBnr) setBanners(JSON.parse(cachedBnr));
+      if (cachedBnr) {
+          const parsedBnr = JSON.parse(cachedBnr);
+          if(parsedBnr.length > 0) setBanners(parsedBnr);
+      }
 
       const cachedCpn = localStorage.getItem('himistri_cache_cpn');
-      if (cachedCpn) setCoupons(JSON.parse(cachedCpn));
+      if (cachedCpn) {
+          const parsedCpn = JSON.parse(cachedCpn);
+          if(parsedCpn.length > 0) setCoupons(parsedCpn);
+      }
 
+      // If we have cached categories OR services, stop showing skeleton instantly
       if (cachedCat || cachedSrv || cachedBnr) {
         setIsLoadingContent(false);
       }
@@ -241,7 +254,7 @@ export default function HomePage() {
     // Fallback timer
     const fallbackTimer = setTimeout(() => {
       setIsLoadingContent(false);
-    }, 2000);
+    }, 4000);
 
     return () => {
       clearTimeout(fallbackTimer);
@@ -395,7 +408,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
-            {isLoadingContent && categories.length === 0 ? (
+            {isLoadingContent ? (
               [1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)
             ) : (
               categories.map((c) => {
@@ -433,7 +446,7 @@ export default function HomePage() {
         </div>
 
         {/* 3. HERO BANNER CAROUSEL SLIDER */}
-        {isLoadingContent && banners.length === 0 ? (
+        {isLoadingContent ? (
           <HeroBannerSkeleton />
         ) : (
           <HeroBanner banners={banners} />
@@ -538,7 +551,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {isLoadingContent && popularServices.length === 0 ? (
+          {isLoadingContent ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
             </div>

@@ -60,10 +60,16 @@ export default function ServicesPage() {
   useEffect(() => {
     try {
       const cachedSrv = localStorage.getItem('himistri_cache_srv');
-      if (cachedSrv) setServices(JSON.parse(cachedSrv));
+      if (cachedSrv) {
+          const parsedSrv = JSON.parse(cachedSrv);
+          if (parsedSrv.length > 0) setServices(parsedSrv);
+      }
 
       const cachedCat = localStorage.getItem('himistri_cache_cat');
-      if (cachedCat) setCategories(JSON.parse(cachedCat));
+      if (cachedCat) {
+          const parsedCat = JSON.parse(cachedCat);
+          if (parsedCat.length > 0) setCategories(parsedCat);
+      }
 
       if (cachedSrv || cachedCat) {
         setIsLoadingContent(false);
@@ -83,6 +89,7 @@ export default function ServicesPage() {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
       }
+      setIsLoadingContent(false);
     });
 
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
@@ -98,10 +105,11 @@ export default function ServicesPage() {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
       }
+      setIsLoadingContent(false);
     });
 
     // Fallback timer
-    const timer = setTimeout(() => setIsLoadingContent(false), 2000);
+    const timer = setTimeout(() => setIsLoadingContent(false), 4000);
 
     return () => { unsubSrv(); unsubCat(); clearTimeout(timer); };
   }, []);
@@ -213,7 +221,7 @@ export default function ServicesPage() {
         </div>
 
         {/* Services Grid rendering */}
-        {isLoadingContent && filtered.length === 0 ? (
+        {isLoadingContent ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <ServiceSkeleton key={i} />)}
           </div>

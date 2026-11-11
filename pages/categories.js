@@ -95,8 +95,8 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingCat(false);
       }
+      setIsLoadingCat(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -109,11 +109,17 @@ export default function CategoriesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingSrv(false);
       }
+      setIsLoadingSrv(false);
     });
 
-    return () => { unsubCat(); unsubSrv(); };
+    // Safety fallback timer for completely empty DBs
+    const timer = setTimeout(() => {
+      setIsLoadingCat(false);
+      setIsLoadingSrv(false);
+    }, 5000);
+
+    return () => { unsubCat(); unsubSrv(); clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
@@ -147,7 +153,6 @@ export default function CategoriesPage() {
       (selectedCategoryObj && (s.categoryName || '').toLowerCase().includes((selectedCategoryObj.name || '').toLowerCase()));
   });
 
-  // Critical fix: We MUST wait for BOTH services and categories if a specific category is selected from URL
   const isGridLoading = isLoadingSrv || (selectedCategoryId !== 'ALL' && isLoadingCat && !selectedCategoryObj);
 
   return (
@@ -246,7 +251,7 @@ export default function CategoriesPage() {
             <Flame className="w-3.5 h-3.5 text-amber-300" /> All Categories ({categories.length})
           </button>
 
-          {isLoadingCat ? (
+          {isLoadingCat && categories.length === 0 ? (
             <div className="flex gap-2">
               <div className="w-24 h-10 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-full" />
               <div className="w-24 h-10 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-full" />
@@ -278,7 +283,7 @@ export default function CategoriesPage() {
               Browse All Workforce Categories
             </h2>
 
-            {isLoadingCat ? (
+            {isLoadingCat && categories.length === 0 ? (
               <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
                 {[1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)}
               </div>
@@ -322,7 +327,8 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          {isGridLoading ? (
+          {/* CRITICAL FIX: Only render Skeleton IF grid is loading AND filteredServices has length 0 */}
+          {isGridLoading && filteredServices.length === 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
             </div>

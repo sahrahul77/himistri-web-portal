@@ -19,7 +19,7 @@ export default function ServicesPage() {
   const [activeChip, setActiveChip] = useState('ALL');
   const [checkoutService, setCheckoutService] = useState(null);
 
-  // Initialize state empty to show skeletons
+  // Initialize state empty
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -93,8 +93,8 @@ export default function ServicesPage() {
       if (list.length > 0) {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
-        setIsLoadingSrv(false);
       }
+      setIsLoadingSrv(false);
     });
 
     const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
@@ -109,11 +109,17 @@ export default function ServicesPage() {
       if (list.length > 0) {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
-        setIsLoadingCat(false);
       }
+      setIsLoadingCat(false);
     });
 
-    return () => { unsubSrv(); unsubCat(); };
+    // Safety fallback timer for completely empty DBs
+    const timer = setTimeout(() => {
+      setIsLoadingSrv(false);
+      setIsLoadingCat(false);
+    }, 5000);
+
+    return () => { unsubSrv(); unsubCat(); clearTimeout(timer); };
   }, []);
 
   const handleHireNow = (serviceObj) => {
@@ -195,7 +201,7 @@ export default function ServicesPage() {
             >
               All Services
             </button>
-            {isLoadingCat ? (
+            {isLoadingCat && categories.length === 0 ? (
               <div className="flex gap-2">
                 <div className="w-20 h-9 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-2xl" />
                 <div className="w-20 h-9 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-2xl" />
@@ -230,7 +236,7 @@ export default function ServicesPage() {
         </div>
 
         {/* Services Grid rendering */}
-        {isLoadingSrv ? (
+        {isLoadingSrv && filtered.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <ServiceSkeleton key={i} />)}
           </div>

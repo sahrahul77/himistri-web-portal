@@ -38,7 +38,11 @@ export default function HomePage() {
   const [coupons, setCoupons] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
+
+  // Independent Loading States
+  const [isLoadingCat, setIsLoadingCat] = useState(true);
+  const [isLoadingSrv, setIsLoadingSrv] = useState(true);
+  const [isLoadingBnr, setIsLoadingBnr] = useState(true);
 
   const { currentUser, isAuthLoaded } = useAuth();
 
@@ -160,11 +164,6 @@ export default function HomePage() {
           const parsedCpn = JSON.parse(cachedCpn);
           if(parsedCpn.length > 0) setCoupons(parsedCpn);
       }
-
-      // If we have cached categories OR services, stop showing skeleton instantly
-      if (cachedCat || cachedSrv || cachedBnr) {
-        setIsLoadingContent(false);
-      }
     } catch (e) {
       console.warn("Cache read error", e);
     }
@@ -187,7 +186,7 @@ export default function HomePage() {
         setCategories(list);
         localStorage.setItem('himistri_cache_cat', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
+      setIsLoadingCat(false);
     });
 
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -201,7 +200,7 @@ export default function HomePage() {
         setServices(list);
         localStorage.setItem('himistri_cache_srv', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
+      setIsLoadingSrv(false);
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
@@ -215,7 +214,7 @@ export default function HomePage() {
         setBanners(list);
         localStorage.setItem('himistri_cache_bnr', JSON.stringify(list));
       }
-      setIsLoadingContent(false);
+      setIsLoadingBnr(false);
     });
 
     const unsubCoupons = onValue(ref(rtdb, 'coupons'), (snapshot) => {
@@ -253,7 +252,9 @@ export default function HomePage() {
 
     // Fallback timer
     const fallbackTimer = setTimeout(() => {
-      setIsLoadingContent(false);
+      setIsLoadingCat(false);
+      setIsLoadingSrv(false);
+      setIsLoadingBnr(false);
     }, 4000);
 
     return () => {
@@ -358,7 +359,7 @@ export default function HomePage() {
                 <span className="text-[9px] text-slate-400">Click item to book</span>
               </div>
 
-              {filteredServices.length === 0 ? (
+              {filteredServices.length === 0 && !isLoadingSrv ? (
                 <div className="p-4 text-center text-xs text-slate-500 font-bold">
                   No services matching "{searchQuery}". Try searching "Plumber", "Electrician", or "Tutor".
                 </div>
@@ -408,7 +409,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-3 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory">
-            {isLoadingContent ? (
+            {isLoadingCat && categories.length === 0 ? (
               [1, 2, 3, 4, 5, 6].map((i) => <CategorySkeleton key={i} />)
             ) : (
               categories.map((c) => {
@@ -446,14 +447,14 @@ export default function HomePage() {
         </div>
 
         {/* 3. HERO BANNER CAROUSEL SLIDER */}
-        {isLoadingContent ? (
+        {isLoadingBnr && banners.length === 0 ? (
           <HeroBannerSkeleton />
-        ) : (
+        ) : banners.length > 0 ? (
           <HeroBanner banners={banners} />
-        )}
+        ) : null}
 
         {/* 4. REALTIME FIREBASE PROMO COUPON CAROUSEL SLIDER */}
-        {coupons.length > 0 && !isLoadingContent && (
+        {coupons.length > 0 && (
           <div className="space-y-3">
             <div className="flex justify-between items-center px-1">
               <span className="text-xs font-black uppercase text-redPrimary tracking-widest flex items-center gap-1">
@@ -551,7 +552,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {isLoadingContent ? (
+          {isLoadingSrv && popularServices.length === 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => <ServiceSkeleton key={i} />)}
             </div>

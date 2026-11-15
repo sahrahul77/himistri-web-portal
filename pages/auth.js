@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
 import { ref, get, set } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
-import { User, Lock, Phone, CheckCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { User, Lock, Phone, CheckCircle, CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function AuthPage() {
   const [isDark, setIsDark] = useState(true);
@@ -13,11 +13,13 @@ export default function AuthPage() {
 
   const [inputVal, setInputVal] = useState('');
   const [password, setPassword] = useState('');
+  const [showLoginPass, setShowLoginPass] = useState(false);
 
   const [regName, setRegName] = useState('');
   const [regPhone, setRegPhone] = useState('+91');
   const [regEmail, setRegEmail] = useState('');
   const [regPass, setRegPass] = useState('');
+  const [showRegPass, setShowRegPass] = useState(false);
   const [regSkill, setRegSkill] = useState('Plumber');
 
   const [isOtpOpen, setIsOtpOpen] = useState(false);
@@ -197,12 +199,19 @@ export default function AuthPage() {
                 <div className="relative">
                   <Lock className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
                   <input
-                    type="password"
+                    type={showLoginPass ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm"
+                    className="w-full pl-10 pr-10 p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPass(!showLoginPass)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-redPrimary transition"
+                  >
+                    {showLoginPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -277,13 +286,23 @@ export default function AuthPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Set Password * (Compulsory)</label>
-                <input
-                  type="password"
-                  value={regPass}
-                  onChange={(e) => setRegPass(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm"
-                />
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                  <input
+                    type={showRegPass ? "text" : "password"}
+                    value={regPass}
+                    onChange={(e) => setRegPass(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-10 p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPass(!showRegPass)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-redPrimary transition"
+                  >
+                    {showRegPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {regRole === 'PARTNER' && (

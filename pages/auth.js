@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
-import { ref, get, set } from 'firebase/database';
+import { ref, get, set, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
 import { User, Lock, Phone, CheckCircle, CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-react';
 
@@ -20,7 +20,30 @@ export default function AuthPage() {
   const [regEmail, setRegEmail] = useState('');
   const [regPass, setRegPass] = useState('');
   const [showRegPass, setShowRegPass] = useState(false);
-  const [regSkill, setRegSkill] = useState('Plumber');
+  const [regSkill, setRegSkill] = useState('');
+  const [categories, setCategories] = useState([]);
+
+  // Fetch Live Categories from Database for Dynamic Skill Selection
+  useEffect(() => {
+    const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
+      const list = [];
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === 'object' && val !== null) {
+          Object.keys(val).forEach((k) => {
+            if (val[k] && val[k].name) {
+              list.push({ id: k, ...val[k] });
+            }
+          });
+        }
+      }
+      setCategories(list);
+      if (list.length > 0 && !regSkill) {
+        setRegSkill(list[0].name.replace(' Manpower', ''));
+      }
+    });
+    return () => unsubCat();
+  }, []);
 
   const [isOtpOpen, setIsOtpOpen] = useState(false);
   const [successUser, setSuccessUser] = useState(null);
@@ -311,14 +334,25 @@ export default function AuthPage() {
                   <select
                     value={regSkill}
                     onChange={(e) => setRegSkill(e.target.value)}
-                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm"
+                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-bold text-slate-900 dark:text-white"
                   >
-                    <option>Plumber</option>
-                    <option>Electrician</option>
-                    <option>Barber & Salon</option>
-                    <option>Home Tutor</option>
-                    <option>Cleaner & Washing</option>
-                    <option>Carpenter</option>
+                    {categories.length > 0 ? (
+                      categories.map((c) => {
+                        const cleanName = c.name.replace(' Manpower', '');
+                        return (
+                          <option key={c.id} value={cleanName}>
+                            {cleanName}
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <option value="Plumber">Plumber</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Carpenter">Carpenter</option>
+                        <option value="Home Tutor">Home Tutor</option>
+                      </>
+                    )}
                   </select>
                 </div>
               )}

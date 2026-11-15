@@ -21,28 +21,28 @@ export default function AuthPage() {
   const [regPass, setRegPass] = useState('');
   const [showRegPass, setShowRegPass] = useState(false);
   const [regSkill, setRegSkill] = useState('');
-  const [categories, setCategories] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
 
-  // Fetch Live Categories from Database for Dynamic Skill Selection
+  // Fetch Live Services from Database for Dynamic Skill Selection
   useEffect(() => {
-    const unsubCat = onValue(ref(rtdb, 'categories'), (snapshot) => {
+    const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = [];
       if (snapshot.exists()) {
         const val = snapshot.val();
         if (typeof val === 'object' && val !== null) {
           Object.keys(val).forEach((k) => {
-            if (val[k] && val[k].name) {
+            if (val[k] && val[k].title) {
               list.push({ id: k, ...val[k] });
             }
           });
         }
       }
-      setCategories(list);
+      setServicesList(list);
       if (list.length > 0 && !regSkill) {
-        setRegSkill(list[0].name.replace(' Manpower', ''));
+        setRegSkill(list[0].title);
       }
     });
-    return () => unsubCat();
+    return () => unsubSrv();
   }, []);
 
   const [isOtpOpen, setIsOtpOpen] = useState(false);
@@ -336,21 +336,18 @@ export default function AuthPage() {
                     onChange={(e) => setRegSkill(e.target.value)}
                     className="w-full p-3 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm font-bold text-slate-900 dark:text-white"
                   >
-                    {categories.length > 0 ? (
-                      categories.map((c) => {
-                        const cleanName = c.name.replace(' Manpower', '');
-                        return (
-                          <option key={c.id} value={cleanName}>
-                            {cleanName}
-                          </option>
-                        );
-                      })
+                    {servicesList.length > 0 ? (
+                      servicesList.map((s) => (
+                        <option key={s.id} value={s.title}>
+                          {s.title} ({s.categoryName ? s.categoryName.replace(' Manpower', '') : 'General'})
+                        </option>
+                      ))
                     ) : (
                       <>
-                        <option value="Plumber">Plumber</option>
-                        <option value="Electrician">Electrician</option>
-                        <option value="Carpenter">Carpenter</option>
-                        <option value="Home Tutor">Home Tutor</option>
+                        <option value="Plumber Leak Fix & Fitting">Plumber Leak Fix & Fitting</option>
+                        <option value="AC/Fan Repairer">AC/Fan Repairer</option>
+                        <option value="Full House Wiring & Switchboard Repair">Full House Wiring & Switchboard Repair</option>
+                        <option value="Door Lock & Hinge Repair">Door Lock & Hinge Repair</option>
                       </>
                     )}
                   </select>

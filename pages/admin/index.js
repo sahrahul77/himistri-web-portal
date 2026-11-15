@@ -12,7 +12,7 @@ import {
   ShieldCheck, Users, DollarSign, Package, Plus, Trash2, CheckCircle2, UserPlus, Lock, LogIn, LogOut,
   BarChart3, CreditCard, HardHat, Image as ImageIcon, Layers, Wrench, Search, Phone, Mail, Edit, MessageSquare, X, User, Check, TrendingUp, ShoppingBag, Clock, Award, Save, Bike, ChevronLeft, ChevronRight, ShieldAlert, UserCheck, Key, Upload, Timer, Star, Bell, Send, Tag, Percent, RefreshCw
 } from 'lucide-react';
-import { DEFAULT_CATEGORIES, DEFAULT_COUPONS } from '../../lib/defaultData';
+import { DEFAULT_CATEGORIES, DEFAULT_SERVICES, DEFAULT_BANNERS, DEFAULT_COUPONS } from '../../lib/defaultData';
 
 export default function AdminControlPanelPage() {
   // Default Website Theme is Light Mode
@@ -364,20 +364,42 @@ export default function AdminControlPanelPage() {
 
     const unsubCategories = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
-      setCategoriesList(list);
-      if (list.length > 0 && !newSrvCatId) {
-        setNewSrvCatId(list[0].id);
+      if (!snapshot.exists() || list.length === 0) {
+        DEFAULT_CATEGORIES.forEach((c) => {
+          set(ref(rtdb, `categories/${c.id}`), c);
+        });
+        setCategoriesList(DEFAULT_CATEGORIES);
+        if (!newSrvCatId) setNewSrvCatId(DEFAULT_CATEGORIES[0].id);
+      } else {
+        setCategoriesList(list);
+        if (list.length > 0 && !newSrvCatId) {
+          setNewSrvCatId(list[0].id);
+        }
       }
     });
 
     const unsubServices = onValue(ref(rtdb, 'services'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
-      setServicesList(list);
+      if (!snapshot.exists() || list.length === 0) {
+        DEFAULT_SERVICES.forEach((s) => {
+          set(ref(rtdb, `services/${s.id}`), s);
+        });
+        setServicesList(DEFAULT_SERVICES);
+      } else {
+        setServicesList(list);
+      }
     });
 
     const unsubBanners = onValue(ref(rtdb, 'banners'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
-      setBannersList(list);
+      if (!snapshot.exists() || list.length === 0) {
+        DEFAULT_BANNERS.forEach((b) => {
+          set(ref(rtdb, `banners/${b.id}`), b);
+        });
+        setBannersList(DEFAULT_BANNERS);
+      } else {
+        setBannersList(list);
+      }
     });
 
     const unsubTestimonials = onValue(ref(rtdb, 'testimonials'), (snapshot) => {

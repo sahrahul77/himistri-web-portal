@@ -174,11 +174,8 @@ export default function HomePage() {
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
           const cat = child.val();
-          const catName = (cat?.name || '').trim();
-          if (catName.toLowerCase().includes('manpower')) {
+          if (cat) {
             list.push({ id: child.key, ...cat });
-          } else {
-            remove(ref(rtdb, `categories/${child.key}`));
           }
         });
       }

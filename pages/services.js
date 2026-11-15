@@ -101,7 +101,7 @@ export default function ServicesPage() {
       const list = [];
       if (snapshot.exists()) {
         snapshot.forEach((child) => {
-          if (child.val() && (child.val().name || '').toLowerCase().includes('manpower')) {
+          if (child.val()) {
             list.push({ id: child.key, ...child.val() });
           }
         });

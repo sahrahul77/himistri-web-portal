@@ -44,6 +44,7 @@ export default function CheckoutPage() {
   // Booking Plan & Duration Dropdown States
   const [bookingPlan, setBookingPlan] = useState('HOURLY'); // HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY
   const [durationValue, setDurationValue] = useState(1);
+  const [preferredGender, setPreferredGender] = useState('ANY'); // ANY, MALE, FEMALE
 
   // Address Form Structured States
   const [savedAddressesList, setSavedAddressesList] = useState([]);
@@ -396,6 +397,7 @@ export default function CheckoutPage() {
       totalTaxesAndFees: totalTaxesAndFees,
       amazeSubscriptionCost: amazeSubscriptionCost,
       totalAmount: finalTotalAmount,
+      preferredGender: preferredGender,
       scheduledDate: date,
       scheduledTimeSlot: slot,
       address: finalAddressString,
@@ -641,6 +643,58 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Preferred Craftsman Gender Selection */}
+            <div className="web-card p-5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333333] rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center gap-2 text-redPrimary">
+                <User className="w-5 h-5 text-redPrimary" />
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Preferred Craftsman Gender</h3>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Select if you prefer a Male or Female craftsman dispatched to your doorstep.
+              </p>
+
+              <div className="grid grid-cols-3 gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPreferredGender('ANY')}
+                  className={`p-3.5 rounded-xl border text-xs font-extrabold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition cursor-pointer ${
+                    preferredGender === 'ANY'
+                      ? 'border-redPrimary bg-redPrimary/10 text-redPrimary shadow-md'
+                      : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 text-slate-700 dark:text-slate-300 hover:border-redPrimary/50'
+                  }`}
+                >
+                  <span className="text-base">👥</span>
+                  <span>Any / No Pref</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPreferredGender('MALE')}
+                  className={`p-3.5 rounded-xl border text-xs font-extrabold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition cursor-pointer ${
+                    preferredGender === 'MALE'
+                      ? 'border-redPrimary bg-redPrimary/10 text-redPrimary shadow-md'
+                      : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 text-slate-700 dark:text-slate-300 hover:border-redPrimary/50'
+                  }`}
+                >
+                  <span className="text-base">👨</span>
+                  <span>Male Craftsman</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPreferredGender('FEMALE')}
+                  className={`p-3.5 rounded-xl border text-xs font-extrabold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition cursor-pointer ${
+                    preferredGender === 'FEMALE'
+                      ? 'border-redPrimary bg-redPrimary/10 text-redPrimary shadow-md'
+                      : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 text-slate-700 dark:text-slate-300 hover:border-redPrimary/50'
+                  }`}
+                >
+                  <span className="text-base">👩</span>
+                  <span>Female Craftsman</span>
+                </button>
+              </div>
             </div>
 
             {/* Payment Method Selector */}

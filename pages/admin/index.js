@@ -101,6 +101,7 @@ export default function AdminControlPanelPage() {
   const [newSrvDiscount, setNewSrvDiscount] = useState('');
   const [newSrvRating, setNewSrvRating] = useState('5.0');
   const [newSrvImage, setNewSrvImage] = useState('');
+  const [newSrvDesc, setNewSrvDesc] = useState('');
 
   const [newBnrTitle, setNewBnrTitle] = useState('');
   const [newBnrSub, setNewBnrSub] = useState('');
@@ -775,6 +776,7 @@ export default function AdminControlPanelPage() {
       categoryId: catObj.id,
       categoryName: catObj.name,
       title: newSrvTitle,
+      shortDescription: newSrvDesc || 'Doorstep expert technical service delivered by local craftsmen in Gangtok.',
       originalPrice: parseFloat(newSrvPrice) || 1000,
       discountedPrice: parseFloat(newSrvDiscount) || (parseFloat(newSrvPrice) || 1000),
       ratingAverage: parseFloat(newSrvRating) || 5.0,
@@ -782,7 +784,7 @@ export default function AdminControlPanelPage() {
       imageUrl: newSrvImage || 'https://cdn-icons-png.flaticon.com/512/3079/3079203.png'
     }).then(() => {
       setPopupState({ isOpen: true, title: 'Service Created', message: `Service '${newSrvTitle}' saved with default ${newSrvRating || 5.0}★ rating!`, type: 'success' });
-      setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage(''); setNewSrvRating('5.0');
+      setNewSrvTitle(''); setNewSrvPrice(''); setNewSrvDiscount(''); setNewSrvImage(''); setNewSrvRating('5.0'); setNewSrvDesc('');
     });
   };
 
@@ -855,6 +857,7 @@ export default function AdminControlPanelPage() {
 
     update(ref(rtdb, `services/${editingService.id}`), {
       title: editingService.title,
+      shortDescription: editingService.shortDescription || 'Doorstep expert technical service delivered by local craftsmen in Gangtok.',
       originalPrice: parseFloat(editingService.originalPrice) || 1000,
       discountedPrice: parseFloat(editingService.discountedPrice) || 800,
       ratingAverage: parseFloat(editingService.ratingAverage) || 5.0,
@@ -1586,7 +1589,7 @@ export default function AdminControlPanelPage() {
                 setEditingTestimonial={setEditingTestimonial}
                 setEditingFaq={setEditingFaq}
                 handleAddCategory={handleAddCategory} newCatName={newCatName} setNewCatName={setNewCatName} newCatIcon={newCatIcon} setNewCatIcon={setNewCatIcon}
-                handleAddService={handleAddService} newSrvTitle={newSrvTitle} setNewSrvTitle={setNewSrvTitle} newSrvCatId={newSrvCatId} setNewSrvCatId={setNewSrvCatId} newSrvPrice={newSrvPrice} setNewSrvPrice={setNewSrvPrice} newSrvDiscount={newSrvDiscount} setNewSrvDiscount={setNewSrvDiscount} newSrvRating={newSrvRating} setNewSrvRating={setNewSrvRating} newSrvImage={newSrvImage} setNewSrvImage={setNewSrvImage}
+                handleAddService={handleAddService} newSrvTitle={newSrvTitle} setNewSrvTitle={setNewSrvTitle} newSrvCatId={newSrvCatId} setNewSrvCatId={setNewSrvCatId} newSrvPrice={newSrvPrice} setNewSrvPrice={setNewSrvPrice} newSrvDiscount={newSrvDiscount} setNewSrvDiscount={setNewSrvDiscount} newSrvRating={newSrvRating} setNewSrvRating={setNewSrvRating} newSrvImage={newSrvImage} setNewSrvImage={setNewSrvImage} newSrvDesc={newSrvDesc} setNewSrvDesc={setNewSrvDesc}
                 handleAddBanner={handleAddBanner} newBnrTitle={newBnrTitle} setNewBnrTitle={setNewBnrTitle} newBnrSub={newBnrSub} setNewBnrSub={setNewBnrSub} newBnrImg={newBnrImg} setNewBnrImg={setNewBnrImg}
                 handleAddTestimonial={handleAddTestimonial} newTestName={newTestName} setNewTestName={setNewTestName} newTestLoc={newTestLoc} setNewTestLoc={setNewTestLoc} newTestText={newTestText} setNewTestText={setNewTestText}
                 handleAddFaq={handleAddFaq} newFaqQ={newFaqQ} setNewFaqQ={setNewFaqQ} newFaqA={newFaqA} setNewFaqA={setNewFaqA}

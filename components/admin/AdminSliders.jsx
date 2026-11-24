@@ -28,7 +28,7 @@ export const AdminSliders = ({
   setEditingTestimonial,
   setEditingFaq,
   handleAddCategory, newCatName, setNewCatName, newCatIcon, setNewCatIcon,
-  handleAddService, newSrvTitle, setNewSrvTitle, newSrvCatId, setNewSrvCatId, newSrvPrice, setNewSrvPrice, newSrvDiscount, setNewSrvDiscount, newSrvRating, setNewSrvRating, newSrvImage, setNewSrvImage,
+  handleAddService, newSrvTitle, setNewSrvTitle, newSrvCatId, setNewSrvCatId, newSrvPrice, setNewSrvPrice, newSrvDiscount, setNewSrvDiscount, newSrvRating, setNewSrvRating, newSrvImage, setNewSrvImage, newSrvDesc, setNewSrvDesc,
   handleAddBanner, newBnrTitle, setNewBnrTitle, newBnrSub, setNewBnrSub, newBnrImg, setNewBnrImg,
   handleAddTestimonial, newTestName, setNewTestName, newTestLoc, setNewTestLoc, newTestText, setNewTestText,
   handleAddFaq, newFaqQ, setNewFaqQ, newFaqA, setNewFaqA,
@@ -526,6 +526,18 @@ export const AdminSliders = ({
                     className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                   />
                 </div>
+              </div>
+
+              {/* Service Short Description Field */}
+              <div className="md:col-span-2">
+                <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Short Description / Service Details</label>
+                <textarea
+                  value={newSrvDesc || ''}
+                  onChange={(e) => setNewSrvDesc(e.target.value)}
+                  placeholder="e.g. Doorlock, wooden furniture & cabinet repair at doorstep"
+                  rows={2}
+                  className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary resize-none"
+                />
               </div>
 
               <div className="md:col-span-2 space-y-1">

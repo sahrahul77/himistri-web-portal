@@ -288,6 +288,18 @@ export function AdminModals({
               </div>
             </div>
 
+            {/* Field 5: Short Description Field */}
+            <div>
+              <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Short Description / Service Details</label>
+              <textarea
+                value={editingService.shortDescription || ''}
+                onChange={(e) => setEditingService({ ...editingService, shortDescription: e.target.value })}
+                placeholder="e.g. Door lock, wooden furniture & cabinet repair at doorstep"
+                rows={2}
+                className="w-full p-3 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary resize-none"
+              />
+            </div>
+
             {/* Field 5: Image Upload */}
             <div>
               <label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 block mb-1">Upload New Service Image File (&le;200KB) / URL</label>

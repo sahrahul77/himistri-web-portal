@@ -87,7 +87,7 @@ export default function Footer() {
       </div>
 
       {/* Main Footer Links & Information */}
-      <div className="web-container py-10 sm:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
+      <div className="web-container py-10 sm:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10">
 
         {/* Brand Information */}
         <div className="space-y-3.5">
@@ -123,6 +123,16 @@ export default function Footer() {
             <li><Link href="/auth" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Customer Sign In / Register</Link></li>
             <li><Link href="/partner" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Service Partner Dashboard</Link></li>
             <li><Link href="/admin" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Admin Control Panel</Link></li>
+          </ul>
+        </div>
+
+        {/* Legal & Policies */}
+        <div>
+          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-3.5 border-l-2 border-redPrimary pl-2">Legal & Policies</h4>
+          <ul className="space-y-2.5 text-xs font-semibold">
+            <li><Link href="/privacy" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Privacy Policy</Link></li>
+            <li><Link href="/terms" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Terms & Conditions</Link></li>
+            <li><Link href="/cancellation" className="hover:text-redPrimary transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-redPrimary shrink-0" /> Cancellation & Refund Policy</Link></li>
           </ul>
         </div>
 

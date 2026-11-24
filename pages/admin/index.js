@@ -1314,6 +1314,20 @@ export default function AdminControlPanelPage() {
                           <p className="text-xs text-slate-600 dark:text-slate-400">Customer: <strong className="text-slate-900 dark:text-white">{currentOrder.userName || 'Passang Bhutia'}</strong> ({currentOrder.customerPhone || '+916296351107'})</p>
                           <p className="text-xs text-slate-600 dark:text-slate-400">Address: <strong className="text-slate-900 dark:text-white">{currentOrder.address || 'Gangtok'}</strong></p>
 
+                          {/* Preferred Craftsman Gender Badge */}
+                          <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs font-bold">
+                            <span>Customer Preferred Craftsman:</span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase w-fit ${
+                              currentOrder.preferredGender === 'MALE' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30' :
+                              currentOrder.preferredGender === 'FEMALE' ? 'bg-pink-500/20 text-pink-600 dark:text-pink-400 border border-pink-500/30' :
+                              'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                            }`}>
+                              {currentOrder.preferredGender === 'MALE' ? '👨 Male Craftsman Required' :
+                               currentOrder.preferredGender === 'FEMALE' ? '👩 Female Craftsman Required' :
+                               '👥 Any / No Preference'}
+                            </span>
+                          </div>
+
                           <div className="p-3 rounded-xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex items-center gap-2 text-xs font-bold text-orangeSecondary">
                             <Bike className="w-4 h-4 text-orangeSecondary shrink-0" />
                             <span>Live Status: {currentOrder.trackingStatus || 'Order Placed by Customer'}</span>

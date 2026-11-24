@@ -414,10 +414,19 @@ export function AdminModals({
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-snug">
                 Assign Partner for {assigningBooking.serviceTitle}
               </h2>
-              <p className="text-xs font-bold text-redPrimary mt-1">
-                Service Category: {assigningBooking.serviceCategory || 'Services'}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-semibold">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <p className="text-xs font-bold text-redPrimary">
+                  Service Category: {assigningBooking.serviceCategory || 'Services'}
+                </p>
+                <span className="text-[11px] font-black text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                  Pref. Craftsman: {
+                    assigningBooking.preferredGender === 'MALE' ? '👨 Male' :
+                    assigningBooking.preferredGender === 'FEMALE' ? '👩 Female' :
+                    '👥 Any'
+                  }
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-semibold">
                 Select a verified partner to dispatch for order ref: <span className="text-slate-900 dark:text-white font-bold">{assigningBooking.bookingRef || assigningBooking.id}</span>
               </p>
             </div>

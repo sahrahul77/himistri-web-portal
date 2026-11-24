@@ -148,14 +148,14 @@ export default function AuthPage() {
       if (!matchedUser) {
         setIsLoading(false);
         setLoadingStep(0);
-        return alert('Account not found in Database. Please switch to "New Account Register" to create your account.');
+        return alert(`No HiMistri account found registered with '${cleanInput}'.\n\nIf you are a new customer or service partner, please switch to the 'New Account Register' tab above to create your free account.`);
       }
 
       // Verify Password
       if (matchedUser.password && matchedUser.password !== password) {
         setIsLoading(false);
         setLoadingStep(0);
-        return alert('Incorrect Password. Please try again.');
+        return alert(`Incorrect Password for account '${cleanInput}'.\n\nPlease check your password or use the 'Send Phone Verification OTP Code' button below to sign in instantly!`);
       }
 
       setLoadingStep(3);
@@ -608,8 +608,8 @@ export default function AuthPage() {
                   <Loader2 className="w-10 h-10 text-redPrimary animate-spin" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Connecting to Sikkim Cloud Node...</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Encrypting credentials and performing security handshake...</p>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Connecting to HiMistri Sikkim Network...</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Encrypting credentials and initializing cloud security handshake...</p>
                 </div>
               </div>
             )}
@@ -620,7 +620,7 @@ export default function AuthPage() {
                   <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Transmitting Verification Documents...</h3>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Transmitting Verification Payload...</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Saving craftsman profile and mirroring credentials to Firebase Database...</p>
                 </div>
               </div>

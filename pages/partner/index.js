@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, set } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
-import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell, Trash2, XCircle, AlertCircle, FileCheck } from 'lucide-react';
+import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell, Trash2, XCircle, AlertCircle, FileCheck, Sparkles, Award } from 'lucide-react';
 
 export default function PartnerDashboardPage() {
   // Default Website Theme is Light Mode
@@ -24,6 +24,7 @@ export default function PartnerDashboardPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editSkill, setEditSkill] = useState('');
   const [liveVerificationStatus, setLiveVerificationStatus] = useState('APPROVED');
+  const [showApprovedCelebration, setShowApprovedCelebration] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Dynamic Popup Modal State
@@ -67,17 +68,29 @@ export default function PartnerDashboardPage() {
     setEditPhone(currentUser.phoneNumber || '');
     setEditSkill(currentUser.skillCategory || 'General Specialist');
     setIsOnline(currentUser.isOnline !== false);
-    setLiveVerificationStatus(currentUser.verificationStatus || 'APPROVED');
+
+    const initStatus = currentUser.verificationStatus || 'APPROVED';
+    setLiveVerificationStatus(initStatus);
+
+    const ackKey = `himistri_partner_approved_ack_${currentUser.id}`;
+    if (initStatus === 'APPROVED' && !localStorage.getItem(ackKey)) {
+      setShowApprovedCelebration(true);
+    }
 
     const partnerUserRef = ref(rtdb, `users/${currentUser.id}`);
     const unsubPartner = onValue(partnerUserRef, (snap) => {
       if (snap.exists()) {
         const val = snap.val();
+        const freshStatus = val.verificationStatus || currentUser.verificationStatus || 'APPROVED';
         setIsOnline(val.isOnline !== false);
         setEditName(val.fullName || currentUser.fullName || '');
         setEditPhone(val.phoneNumber || currentUser.phoneNumber || '');
         setEditSkill(val.skillCategory || currentUser.skillCategory || 'General Specialist');
-        setLiveVerificationStatus(val.verificationStatus || currentUser.verificationStatus || 'APPROVED');
+
+        if (freshStatus === 'APPROVED' && !localStorage.getItem(ackKey)) {
+          setShowApprovedCelebration(true);
+        }
+        setLiveVerificationStatus(freshStatus);
       }
     });
 
@@ -273,6 +286,56 @@ export default function PartnerDashboardPage() {
             <Link href="/auth" className="btn-primary inline-flex bg-orangeSecondary hover:bg-orange-600">
               <LogIn className="w-4 h-4" /> Sign In as Partner
             </Link>
+          </div>
+        ) : liveVerificationStatus === 'APPROVED' && showApprovedCelebration ? (
+          <div className="web-card p-8 sm:p-10 max-w-xl mx-auto space-y-6 shadow-2xl text-center border border-emerald-500/30 bg-white dark:bg-[#1A1A1A] rounded-3xl relative overflow-hidden">
+
+            {/* Background Glow Accents */}
+            <div className="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto shadow-inner relative">
+              <CheckCircle2 className="w-12 h-12 text-emerald-600 animate-bounce" />
+              <Sparkles className="w-6 h-6 text-amber-400 absolute -top-1 -right-1 animate-pulse" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border border-emerald-500/30">
+                🎉 ACCOUNT VERIFIED & APPROVED!
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                Congratulations, <span className="text-redPrimary">{currentUser.fullName}</span>!
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed max-w-md mx-auto">
+                Your Service Partner account and craftsman documents have been verified and approved by the Lead Admin. You are now an official HiMistri Technical Service Partner in Sikkim!
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-left space-y-2.5 text-xs">
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-slate-500">Registered Craftsman Skill:</span>
+                <span className="text-redPrimary font-extrabold">{editSkill}</span>
+              </div>
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-slate-500">Contact Number:</span>
+                <span className="text-slate-900 dark:text-white">{editPhone}</span>
+              </div>
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-slate-500">Dispatch Duty Status:</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">🟢 ONLINE & READY</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.setItem(`himistri_partner_approved_ack_${currentUser.id}`, 'true');
+                setShowApprovedCelebration(false);
+              }}
+              className="btn-primary w-full py-4 text-xs font-black shadow-xl rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center justify-center gap-2"
+            >
+              <Briefcase className="w-4 h-4" /> Go to Partner Dashboard & View Workspace →
+            </button>
           </div>
         ) : liveVerificationStatus === 'PENDING' ? (
           <div className="web-card p-8 sm:p-10 max-w-xl mx-auto space-y-6 shadow-2xl text-center border border-amber-500/30 bg-white dark:bg-[#1A1A1A] rounded-3xl relative overflow-hidden">

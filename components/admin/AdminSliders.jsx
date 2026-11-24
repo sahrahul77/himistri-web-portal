@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus, Download, FileText, Award, CreditCard, XCircle, UserCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus, Download, FileText, Award, CreditCard, XCircle, UserCheck, AlertCircle, Loader2, Ban } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, update } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
@@ -63,6 +63,17 @@ export const AdminSliders = ({
       alert('Error rejecting partner: ' + e.message);
     } finally {
       setProcessingPartnerId(null);
+    }
+  };
+
+  const handleToggleAccountStatus = async (userId, currentStatus) => {
+    const nextStatus = currentStatus === 'DISABLED' ? 'ACTIVE' : 'DISABLED';
+    try {
+      await update(ref(rtdb, `users/${userId}`), { accountStatus: nextStatus });
+      await update(ref(rtdb, `partners/${userId}`), { accountStatus: nextStatus });
+      alert(nextStatus === 'DISABLED' ? '🔴 Account Disabled / Deactivated successfully!' : '🟢 Account Enabled & Reactivated successfully!');
+    } catch (e) {
+      alert('Error toggling account status: ' + e.message);
     }
   };
 
@@ -338,6 +349,33 @@ export const AdminSliders = ({
                                 <XCircle className="w-4 h-4" />
                               )}
                               {currentUserObj.verificationStatus === 'REJECTED' ? '✕ Rejected' : processingPartnerId === currentUserObj.id ? 'Rejecting...' : 'Reject Partner'}
+                            </button>
+                          </div>
+
+                          {/* ENABLE / DISABLE ACCOUNT TOGGLE BUTTON */}
+                          <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Account Access:</span>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                currentUserObj.accountStatus === 'DISABLED'
+                                  ? 'bg-rose-500/20 text-rose-600 border border-rose-500/30'
+                                  : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                              }`}>
+                                {currentUserObj.accountStatus === 'DISABLED' ? '🔴 Disabled' : '🟢 Active'}
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleAccountStatus(currentUserObj.id, currentUserObj.accountStatus)}
+                              className={`py-1.5 px-3 rounded-xl font-extrabold text-[11px] transition shadow-sm flex items-center gap-1 cursor-pointer ${
+                                currentUserObj.accountStatus === 'DISABLED'
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  : 'bg-slate-200 dark:bg-neutral-800 hover:bg-rose-600 hover:text-white text-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              {currentUserObj.accountStatus === 'DISABLED' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                              {currentUserObj.accountStatus === 'DISABLED' ? 'Enable Account' : 'Disable Account'}
                             </button>
                           </div>
                         </div>

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, set } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
-import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell, Trash2, XCircle, AlertCircle, FileCheck, Sparkles, Award } from 'lucide-react';
+import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell, Trash2, XCircle, AlertCircle, FileCheck, Sparkles, Award, Ban } from 'lucide-react';
 
 export default function PartnerDashboardPage() {
   // Default Website Theme is Light Mode
@@ -24,6 +24,7 @@ export default function PartnerDashboardPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editSkill, setEditSkill] = useState('');
   const [liveVerificationStatus, setLiveVerificationStatus] = useState('APPROVED');
+  const [liveAccountStatus, setLiveAccountStatus] = useState('ACTIVE');
   const [showApprovedCelebration, setShowApprovedCelebration] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -82,6 +83,7 @@ export default function PartnerDashboardPage() {
       if (snap.exists()) {
         const val = snap.val();
         const freshStatus = val.verificationStatus || currentUser.verificationStatus || 'APPROVED';
+        const freshAccountStatus = val.accountStatus || currentUser.accountStatus || 'ACTIVE';
         setIsOnline(val.isOnline !== false);
         setEditName(val.fullName || currentUser.fullName || '');
         setEditPhone(val.phoneNumber || currentUser.phoneNumber || '');
@@ -91,6 +93,7 @@ export default function PartnerDashboardPage() {
           setShowApprovedCelebration(true);
         }
         setLiveVerificationStatus(freshStatus);
+        setLiveAccountStatus(freshAccountStatus);
       }
     });
 
@@ -286,6 +289,33 @@ export default function PartnerDashboardPage() {
             <Link href="/auth" className="btn-primary inline-flex bg-orangeSecondary hover:bg-orange-600">
               <LogIn className="w-4 h-4" /> Sign In as Partner
             </Link>
+          </div>
+        ) : liveAccountStatus === 'DISABLED' ? (
+          <div className="web-card p-8 sm:p-10 max-w-xl mx-auto space-y-6 shadow-2xl text-center border border-rose-500/30 bg-white dark:bg-[#1A1A1A] rounded-3xl">
+            <div className="w-20 h-20 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
+              <Ban className="w-10 h-10 text-rose-500" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-rose-500/10 text-rose-600 border border-rose-500/30">
+                🔴 ACCOUNT DEACTIVATED
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+                Account Suspended by Lead Admin
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-md mx-auto">
+                Hi <strong className="text-slate-900 dark:text-white">{currentUser.fullName}</strong>, your partner account has been temporarily disabled by Lead Admin. Please contact helpline support to reactivate your workspace.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="tel:+917430887960" className="btn-primary py-3 px-5 text-xs font-black rounded-xl bg-rose-600 hover:bg-rose-700 shadow-md">
+                <Phone className="w-4 h-4 inline mr-1.5" /> Call Admin Helpline: +91 7430887960
+              </a>
+              <button onClick={() => logout()} className="px-5 py-3 rounded-xl bg-slate-200 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-300 dark:hover:bg-neutral-700">
+                <LogOut className="w-4 h-4 inline mr-1.5" /> Sign Out
+              </button>
+            </div>
           </div>
         ) : liveVerificationStatus === 'APPROVED' && showApprovedCelebration ? (
           <div className="web-card p-8 sm:p-10 max-w-xl mx-auto space-y-6 shadow-2xl text-center border border-emerald-500/30 bg-white dark:bg-[#1A1A1A] rounded-3xl relative overflow-hidden">

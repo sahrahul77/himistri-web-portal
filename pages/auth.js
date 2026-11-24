@@ -151,6 +151,12 @@ export default function AuthPage() {
         return alert(`No HiMistri account found registered with '${cleanInput}'.\n\nIf you are a new customer or service partner, please switch to the 'New Account Register' tab above to create your free account.`);
       }
 
+      if (matchedUser.accountStatus === 'DISABLED') {
+        setIsLoading(false);
+        setLoadingStep(0);
+        return alert(`Account Deactivated!\n\nYour HiMistri account ('${cleanInput}') has been disabled by Lead Admin.\n\nPlease contact helpline support at +91 7430887960 to restore access.`);
+      }
+
       // Verify Password
       if (matchedUser.password && matchedUser.password !== password) {
         setIsLoading(false);

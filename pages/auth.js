@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
 import { ref, get, set, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
-import { User, Lock, Phone, CheckCircle, CheckCircle2, Loader2, Eye, EyeOff, FileText, Upload, CreditCard, Award, FileCheck, CheckSquare, Square, MessageSquare } from 'lucide-react';
+import { User, Lock, Phone, CheckCircle, CheckCircle2, Loader2, Eye, EyeOff, FileText, Upload, CreditCard, Award, FileCheck, CheckSquare, Square, MessageSquare, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AuthPage() {
@@ -38,6 +38,12 @@ export default function AuthPage() {
   const [aboutText, setAboutText] = useState('');
   const [agreedTerms, setAgreedTerms] = useState(true);
 
+  // Dynamic Loading Step State (0 = None, 1 = Handshake, 2 = Saving Docs, 3 = Authenticated)
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [isOtpOpen, setIsOtpOpen] = useState(false);
+  const [successUser, setSuccessUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   // Fetch Live Services from Database for Dynamic Skill Selection
   useEffect(() => {
     const unsubSrv = onValue(ref(rtdb, 'services'), (snapshot) => {
@@ -59,10 +65,6 @@ export default function AuthPage() {
     });
     return () => unsubSrv();
   }, []);
-
-  const [isOtpOpen, setIsOtpOpen] = useState(false);
-  const [successUser, setSuccessUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -100,7 +102,7 @@ export default function AuthPage() {
       if (userObj.role === 'ADMIN') window.location.href = '/admin';
       else if (userObj.role === 'PARTNER') window.location.href = '/partner';
       else window.location.href = '/';
-    }, 1800);
+    }, 2200);
   };
 
   const handleLoginSubmit = async (e) => {
@@ -109,6 +111,7 @@ export default function AuthPage() {
     if (!password) return alert('Please enter Password.');
 
     setIsLoading(true);
+    setLoadingStep(1);
     const cleanInput = inputVal.trim();
     const cleanPhone = cleanInput.replace(/\D/g, '').slice(-10);
 
@@ -144,18 +147,22 @@ export default function AuthPage() {
 
       if (!matchedUser) {
         setIsLoading(false);
+        setLoadingStep(0);
         return alert('Account not found in Database. Please switch to "New Account Register" to create your account.');
       }
 
       // Verify Password
       if (matchedUser.password && matchedUser.password !== password) {
         setIsLoading(false);
+        setLoadingStep(0);
         return alert('Incorrect Password. Please try again.');
       }
 
+      setLoadingStep(3);
       triggerSuccessRedirect(matchedUser);
     } catch (err) {
       setIsLoading(false);
+      setLoadingStep(0);
       alert('Login failed: ' + err.message);
     }
   };
@@ -185,6 +192,7 @@ export default function AuthPage() {
     }
 
     setIsLoading(true);
+    setLoadingStep(1); // Stage 1: Handshake
 
     const newId = 'usr_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
     const newUser = {
@@ -216,9 +224,18 @@ export default function AuthPage() {
         await set(ref(rtdb, 'partners/' + newId), newUser);
       }
       console.log("User successfully saved!");
-      triggerSuccessRedirect(newUser);
+
+      setLoadingStep(2); // Stage 2: Verification & Mirroring
+
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingStep(3); // Stage 3: Authenticated & Redirecting
+        triggerSuccessRedirect(newUser);
+      }, 1200);
+
     } catch (err) {
       setIsLoading(false);
+      setLoadingStep(0);
       console.error("Firebase Write Error:", err);
       alert("Registration failed! Please check your network or Firebase Database Rules. Error: " + err.message);
     }
@@ -230,11 +247,6 @@ export default function AuthPage() {
 
       <main className="web-container py-10 flex-1 max-w-2xl mx-auto">
         <div className="web-card relative shadow-2xl rounded-3xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1A1A1A] p-6 sm:p-8">
-          {isLoading && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-3xl">
-              <Loader2 className="w-10 h-10 text-white animate-spin" />
-            </div>
-          )}
 
           {/* Top Auth Tab Switcher */}
           <div className="flex bg-slate-100 dark:bg-neutral-800 rounded-2xl p-1 mb-6">
@@ -580,29 +592,86 @@ export default function AuthPage() {
         </div>
       </main>
 
-      {/* Dynamic Success Welcome Popup Modal */}
-      {successUser && (
+      {/* Dynamic Glassmorphism Multi-Stage Loading & Welcome Popup Modal */}
+      {(isLoading || successUser) && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-neutral-800 rounded-3xl p-8 w-full max-w-md text-center shadow-2xl space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-600/20 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-10 h-10 text-emerald-600 animate-bounce" />
-            </div>
+          <div className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-neutral-800 rounded-3xl p-8 w-full max-w-md text-center shadow-2xl space-y-5 relative overflow-hidden">
 
-            <div>
-              <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600">Account Authenticated!</span>
-              <h2 className="text-2xl font-black mt-1 text-slate-900 dark:text-white">Welcome, <span className="text-redPrimary">{successUser.fullName}</span>!</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">
-                {successUser.role === 'ADMIN'
-                  ? 'Redirecting to Lead Admin Control Panel...'
-                  : successUser.role === 'PARTNER'
-                  ? 'Redirecting to Service Partner Dashboard...'
-                  : 'Redirecting to HiMistri Home Screen...'}
-              </p>
-            </div>
+            {/* Top Glow Accents */}
+            <div className="absolute -top-12 -left-12 w-32 h-32 bg-redPrimary/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-orangeSecondary/20 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="pt-2 flex items-center justify-center gap-2 text-xs font-bold text-redPrimary">
-              <Loader2 className="w-4 h-4 animate-spin" /> Accessing Workspace...
-            </div>
+            {loadingStep === 1 && (
+              <div className="space-y-4 py-4">
+                <div className="w-16 h-16 rounded-full bg-redPrimary/10 text-redPrimary flex items-center justify-center mx-auto relative">
+                  <Loader2 className="w-10 h-10 text-redPrimary animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Connecting to Sikkim Cloud Node...</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Encrypting credentials and performing security handshake...</p>
+                </div>
+              </div>
+            )}
+
+            {loadingStep === 2 && (
+              <div className="space-y-4 py-4">
+                <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto relative">
+                  <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Transmitting Verification Documents...</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Saving craftsman profile and mirroring credentials to Firebase Database...</p>
+                </div>
+              </div>
+            )}
+
+            {(loadingStep === 3 || successUser) && (
+              <div className="space-y-4">
+                <div className="w-20 h-20 rounded-full bg-emerald-600/20 text-emerald-600 flex items-center justify-center mx-auto shadow-inner relative">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-600 animate-bounce" />
+                  <Sparkles className="w-5 h-5 text-amber-400 absolute top-1 right-1 animate-pulse" />
+                </div>
+
+                <div className="space-y-2">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                    Account Authenticated & Verified!
+                  </span>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+                    Welcome, <span className="text-redPrimary">{successUser?.fullName}</span>!
+                  </h2>
+
+                  {successUser?.role === 'PARTNER' && (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-left space-y-2 mt-3 shadow-sm">
+                      <div className="flex justify-between items-center text-xs font-black text-slate-900 dark:text-white">
+                        <span>Craftsman Skill:</span>
+                        <span className="text-redPrimary font-extrabold">{successUser.skillCategory || 'Specialist'}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                        <span>Contact Number:</span>
+                        <span>{successUser.phoneNumber}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                        <span>Documents Uploaded:</span>
+                        <span className="text-emerald-600 font-extrabold">✓ Verified</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
+                    {successUser?.role === 'ADMIN'
+                      ? 'Redirecting to Lead Admin Control Panel...'
+                      : successUser?.role === 'PARTNER'
+                      ? 'Redirecting to Service Partner Dashboard Workspace...'
+                      : 'Redirecting to HiMistri Home Screen...'}
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-center gap-2 text-xs font-extrabold text-redPrimary">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Accessing Partner Panel...
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}

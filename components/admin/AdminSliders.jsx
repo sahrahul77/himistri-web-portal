@@ -1,5 +1,5 @@
-import React from 'react';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus, Download, FileText, Award, CreditCard, XCircle, UserCheck, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus, Download, FileText, Award, CreditCard, XCircle, UserCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, update } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
@@ -36,23 +36,33 @@ export const AdminSliders = ({
   // HiMistri Amaze Props
   handleToggleHiMistriAmaze, handleRevokeHiMistriAmaze
 }) => {
+  const [processingPartnerId, setProcessingPartnerId] = useState(null);
+
   const handleApprovePartner = async (partnerId) => {
+    if (processingPartnerId) return;
+    setProcessingPartnerId(partnerId);
     try {
       await update(ref(rtdb, `users/${partnerId}`), { verificationStatus: 'APPROVED' });
       await update(ref(rtdb, `partners/${partnerId}`), { verificationStatus: 'APPROVED' });
       alert('✓ Partner Approved Successfully! Their dispatch workspace is now active.');
     } catch (e) {
       alert('Error approving partner: ' + e.message);
+    } finally {
+      setProcessingPartnerId(null);
     }
   };
 
   const handleRejectPartner = async (partnerId) => {
+    if (processingPartnerId) return;
+    setProcessingPartnerId(partnerId);
     try {
       await update(ref(rtdb, `users/${partnerId}`), { verificationStatus: 'REJECTED' });
       await update(ref(rtdb, `partners/${partnerId}`), { verificationStatus: 'REJECTED' });
       alert('✕ Partner Application Marked as Rejected.');
     } catch (e) {
       alert('Error rejecting partner: ' + e.message);
+    } finally {
+      setProcessingPartnerId(null);
     }
   };
 
@@ -292,17 +302,42 @@ export const AdminSliders = ({
                           <div className="grid grid-cols-2 gap-2 pt-1">
                             <button
                               type="button"
+                              disabled={processingPartnerId === currentUserObj.id || currentUserObj.verificationStatus === 'APPROVED'}
                               onClick={() => handleApprovePartner(currentUserObj.id)}
-                              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1"
+                              className={`py-2.5 px-3 rounded-xl font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1.5 ${
+                                currentUserObj.verificationStatus === 'APPROVED'
+                                  ? 'bg-emerald-600/30 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 cursor-not-allowed opacity-80'
+                                  : processingPartnerId === currentUserObj.id
+                                  ? 'bg-slate-400 text-white cursor-not-allowed'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                              }`}
                             >
-                              <UserCheck className="w-4 h-4" /> Accept & Approve
+                              {processingPartnerId === currentUserObj.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <UserCheck className="w-4 h-4" />
+                              )}
+                              {currentUserObj.verificationStatus === 'APPROVED' ? '✓ Approved' : processingPartnerId === currentUserObj.id ? 'Approving...' : 'Accept & Approve'}
                             </button>
+
                             <button
                               type="button"
+                              disabled={processingPartnerId === currentUserObj.id || currentUserObj.verificationStatus === 'REJECTED'}
                               onClick={() => handleRejectPartner(currentUserObj.id)}
-                              className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1"
+                              className={`py-2.5 px-3 rounded-xl font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1.5 ${
+                                currentUserObj.verificationStatus === 'REJECTED'
+                                  ? 'bg-rose-600/30 text-rose-600 dark:text-rose-400 border border-rose-500/30 cursor-not-allowed opacity-80'
+                                  : processingPartnerId === currentUserObj.id
+                                  ? 'bg-slate-400 text-white cursor-not-allowed'
+                                  : 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer'
+                              }`}
                             >
-                              <XCircle className="w-4 h-4" /> Reject Partner
+                              {processingPartnerId === currentUserObj.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <XCircle className="w-4 h-4" />
+                              )}
+                              {currentUserObj.verificationStatus === 'REJECTED' ? '✕ Rejected' : processingPartnerId === currentUserObj.id ? 'Rejecting...' : 'Reject Partner'}
                             </button>
                           </div>
                         </div>

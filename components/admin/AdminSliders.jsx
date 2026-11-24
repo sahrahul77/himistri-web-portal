@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus, Download, FileText, Award, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AdminSliders = ({
@@ -158,6 +158,101 @@ export const AdminSliders = ({
                         *HiMistri Amaze members receive 100% discount on Visiting Fees (₹0 Visiting Fee).
                       </p>
                     </div>
+
+                    {/* Service Partner Verification Documents & Bio Section */}
+                    {(currentUserObj.role === 'PARTNER' || currentUserObj.documents || currentUserObj.aboutText) && (
+                      <div className="mt-2 pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <FileText className="w-4 h-4 text-redPrimary" /> Verification Documents & Bio
+                          </span>
+                          {currentUserObj.skillCategory && (
+                            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                              Skill: {currentUserObj.skillCategory}
+                            </span>
+                          )}
+                        </div>
+
+                        {currentUserObj.aboutText && (
+                          <div className="p-3 bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-xs">
+                            <strong className="text-slate-500 dark:text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Partner Self Intro / Bio:</strong>
+                            <p className="text-slate-800 dark:text-slate-200 font-medium italic">"{currentUserObj.aboutText}"</p>
+                          </div>
+                        )}
+
+                        {currentUserObj.documents ? (
+                          <div className="space-y-2">
+                            {/* Identity Proof (Aadhar/PAN/Voter) */}
+                            {currentUserObj.documents.idProofData && (
+                              <div className="p-3 bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2 truncate">
+                                  <CreditCard className="w-4 h-4 text-redPrimary shrink-0" />
+                                  <div className="truncate">
+                                    <strong className="block text-slate-900 dark:text-white font-bold truncate">Identity Proof (Aadhar/PAN/Voter)</strong>
+                                    <span className="text-[10px] text-slate-400 truncate block">{currentUserObj.documents.idProofName || 'Identity_Document.pdf'}</span>
+                                  </div>
+                                </div>
+                                <a
+                                  href={currentUserObj.documents.idProofData}
+                                  download={currentUserObj.documents.idProofName || `${currentUserObj.fullName}_ID_Proof.png`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn-primary text-[10px] py-1.5 px-3 rounded-lg font-black shrink-0 flex items-center gap-1 bg-redPrimary hover:bg-redDark text-white"
+                                >
+                                  <Download className="w-3 h-3" /> Download
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Resume / CV */}
+                            {currentUserObj.documents.resumeData && (
+                              <div className="p-3 bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2 truncate">
+                                  <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                                  <div className="truncate">
+                                    <strong className="block text-slate-900 dark:text-white font-bold truncate">Resume / CV</strong>
+                                    <span className="text-[10px] text-slate-400 truncate block">{currentUserObj.documents.resumeName || 'Resume_CV.pdf'}</span>
+                                  </div>
+                                </div>
+                                <a
+                                  href={currentUserObj.documents.resumeData}
+                                  download={currentUserObj.documents.resumeName || `${currentUserObj.fullName}_Resume.pdf`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn-primary text-[10px] py-1.5 px-3 rounded-lg font-black shrink-0 flex items-center gap-1 bg-slate-800 hover:bg-slate-900 text-white"
+                                >
+                                  <Download className="w-3 h-3" /> Download
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Work Experience / Certificates */}
+                            {currentUserObj.documents.workExpData && (
+                              <div className="p-3 bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2 truncate">
+                                  <Award className="w-4 h-4 text-amber-500 shrink-0" />
+                                  <div className="truncate">
+                                    <strong className="block text-slate-900 dark:text-white font-bold truncate">Work Exp / Certificates</strong>
+                                    <span className="text-[10px] text-slate-400 truncate block">{currentUserObj.documents.workExpName || 'Certificates.pdf'}</span>
+                                  </div>
+                                </div>
+                                <a
+                                  href={currentUserObj.documents.workExpData}
+                                  download={currentUserObj.documents.workExpName || `${currentUserObj.fullName}_Certificates.pdf`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn-primary text-[10px] py-1.5 px-3 rounded-lg font-black shrink-0 flex items-center gap-1 bg-slate-800 hover:bg-slate-900 text-white"
+                                >
+                                  <Download className="w-3 h-3" /> Download
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-slate-400 font-medium italic">No verification documents uploaded for this partner yet.</p>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex gap-2 justify-end pt-2">
                       <button onClick={() => setDeletingPath(`users/${currentUserObj.id}`)} className="bg-rose-800 hover:bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold">Delete Account</button>

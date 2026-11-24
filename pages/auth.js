@@ -204,6 +204,7 @@ export default function AuthPage() {
       gender: regGender,
       role: regRole,
       skillCategory: regRole === 'PARTNER' ? regSkill : null,
+      verificationStatus: regRole === 'PARTNER' ? 'PENDING' : 'APPROVED',
       documents: regRole === 'PARTNER' ? {
         resumeName: resumeName || null,
         resumeData: resumeData || null,

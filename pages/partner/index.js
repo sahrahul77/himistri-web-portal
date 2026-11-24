@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue, update, set } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthContext';
-import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell, Trash2 } from 'lucide-react';
+import { HardHat, Phone, MapPin, CheckCircle2, Clock, ShieldCheck, DollarSign, Lock, LogIn, Navigation, Bike, Wrench, ChevronLeft, ChevronRight, Check, Star, LogOut, Sun, Moon, Briefcase, User, Save, Edit, Mail, Bell, Trash2, XCircle, AlertCircle, FileCheck } from 'lucide-react';
 
 export default function PartnerDashboardPage() {
   // Default Website Theme is Light Mode
@@ -23,6 +23,7 @@ export default function PartnerDashboardPage() {
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editSkill, setEditSkill] = useState('');
+  const [liveVerificationStatus, setLiveVerificationStatus] = useState('APPROVED');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Dynamic Popup Modal State
@@ -66,6 +67,7 @@ export default function PartnerDashboardPage() {
     setEditPhone(currentUser.phoneNumber || '');
     setEditSkill(currentUser.skillCategory || 'General Specialist');
     setIsOnline(currentUser.isOnline !== false);
+    setLiveVerificationStatus(currentUser.verificationStatus || 'APPROVED');
 
     const partnerUserRef = ref(rtdb, `users/${currentUser.id}`);
     const unsubPartner = onValue(partnerUserRef, (snap) => {
@@ -75,6 +77,7 @@ export default function PartnerDashboardPage() {
         setEditName(val.fullName || currentUser.fullName || '');
         setEditPhone(val.phoneNumber || currentUser.phoneNumber || '');
         setEditSkill(val.skillCategory || currentUser.skillCategory || 'General Specialist');
+        setLiveVerificationStatus(val.verificationStatus || currentUser.verificationStatus || 'APPROVED');
       }
     });
 
@@ -270,6 +273,83 @@ export default function PartnerDashboardPage() {
             <Link href="/auth" className="btn-primary inline-flex bg-orangeSecondary hover:bg-orange-600">
               <LogIn className="w-4 h-4" /> Sign In as Partner
             </Link>
+          </div>
+        ) : liveVerificationStatus === 'PENDING' ? (
+          <div className="web-card p-8 sm:p-10 max-w-xl mx-auto space-y-6 shadow-2xl text-center border border-amber-500/30 bg-white dark:bg-[#1A1A1A] rounded-3xl relative overflow-hidden">
+            <div className="w-20 h-20 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto shadow-inner relative">
+              <Clock className="w-10 h-10 text-amber-500 animate-spin" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/30 animate-pulse">
+                ⏳ Account Under Verification
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                Application Submitted, <span className="text-orangeSecondary">{currentUser.fullName}</span>!
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-md mx-auto">
+                Your partner credentials, craftsman skill (<strong className="text-slate-900 dark:text-white">{editSkill}</strong>), and verification documents are currently under review by the Lead Admin.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-left space-y-2.5 text-xs">
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-slate-500">Craftsman Skill:</span>
+                <span className="text-slate-900 dark:text-white font-extrabold">{editSkill}</span>
+              </div>
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-slate-500">Contact Number:</span>
+                <span className="text-slate-900 dark:text-white">{editPhone}</span>
+              </div>
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-slate-500">Verification Documents:</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1"><FileCheck className="w-3.5 h-3.5" /> Submitted & Encrypted</span>
+              </div>
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-slate-500">Review Status:</span>
+                <span className="text-amber-500 font-extrabold animate-pulse">⏳ Under Review by Lead Admin</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400 italic">
+              *Once the Lead Admin approves your application from the Admin Control Panel, your live dispatch workspace and active orders will unlock here automatically!
+            </p>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="tel:+917430887960" className="btn-primary py-3 px-5 text-xs font-black rounded-xl bg-orangeSecondary hover:bg-orange-600 shadow-md">
+                <Phone className="w-4 h-4 inline mr-1.5" /> Call Admin Helpline: +91 7430887960
+              </a>
+              <button onClick={() => logout()} className="px-5 py-3 rounded-xl bg-slate-200 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-300 dark:hover:bg-neutral-700">
+                <LogOut className="w-4 h-4 inline mr-1.5" /> Sign Out
+              </button>
+            </div>
+          </div>
+        ) : liveVerificationStatus === 'REJECTED' ? (
+          <div className="web-card p-8 sm:p-10 max-w-xl mx-auto space-y-6 shadow-2xl text-center border border-rose-500/30 bg-white dark:bg-[#1A1A1A] rounded-3xl">
+            <div className="w-20 h-20 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
+              <XCircle className="w-10 h-10 text-rose-500" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-rose-500/10 text-rose-600 border border-rose-500/30">
+                ✕ Application Requires Attention
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+                Application Status: <span className="text-rose-600">Rejected / Incomplete</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-md mx-auto">
+                Your partner application was reviewed and could not be verified with the current documents or details provided. Please contact Lead Admin support to update your application.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="tel:+917430887960" className="btn-primary py-3 px-5 text-xs font-black rounded-xl bg-rose-600 hover:bg-rose-700 shadow-md">
+                <Phone className="w-4 h-4 inline mr-1.5" /> Contact Admin Support: +91 7430887960
+              </a>
+              <button onClick={() => logout()} className="px-5 py-3 rounded-xl bg-slate-200 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-300 dark:hover:bg-neutral-700">
+                <LogOut className="w-4 h-4 inline mr-1.5" /> Sign Out
+              </button>
+            </div>
           </div>
         ) : (
           <>

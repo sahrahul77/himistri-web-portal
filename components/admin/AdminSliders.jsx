@@ -1,6 +1,8 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus, Download, FileText, Award, CreditCard } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Key, Star, CheckCircle2, Upload, Plus, Download, FileText, Award, CreditCard, XCircle, UserCheck, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ref, update } from 'firebase/database';
+import { rtdb } from '../../lib/firebase';
 
 export const AdminSliders = ({
   activeTab,
@@ -34,6 +36,25 @@ export const AdminSliders = ({
   // HiMistri Amaze Props
   handleToggleHiMistriAmaze, handleRevokeHiMistriAmaze
 }) => {
+  const handleApprovePartner = async (partnerId) => {
+    try {
+      await update(ref(rtdb, `users/${partnerId}`), { verificationStatus: 'APPROVED' });
+      await update(ref(rtdb, `partners/${partnerId}`), { verificationStatus: 'APPROVED' });
+      alert('✓ Partner Approved Successfully! Their dispatch workspace is now active.');
+    } catch (e) {
+      alert('Error approving partner: ' + e.message);
+    }
+  };
+
+  const handleRejectPartner = async (partnerId) => {
+    try {
+      await update(ref(rtdb, `users/${partnerId}`), { verificationStatus: 'REJECTED' });
+      await update(ref(rtdb, `partners/${partnerId}`), { verificationStatus: 'REJECTED' });
+      alert('✕ Partner Application Marked as Rejected.');
+    } catch (e) {
+      alert('Error rejecting partner: ' + e.message);
+    }
+  };
 
   const safeUserIdx = userSliderIdx % (usersList.length || 1);
   const currentUserObj = usersList[safeUserIdx] || usersList[0];
@@ -251,6 +272,40 @@ export const AdminSliders = ({
                         ) : (
                           <p className="text-[10px] text-slate-400 font-medium italic">No verification documents uploaded for this partner yet.</p>
                         )}
+
+                        {/* PARTNER ACCEPT / REJECT ADMIN ACTION BUTTONS */}
+                        <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-500">Verification Status:</span>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 ${
+                              currentUserObj.verificationStatus === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30' :
+                              currentUserObj.verificationStatus === 'REJECTED' ? 'bg-rose-500/20 text-rose-600 border border-rose-500/30' :
+                              'bg-amber-500/20 text-amber-600 border border-amber-500/30 animate-pulse'
+                            }`}>
+                              {currentUserObj.verificationStatus === 'APPROVED' ? <CheckCircle2 className="w-3 h-3" /> :
+                               currentUserObj.verificationStatus === 'REJECTED' ? <XCircle className="w-3 h-3" /> :
+                               <AlertCircle className="w-3 h-3" />}
+                              {currentUserObj.verificationStatus || 'PENDING VERIFICATION'}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleApprovePartner(currentUserObj.id)}
+                              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1"
+                            >
+                              <UserCheck className="w-4 h-4" /> Accept & Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectPartner(currentUserObj.id)}
+                              className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1"
+                            >
+                              <XCircle className="w-4 h-4" /> Reject Partner
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
 

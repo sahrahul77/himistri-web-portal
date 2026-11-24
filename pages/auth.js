@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
 import { ref, get, set, onValue } from 'firebase/database';
 import { rtdb } from '../lib/firebase';
-import { User, Lock, Phone, CheckCircle, CheckCircle2, Loader2, Eye, EyeOff, FileText, Upload, IdCard, Award, FileCheck, CheckSquare, Square, MessageSquare } from 'lucide-react';
+import { User, Lock, Phone, CheckCircle, CheckCircle2, Loader2, Eye, EyeOff, FileText, Upload, CreditCard, Award, FileCheck, CheckSquare, Square, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AuthPage() {
@@ -474,7 +474,7 @@ export default function AuthPage() {
                     <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="p-2.5 rounded-xl bg-redPrimary/10 text-redPrimary shrink-0">
-                          <IdCard className="w-5 h-5 text-redPrimary" />
+                          <CreditCard className="w-5 h-5 text-redPrimary" />
                         </div>
                         <div>
                           <strong className="block text-xs font-black text-slate-900 dark:text-white">Identity Proof <span className="text-redPrimary font-bold">(Compulsory *)</span></strong>

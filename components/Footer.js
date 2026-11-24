@@ -181,7 +181,7 @@ export default function Footer() {
 
       {/* Copyright Strip */}
       <div className="bg-slate-300/80 dark:bg-black py-4 text-center text-xs text-slate-600 dark:text-slate-500 border-t border-slate-300 dark:border-neutral-900 font-medium">
-        HiMistri Platform &copy; 2026. Official Domain: <strong className="text-slate-900 dark:text-slate-300 font-extrabold">himistri.in</strong>. All Rights Reserved. &bull; <span className="text-redPrimary font-black">Official Web Portal</span>
+        HiMistri Platform &copy; 2026. Official Web Portal: <strong className="text-slate-900 dark:text-slate-300 font-black">himistri.in</strong>. All Rights Reserved.
       </div>
 
       {/* FLOATING BOTTOM-TO-TOP SCROLL BUTTON ACROSS ENTIRE WEBSITE */}

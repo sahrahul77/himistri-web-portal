@@ -431,7 +431,7 @@ export default function PartnerDashboardPage() {
                   </div>
                 </div>
 
-                {/* Duty Toggle Button (Online / Offline) */}
+                {/* Duty Toggle Button (Online / Offline), Theme Toggle & Logout */}
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                   <button
                     type="button"
@@ -444,7 +444,16 @@ export default function PartnerDashboardPage() {
                     {isOnline ? '🟢 Duty: ONLINE' : '⚫ Duty: OFFLINE'}
                   </button>
 
-                  <button onClick={logout} className="p-2.5 rounded-2xl bg-rose-600/20 hover:bg-rose-600 text-rose-600 hover:text-white transition" title="Log Out">
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="p-2.5 rounded-2xl bg-slate-200 dark:bg-neutral-800 hover:bg-slate-300 dark:hover:bg-neutral-700 text-slate-800 dark:text-amber-400 transition cursor-pointer"
+                    title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  >
+                    {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+                  </button>
+
+                  <button onClick={logout} className="p-2.5 rounded-2xl bg-rose-600/20 hover:bg-rose-600 text-rose-600 hover:text-white transition cursor-pointer" title="Log Out">
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>

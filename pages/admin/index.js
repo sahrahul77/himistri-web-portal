@@ -364,17 +364,9 @@ export default function AdminControlPanelPage() {
 
     const unsubCategories = onValue(ref(rtdb, 'categories'), (snapshot) => {
       const list = parseFirebaseSnapshot(snapshot);
-      if (!snapshot.exists() || list.length === 0) {
-        DEFAULT_CATEGORIES.forEach((c) => {
-          set(ref(rtdb, `categories/${c.id}`), c);
-        });
-        setCategoriesList(DEFAULT_CATEGORIES);
-        if (!newSrvCatId) setNewSrvCatId(DEFAULT_CATEGORIES[0].id);
-      } else {
-        setCategoriesList(list);
-        if (list.length > 0 && !newSrvCatId) {
-          setNewSrvCatId(list[0].id);
-        }
+      setCategoriesList(list);
+      if (list.length > 0 && !newSrvCatId) {
+        setNewSrvCatId(list[0].id);
       }
     });
 
@@ -858,7 +850,7 @@ export default function AdminControlPanelPage() {
   const handleSaveServiceEdit = (e) => {
     e.preventDefault();
     if (!editingService) return;
-    const activeCats = (categoriesList && categoriesList.length > 0) ? categoriesList : DEFAULT_CATEGORIES;
+    const activeCats = categoriesList || [];
     const matchedCat = activeCats.find(c => c.id === editingService.categoryId || c.name === editingService.categoryName);
 
     update(ref(rtdb, `services/${editingService.id}`), {

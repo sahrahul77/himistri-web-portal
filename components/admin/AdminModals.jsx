@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, UserPlus, Trash2, Save, Upload, User, Eye, EyeOff, Star, Layers } from 'lucide-react';
 import PopupModal from '../PopupModal';
-import { DEFAULT_CATEGORIES } from '../../lib/defaultData';
 
 export function AdminModals({
   popupState, setPopupState,
@@ -26,8 +25,8 @@ export function AdminModals({
   const [showCreatePwd, setShowCreatePwd] = useState(false);
   const [showEditPwd, setShowEditPwd] = useState(false);
 
-  // Fallback to DEFAULT_CATEGORIES if categoriesList is empty or loading
-  const activeCategoriesList = (categoriesList && categoriesList.length > 0) ? categoriesList : DEFAULT_CATEGORIES;
+  // Active Categories List for Editing Service
+  const activeCategoriesList = categoriesList || [];
 
   // Robust Category Matcher for Editing Service
   const matchedCatObj = editingService ? (

@@ -22,6 +22,7 @@ export default function AuthPage() {
   const [regEmail, setRegEmail] = useState('');
   const [regPass, setRegPass] = useState('');
   const [showRegPass, setShowRegPass] = useState(false);
+  const [regGender, setRegGender] = useState('Male');
   const [regSkill, setRegSkill] = useState('');
   const [servicesList, setServicesList] = useState([]);
 
@@ -192,6 +193,7 @@ export default function AuthPage() {
       phoneNumber: '+91' + cleanPhone,
       email: regEmail ? regEmail.trim() : `${cleanPhone}@himistri.com`,
       password: regPass,
+      gender: regGender,
       role: regRole,
       skillCategory: regRole === 'PARTNER' ? regSkill : null,
       documents: regRole === 'PARTNER' ? {
@@ -313,23 +315,7 @@ export default function AuthPage() {
               <div className="space-y-3">
                 <h2 className="text-base font-black text-slate-900 dark:text-white">1. Select Account Role</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div
-                    onClick={() => setRegRole('PARTNER')}
-                    className={`p-4 rounded-2xl border text-left cursor-pointer transition flex items-start gap-3 relative overflow-hidden ${
-                      regRole === 'PARTNER'
-                        ? 'border-redPrimary bg-redPrimary/10 shadow-md'
-                        : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 hover:border-redPrimary/50'
-                    }`}
-                  >
-                    <div className="mt-0.5 shrink-0 text-redPrimary">
-                      {regRole === 'PARTNER' ? <CheckCircle2 className="w-5 h-5 text-redPrimary" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-neutral-700" />}
-                    </div>
-                    <div>
-                      <strong className="text-sm font-extrabold block text-slate-900 dark:text-white">Service Partner / Worker</strong>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 leading-snug">Receive service job requests & earn income in Sikkim</span>
-                    </div>
-                  </div>
-
+                  {/* Customer Card (Left Side) */}
                   <div
                     onClick={() => setRegRole('CUSTOMER')}
                     className={`p-4 rounded-2xl border text-left cursor-pointer transition flex items-start gap-3 relative overflow-hidden ${
@@ -344,6 +330,24 @@ export default function AuthPage() {
                     <div>
                       <strong className="text-sm font-extrabold block text-slate-900 dark:text-white">Customer</strong>
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 leading-snug">Hire local craftsmen & book services in Gangtok</span>
+                    </div>
+                  </div>
+
+                  {/* Service Partner / Worker Card (Right Side) */}
+                  <div
+                    onClick={() => setRegRole('PARTNER')}
+                    className={`p-4 rounded-2xl border text-left cursor-pointer transition flex items-start gap-3 relative overflow-hidden ${
+                      regRole === 'PARTNER'
+                        ? 'border-redPrimary bg-redPrimary/10 shadow-md'
+                        : 'border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 hover:border-redPrimary/50'
+                    }`}
+                  >
+                    <div className="mt-0.5 shrink-0 text-redPrimary">
+                      {regRole === 'PARTNER' ? <CheckCircle2 className="w-5 h-5 text-redPrimary" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-neutral-700" />}
+                    </div>
+                    <div>
+                      <strong className="text-sm font-extrabold block text-slate-900 dark:text-white">Service Partner / Worker</strong>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 leading-snug">Receive service job requests & earn income in Sikkim</span>
                     </div>
                   </div>
                 </div>
@@ -366,6 +370,19 @@ export default function AuthPage() {
                       className="w-full pl-10 p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Gender * (Compulsory)</label>
+                  <select
+                    value={regGender}
+                    onChange={(e) => setRegGender(e.target.value)}
+                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-redPrimary"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
 
                 <div>
